@@ -24,7 +24,7 @@ import { LongPressDirective } from './core/directives/long-press.directive';
       <div
         class="flex justify-content-between align-items-center px-3 py-3 shadow-2"
       >
-        <div class="font-bold text-xl text-primary">TrimSalon</div>
+        <div class="font-bold text-xl text-primary">🐾 TrimSalon</div>
         <p-button icon="pi pi-ellipsis-v" [rounded]="true" [text]="true" />
       </div>
 
@@ -74,7 +74,9 @@ export class App {
       longPressAction: () => this.openGoogleCalendar(),
     },
     { icon: 'pi pi-address-book', link: '/clients' },
+    { icon: 'pi pi-wallet', link: '/wallet' },
     { icon: 'pi pi-wrench', link: '/services' },
+
     { icon: 'pi pi-chart-bar', link: '/reports' },
   ];
 
