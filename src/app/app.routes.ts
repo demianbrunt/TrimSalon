@@ -5,6 +5,7 @@ import { ForbiddenComponent } from './pages/forbidden/forbidden.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { ReportsComponent } from './pages/reports/reports.component';
 import { ServicesComponent } from './pages/services/services.component';
+import { PackagesComponent } from './pages/packages/packages.component';
 import { SigninComponent } from './pages/signin/signin.component';
 import { SignoutComponent } from './pages/signout/signout.component';
 
@@ -25,6 +26,10 @@ export const routes: Routes = [
   {
     path: 'services',
     component: ServicesComponent,
+  },
+  {
+    path: 'packages',
+    component: PackagesComponent,
   },
   {
     path: 'reports',

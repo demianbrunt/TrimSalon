@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, HostListener, inject, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
@@ -20,17 +20,26 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
     </div>
   `,
 })
-export class CalendarComponent {
-  safeCalendarUrl: SafeResourceUrl;
+export class CalendarComponent implements OnInit {
+  safeCalendarUrl!: SafeResourceUrl;
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly userEmail = 'demian.brunt@gmail.com';
 
-  constructor() {
+  ngOnInit(): void {
+    this.updateCalendarUrl();
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.updateCalendarUrl();
+  }
+
+  private updateCalendarUrl(): void {
+    const mode = window.innerWidth < 768 ? 'AGENDA' : 'WEEK';
+    const encodedEmail = encodeURIComponent(this.userEmail);
     // This is an example public calendar.
     // For this to work, the calendar for "demian.brunt@gmail.com" must be made public.
-    const userEmail = 'demian.brunt@gmail.com';
-    const encodedEmail = encodeURIComponent(userEmail);
-    const calendarUrl = `https://calendar.google.com/calendar/embed?src=${encodedEmail}&mode=WEEK&ctz=America/New_York`;
-
+    const calendarUrl = `https://calendar.google.com/calendar/embed?src=${encodedEmail}&mode=${mode}&ctz=America/New_York`;
     this.safeCalendarUrl =
       this.sanitizer.bypassSecurityTrustResourceUrl(calendarUrl);
   }

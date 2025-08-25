@@ -1,17 +1,24 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ToastModule } from 'primeng/toast';
 import { LongPressDirective } from './core/directives/long-press.directive';
 
 @Component({
   selector: 'app-root',
+
   imports: [
     RouterOutlet,
     ButtonModule,
     RouterLink,
     RouterLinkActive,
     LongPressDirective,
+    ConfirmDialogModule,
+    ToastModule,
   ],
+  providers: [MessageService, ConfirmationService],
   styles: [
     `
       .active-nav-button {
@@ -20,6 +27,8 @@ import { LongPressDirective } from './core/directives/long-press.directive';
     `,
   ],
   template: `
+    <p-toast></p-toast>
+    <p-confirmDialog></p-confirmDialog>
     <div class="flex flex-column" style="height: 100dvh">
       <div
         class="flex justify-content-between align-items-center px-3 py-3 shadow-2"
@@ -74,7 +83,7 @@ export class App {
       longPressAction: () => this.openGoogleCalendar(),
     },
     { icon: 'pi pi-address-book', link: '/clients' },
-    { icon: 'pi pi-wallet', link: '/wallet' },
+    { icon: 'pi pi-box', link: '/packages' },
     { icon: 'pi pi-wrench', link: '/services' },
 
     { icon: 'pi pi-chart-bar', link: '/reports' },
