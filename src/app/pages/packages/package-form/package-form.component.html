@@ -1,0 +1,125 @@
+<div class="p-4">
+  <p-toast></p-toast>
+  <div class="card">
+    <div class="flex justify-content-between align-items-center mb-4">
+      <h2 class="m-0">{{ isEditMode ? "Pakket Bewerken" : "Nieuw Pakket" }}</h2>
+    </div>
+    <form [formGroup]="packageForm">
+      <div class="p-fluid">
+        <div class="field">
+          <p-floatlabel variant="on">
+            <input
+              pInputText
+              id="name"
+              class="w-full"
+              [formControl]="name"
+              autocomplete="off"
+            />
+            <label for="name">Naam</label>
+          </p-floatlabel>
+        </div>
+        <div class="field">
+          <p-floatlabel variant="on">
+            <p-multiSelect
+              id="services"
+              [options]="allServices"
+              [formControl]="services"
+              optionLabel="name"
+              display="chip"
+              class="w-full"
+            ></p-multiSelect>
+            <label for="services">Werkzaamheden</label>
+          </p-floatlabel>
+        </div>
+      </div>
+    </form>
+    <div class="flex justify-content-end mt-4 gap-2">
+      <p-button
+        label="Annuleren"
+        icon="pi pi-times"
+        styleClass="p-button-text"
+        (click)="cancel()"
+        type="button"
+      ></p-button>
+      <p-button
+        label="Opslaan"
+        icon="pi pi-check"
+        (click)="savePackage()"
+        [disabled]="packageForm.invalid"
+      ></p-button>
+    </div>
+  </div>
+</div>
+
+<!-- History Dialog -->
+<p-dialog
+  #historyDialogEl
+  [(visible)]="displayHistoryDialog"
+  [modal]="true"
+  header="Prijshistorie Pakket"
+  [style]="{ width: 'clamp(300px, 80vw, 700px)' }"
+  [ngClass]="{ 'fullscreen-dialog': isMobile }"
+>
+  @if (selectedPackageForHistory) {
+    <form
+      [formGroup]="priceHistoryForm"
+      (ngSubmit)="saveNewPrice()"
+      class="mt-4"
+    >
+      <div class="formgrid grid">
+        <div class="field col-12 md:col-6">
+          <label for="newPrice">Nieuwe Prijs</label>
+          <p-inputNumber
+            id="newPrice"
+            formControlName="amount"
+            mode="currency"
+            currency="EUR"
+          ></p-inputNumber>
+        </div>
+        <div class="field col-12 md:col-6">
+          <label for="fromDate">Geldig Vanaf</label>
+          <p-datepicker
+            id="fromDate"
+            formControlName="fromDate"
+            dateFormat="dd-mm-yy"
+          ></p-datepicker>
+        </div>
+      </div>
+      <div class="flex justify-content-end gap-2 mt-3">
+        <p-button
+          label="Annuleren"
+          styleClass="p-button-text"
+          (click)="displayHistoryDialog = false"
+        ></p-button>
+        <p-button
+          label="Nieuwe Prijs Opslaan"
+          type="submit"
+          [disabled]="priceHistoryForm.invalid"
+        ></p-button>
+      </div>
+    </form>
+
+    <p-table
+      [value]="historyData"
+      [tableStyle]="{ 'min-width': '50rem' }"
+      responsiveLayout="stack"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Bedrag</th>
+          <th>Vanaf</th>
+          <th>Tot</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-price>
+        <tr>
+          <td>{{ price.amount | currency: "EUR" }}</td>
+          <td>{{ price.fromDate | date: "dd-MM-yyyy" }}</td>
+          <td>
+            {{ price.toDate ? (price.toDate | date: "dd-MM-yyyy") : "Huidig" }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+</p-dialog>

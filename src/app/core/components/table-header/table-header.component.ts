@@ -21,8 +21,10 @@ import { Table } from 'primeng/table';
     <div
       class="flex justify-content-between align-items-center flex-column md:flex-row"
     >
-      <h2 class="m-0 mb-2 md:mb-0">{{ title }}</h2>
-      <div class="flex justify-content-end gap-2 w-full md:w-auto">
+      @if (title) {
+        <h2 class="m-0 mb-2 md:mb-0">{{ title }}</h2>
+      }
+      <div class="flex justify-content-between gap-2 w-full md:w-auto">
         <p-iconfield>
           <p-inputicon class="pi pi-search" />
           <input
@@ -45,7 +47,7 @@ import { Table } from 'primeng/table';
   `,
 })
 export class TableHeaderComponent {
-  @Input({ required: true }) title!: string;
+  @Input() title!: string;
   @Input() placeholder = 'Zoeken...';
   @Input() addLabel = 'Nieuw';
   @Input({ required: true }) table!: Table | DataView;

@@ -15,6 +15,11 @@ export abstract class BaseService<T extends { id?: string; deletedAt?: Date }> {
     return this.data.filter((d) => !d.deletedAt);
   }
 
+  getById(id: string): Observable<T | undefined> {
+    const item = this.data.find((d) => d.id === id && !d.deletedAt);
+    return of(item);
+  }
+
   add(item: T): Observable<T> {
     const newItem = { ...item, id: this.generateId() };
     this.data.push(newItem);

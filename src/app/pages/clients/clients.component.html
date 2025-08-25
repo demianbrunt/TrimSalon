@@ -1,160 +1,59 @@
-<div class="p-2 h-full">
-  <p-toast></p-toast>
-  <p-confirmDialog></p-confirmDialog>
-
-  <p-dataView
-    #dv
-    [value]="clients"
-    [paginator]="true"
-    [rows]="9"
-    [sortField]="sortField"
-    [sortOrder]="sortOrder"
-    [filterBy]="'name,dogs.name,dogs.breed.name'"
-  >
-    <ng-template #header>
-      <app-table-header
-        title="Klanten"
-        placeholder="Zoek klant of hond"
-        [table]="dv"
-        (addClick)="showClientForm()"
-      ></app-table-header>
-    </ng-template>
-
-    <ng-template #list let-items>
-      @for (client of items; track client.id) {
-        <div class="col-12 md:col-6 lg:col-4 p-2">
-          <div
-            class="p-4 border-1 surface-border surface-card border-round h-full flex flex-column"
-          >
-            <div class="flex-grow-1">
-              <div class="font-bold text-lg">{{ client.name }}</div>
-              <div class="text-secondary">{{ client.phone }}</div>
-              <div class="mt-2">
-                @for (dog of client.dogs; track dog.name) {
-                  <p-tag
-                    [value]="
-                      dog.name +
-                      ' (' +
-                      (dog.breed?.name || 'Onbekend ras') +
-                      ')'
-                    "
-                    styleClass="mr-2 mb-2"
-                  ></p-tag>
-                }
-              </div>
-            </div>
-            <div class="flex-shrink-0 mt-3">
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-pencil"
-                  styleClass="p-button-text p-button-rounded"
-                  (click)="showClientForm(client)"
-                  pTooltip="Bewerken"
-                ></p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  styleClass="p-button-text p-button-rounded p-button-danger"
-                  (click)="deleteClient(client)"
-                  pTooltip="Anonimiseren"
-                ></p-button>
-              </div>
+<p-dataView
+  #dv
+  [value]="clients"
+  [paginator]="true"
+  [rows]="9"
+  [sortField]="sortField"
+  [sortOrder]="sortOrder"
+  [filterBy]="'name,dogs.name,dogs.breed.name'"
+>
+  <ng-template #header>
+    <app-table-header
+      placeholder="Zoek klant of hond"
+      [table]="dv"
+      (addClick)="showClientForm()"
+    ></app-table-header>
+  </ng-template>
+  <ng-template #list let-items>
+    @for (client of items; track client.id) {
+      <div class="col-12 md:col-6 lg:col-4 p-2">
+        <div
+          class="p-4 border-1 surface-border surface-card border-round h-full flex flex-column"
+        >
+          <div class="flex-grow-1">
+            <div class="font-bold text-lg">{{ client.name }}</div>
+            <div class="text-secondary">{{ client.phone }}</div>
+            <div class="mt-2">
+              @for (dog of client.dogs; track dog.name) {
+                <p-tag
+                  [value]="
+                    dog.name + ' (' + (dog.breed?.name || 'Onbekend ras') + ')'
+                  "
+                  styleClass="mr-2 mb-2"
+                ></p-tag>
+              }
             </div>
           </div>
-        </div>
-      } @empty {
-        <div class="text-center p-4">Geen klanten gevonden.</div>
-      }
-    </ng-template>
-  </p-dataView>
-</div>
-
-<p-dialog
-  #dialogEl
-  [(visible)]="displayForm"
-  [modal]="true"
-  header="{{ selectedClient ? 'Klant Bewerken' : 'Nieuwe Klant' }}"
-  [style]="{ width: 'clamp(300px, 90vw, 600px)' }"
-  [maximizable]="true"
->
-  <form [formGroup]="clientForm" (ngSubmit)="saveClient()">
-    <div class="grid p-fluid">
-      <div class="field col-12">
-        <label for="name">Naam</label>
-        <input pInputText id="name" formControlName="name" />
-      </div>
-      <div class="field col-12">
-        <label for="email">Email</label>
-        <input pInputText id="email" formControlName="email" />
-      </div>
-      <div class="field col-12">
-        <label for="phone">Telefoon</label>
-        <input pInputText id="phone" formControlName="phone" />
-      </div>
-    </div>
-
-    <div class="mt-4">
-      <div class="flex justify-content-between align-items-center mb-2">
-        <h4 class="m-0">Honden</h4>
-        <p-button
-          icon="pi pi-plus"
-          label="Hond Toevoegen"
-          (click)="addDog()"
-          type="button"
-        ></p-button>
-      </div>
-      <div formArrayName="dogs">
-        @for (dogGroup of dogsArray.controls; track $index) {
-          <div
-            [formGroupName]="$index"
-            class="formgrid grid grid-nogutter border-1 surface-border p-2 border-round mb-2 align-items-end"
-          >
-            <div class="field col-12 md:col-5 px-1">
-              <label for="dog-name-{{ $index }}">Naam Hond</label>
-              <input
-                pInputText
-                id="dog-name-{{ $index }}"
-                formControlName="name"
-              />
-            </div>
-            <div class="field col-12 md:col-5 px-1">
-              <label for="dog-breed-{{ $index }}">Ras Hond</label>
-              <p-select
-                id="dog-breed-{{ $index }}"
-                [options]="allBreeds"
-                formControlName="breed"
-                optionLabel="name"
-                placeholder="Selecteer ras"
-              ></p-select>
-            </div>
-            <div class="field col-12 md:col-2 px-1 flex-shrink-0">
+          <div class="flex-shrink-0 mt-3">
+            <div class="flex justify-content-end gap-2">
+              <p-button
+                icon="pi pi-pencil"
+                styleClass="p-button-text p-button-rounded"
+                (click)="showClientForm(client)"
+                pTooltip="Bewerken"
+              ></p-button>
               <p-button
                 icon="pi pi-trash"
-                styleClass="p-button-danger w-full"
-                (click)="removeDog($index)"
-                type="button"
+                styleClass="p-button-text p-button-rounded p-button-danger"
+                (click)="deleteClient(client)"
+                pTooltip="Anonimiseren"
               ></p-button>
             </div>
           </div>
-        }
+        </div>
       </div>
-    </div>
-
-    <ng-template pTemplate="footer">
-      <div class="flex justify-content-end gap-2">
-        <p-button
-          label="Annuleren"
-          icon="pi pi-times"
-          styleClass="p-button-text"
-          (click)="displayForm = false"
-          type="button"
-        ></p-button>
-        <p-button
-          label="Opslaan"
-          icon="pi pi-check"
-          type="submit"
-          [disabled]="clientForm.invalid"
-        ></p-button>
-      </div>
-    </ng-template>
-  </form>
-</p-dialog>
+    } @empty {
+      <div class="text-center p-4">Geen klanten gevonden.</div>
+    }
+  </ng-template>
+</p-dataView>

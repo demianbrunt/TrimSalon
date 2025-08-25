@@ -1,103 +1,61 @@
-<div class="p-2 h-full">
-  <p-toast></p-toast>
-  <p-confirmDialog></p-confirmDialog>
-  <p-dataView
-    #dv
-    [value]="packages"
-    [paginator]="true"
-    [rows]="9"
-    [sortField]="sortField"
-    [sortOrder]="sortOrder"
-    [filterBy]="'name,services.name'"
-  >
-    <ng-template #header>
-      <app-table-header
-        title="Pakketten"
-        placeholder="Zoek pakket"
-        [table]="dv"
-        (addClick)="showPackageForm()"
-      ></app-table-header>
-    </ng-template>
-    <ng-template #list let-pkg>
-      @for (pkg of packages; track pkg.id) {
-        <div class="col-12 md:col-6 lg:col-4 p-2">
-          <div
-            class="p-4 border-1 surface-border surface-card border-round h-full flex flex-column"
-          >
-            <div class="flex-grow-1">
-              <div class="font-bold text-lg">{{ pkg.name }}</div>
-              <div class="mt-2">
-                <p>Bevat de volgende werkzaamheden:</p>
-                @for (service of pkg.services; track service.id) {
-                  <p-tag [value]="service.name" styleClass="mr-2 mb-2"></p-tag>
-                }
-              </div>
+<p-dataView
+  #dv
+  [value]="packages"
+  [paginator]="true"
+  [rows]="9"
+  [sortField]="sortField"
+  [sortOrder]="sortOrder"
+  [filterBy]="'name,services.name'"
+>
+  <ng-template #header>
+    <app-table-header
+      placeholder="Zoek pakket"
+      [table]="dv"
+      (addClick)="showPackageForm()"
+    ></app-table-header>
+  </ng-template>
+  <ng-template #list let-pkg>
+    @for (pkg of packages; track pkg.id) {
+      <div class="col-12 md:col-6 lg:col-4 p-2">
+        <div
+          class="p-4 border-1 surface-border surface-card border-round h-full flex flex-column"
+        >
+          <div class="flex-grow-1">
+            <div class="font-bold text-lg">{{ pkg.name }}</div>
+            <div class="mt-2">
+              <p>Bevat de volgende werkzaamheden:</p>
+              @for (service of pkg.services; track service.id) {
+                <p-tag [value]="service.name" styleClass="mr-2 mb-2"></p-tag>
+              }
             </div>
-            <div class="flex-shrink-0 mt-3">
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-pencil"
-                  styleClass="p-button-text p-button-rounded"
-                  (click)="showPackageForm(pkg)"
-                  pTooltip="Bewerken"
-                ></p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  styleClass="p-button-text p-button-rounded p-button-danger"
-                  (click)="deletePackage(pkg)"
-                  pTooltip="Verwijderen"
-                ></p-button>
-              </div>
+          </div>
+          <div class="flex-shrink-0 mt-3">
+            <div class="flex justify-content-end gap-2">
+              <p-button
+                icon="pi pi-history"
+                styleClass="p-button-text p-button-rounded"
+                (click)="showPriceHistory(pkg)"
+                pTooltip="Prijs historie"
+              ></p-button>
+              <p-button
+                icon="pi pi-pencil"
+                styleClass="p-button-text p-button-rounded"
+                (click)="showPackageForm(pkg)"
+                pTooltip="Bewerken"
+              ></p-button>
+              <p-button
+                icon="pi pi-trash"
+                styleClass="p-button-text p-button-rounded p-button-danger"
+                (click)="deletePackage(pkg)"
+                pTooltip="Verwijderen"
+              ></p-button>
             </div>
           </div>
         </div>
-      }
-    </ng-template>
-    <ng-template pTemplate="empty">
-      <div class="text-center p-4">Geen pakketten gevonden.</div>
-    </ng-template>
-  </p-dataView>
-</div>
-
-<p-dialog
-  [(visible)]="displayForm"
-  [modal]="true"
-  header="{{ selectedPackage ? 'Pakket Bewerken' : 'Nieuw Pakket' }}"
-  [style]="{ width: 'clamp(300px, 90vw, 600px)' }"
-  [maximizable]="true"
->
-  <form [formGroup]="packageForm" (ngSubmit)="savePackage()">
-    <div class="p-fluid">
-      <div class="field">
-        <label for="name">Naam</label>
-        <input pInputText id="name" formControlName="name" />
       </div>
-      <div class="field">
-        <label for="services">Werkzaamheden</label>
-        <p-multiSelect
-          id="services"
-          [options]="allServices"
-          formControlName="services"
-          optionLabel="name"
-          display="chip"
-        ></p-multiSelect>
-      </div>
-    </div>
-    <ng-template pTemplate="footer">
-      <div class="flex justify-content-end gap-2">
-        <p-button
-          label="Annuleren"
-          icon="pi pi-times"
-          styleClass="p-button-text"
-          (click)="displayForm = false"
-        ></p-button>
-        <p-button
-          label="Opslaan"
-          icon="pi pi-check"
-          type="submit"
-          [disabled]="packageForm.invalid"
-        ></p-button>
-      </div>
-    </ng-template>
-  </form>
-</p-dialog>
+    }
+  </ng-template>
+  <ng-template pTemplate="empty">
+    <div class="text-center p-4">Geen pakketten gevonden.</div>
+  </ng-template>
+</p-dataView>

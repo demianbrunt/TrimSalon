@@ -1,0 +1,253 @@
+<div class="p-4">
+  <p-toast></p-toast>
+  <div class="card">
+    <div class="flex justify-content-between align-items-center mb-4">
+      <h2 class="m-0">
+        {{ isEditMode ? "Werkzaamheid Bewerken" : "Nieuwe Werkzaamheid" }}
+      </h2>
+    </div>
+    <form [formGroup]="serviceForm">
+      <div class="p-fluid">
+        <div class="field">
+          <p-floatlabel variant="on">
+            <input
+              pInputText
+              id="name"
+              [formControl]="name"
+              class="w-full"
+              autocomplete="off"
+            />
+            <label for="name">Naam</label>
+          </p-floatlabel>
+        </div>
+        <div class="field">
+          <p-floatlabel variant="on">
+            <textarea
+              pInputTextarea
+              id="description"
+              [formControl]="description"
+              rows="3"
+              class="w-full"
+            ></textarea>
+            <label for="description">Omschrijving</label>
+          </p-floatlabel>
+        </div>
+        <div class="field">
+          <label for="pricingType">Prijsmodel</label>
+          <p-selectButton
+            [options]="pricingTypes"
+            [formControl]="pricingType"
+            optionLabel="label"
+            optionValue="value"
+          ></p-selectButton>
+        </div>
+
+        <!-- Fixed Prices Section -->
+        @if (pricingType?.value === "FIXED") {
+          <div class="mt-4" formArrayName="fixedPrices">
+            <div class="flex justify-content-between align-items-center mb-2">
+              <h4 class="m-0">Vaste Prijzen per Ras</h4>
+              <p-button
+                icon="pi pi-plus"
+                label="Prijs Toevoegen"
+                (click)="addFixedPrice()"
+                type="button"
+              ></p-button>
+            </div>
+            @for (priceGroup of fixedPricesArray.controls; track $index) {
+              <div
+                [formGroupName]="$index"
+                class="formgrid grid grid-nogutter border-1 surface-border p-2 border-round mb-2 align-items-center"
+              >
+                <div class="field col-12 md:col-5 px-1">
+                  <p-floatlabel variant="on">
+                    <p-select
+                      id="fixed-breed-{{ $index }}"
+                      formControlName="breed"
+                      [options]="allBreeds"
+                      optionLabel="name"
+                      placeholder="Alle Rassen"
+                      [showClear]="true"
+                      class="w-full"
+                    ></p-select>
+                    <label for="fixed-breed-{{ $index }}"
+                      >Ras (leeg = Alle Rassen)</label
+                    >
+                  </p-floatlabel>
+                </div>
+                <div class="field col-12 md:col-4 px-1">
+                  <p-floatlabel variant="on">
+                    <p-inputNumber
+                      id="fixed-amount-{{ $index }}"
+                      formControlName="amount"
+                      mode="currency"
+                      currency="EUR"
+                    ></p-inputNumber>
+                    <label for="fixed-amount-{{ $index }}">Prijs</label>
+                  </p-floatlabel>
+                </div>
+
+                <div class="field col-12 md:col-2 px-1 flex-shrink-0">
+                  <p-button
+                    icon="pi pi-trash"
+                    styleClass="p-button-danger w-full"
+                    (click)="removeFixedPrice($index)"
+                    type="button"
+                  ></p-button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Time-Based Rates Section -->
+        @if (pricingType?.value === "TIME_BASED") {
+          <div class="mt-4" formArrayName="timeRates">
+            <div class="flex justify-content-between align-items-center mb-2">
+              <h4 class="m-0">Tarieven per Ras (€/min)</h4>
+              <p-button
+                icon="pi pi-plus"
+                label="Tarief Toevoegen"
+                (click)="addTimeRate()"
+                type="button"
+              ></p-button>
+            </div>
+            @for (rateGroup of timeRatesArray.controls; track $index) {
+              <div
+                [formGroupName]="$index"
+                class="formgrid grid grid-nogutter border-1 surface-border p-2 border-round mb-2 align-items-end"
+              >
+                <div class="field col-12 md:col-5 px-1">
+                  <p-floatlabel variant="on">
+                    <p-select
+                      id="time-breed-{{ $index }}"
+                      formControlName="breed"
+                      [options]="allBreeds"
+                      optionLabel="name"
+                      placeholder="Basis Tarief"
+                      [showClear]="true"
+                      class="w-full"
+                    ></p-select>
+                    <label for="time-breed-{{ $index }}"
+                      >Ras (leeg = Basis Tarief)</label
+                    >
+                  </p-floatlabel>
+                </div>
+                <div class="field col-12 md:col-4 px-1">
+                  <p-floatlabel variant="on">
+                    <p-inputNumber
+                      id="time-amount-{{ $index }}"
+                      formControlName="amount"
+                      mode="currency"
+                      currency="EUR"
+                    ></p-inputNumber>
+                    <label for="time-amount-{{ $index }}"
+                      >Tarief per minuut</label
+                    >
+                  </p-floatlabel>
+                </div>
+
+                <div class="field col-12 md:col-2 px-1 flex-shrink-0">
+                  <p-button
+                    icon="pi pi-trash"
+                    styleClass="p-button-danger w-full"
+                    (click)="removeTimeRate($index)"
+                    type="button"
+                  ></p-button>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </form>
+    <div class="flex justify-content-end mt-4 gap-2">
+      <p-button
+        label="Annuleren"
+        icon="pi pi-times"
+        styleClass="p-button-text"
+        (click)="cancel()"
+        type="button"
+      ></p-button>
+      <p-button
+        label="Opslaan"
+        icon="pi pi-check"
+        (click)="saveService()"
+        [disabled]="serviceForm.invalid"
+      ></p-button>
+    </div>
+  </div>
+</div>
+
+<!-- History Dialog -->
+<p-dialog
+  #historyDialogEl
+  [(visible)]="displayHistoryDialog"
+  [modal]="true"
+  header="Prijshistorie"
+  [style]="{ width: 'clamp(300px, 80vw, 700px)' }"
+  [ngClass]="{ 'fullscreen-dialog': isMobile }"
+>
+  @if (currentPriceRuleContext) {
+    <form
+      [formGroup]="priceHistoryForm"
+      (ngSubmit)="saveNewPrice()"
+      class="mt-4"
+    >
+      <div class="formgrid grid">
+        <div class="field col-12 md:col-6">
+          <label for="newPrice">Nieuwe Prijs / Tarief</label>
+          <p-inputNumber
+            id="newPrice"
+            formControlName="amount"
+            mode="currency"
+            currency="EUR"
+          ></p-inputNumber>
+        </div>
+        <div class="field col-12 md:col-6">
+          <label for="fromDate">Geldig Vanaf</label>
+          <p-datepicker
+            id="fromDate"
+            formControlName="fromDate"
+            dateFormat="dd-mm-yy"
+          ></p-datepicker>
+        </div>
+      </div>
+      <div class="flex justify-content-end gap-2 mt-3">
+        <p-button
+          label="Annuleren"
+          styleClass="p-button-text"
+          (click)="displayHistoryDialog = false"
+        ></p-button>
+        <p-button
+          label="Nieuwe Prijs Opslaan"
+          type="submit"
+          [disabled]="priceHistoryForm.invalid"
+        ></p-button>
+      </div>
+    </form>
+
+    <p-table
+      [value]="historyData"
+      [tableStyle]="{ 'min-width': '50rem' }"
+      responsiveLayout="stack"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Bedrag / Tarief</th>
+          <th>Vanaf</th>
+          <th>Tot</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-price>
+        <tr>
+          <td>{{ price.amount | currency: "EUR" }}</td>
+          <td>{{ price.fromDate | date: "dd-MM-yyyy" }}</td>
+          <td>
+            {{ price.toDate ? (price.toDate | date: "dd-MM-yyyy") : "Huidig" }}
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+</p-dialog>
