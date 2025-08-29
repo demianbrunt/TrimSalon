@@ -20,7 +20,6 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
 import { PackageService } from '../../../core/services/package.service';
 import { ServiceService } from '../../../core/services/service.service';
 import { Package } from '../../../core/models/package.model';
@@ -32,6 +31,7 @@ import { TableModule } from 'primeng/table';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { Price } from '../../../core/models/price.model';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
+import { ToastrService } from '../../../core/services/toastr.service';
 
 @Component({
   selector: 'app-package-form',
@@ -50,7 +50,6 @@ import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
     TableModule,
     InputNumberModule,
   ],
-  providers: [MessageService],
   templateUrl: './package-form.component.html',
   styleUrls: ['./package-form.component.css'],
 })
@@ -71,7 +70,7 @@ export class PackageFormComponent implements OnInit {
 
   private readonly packageService = inject(PackageService);
   private readonly serviceService = inject(ServiceService);
-  private readonly messageService = inject(MessageService);
+  private readonly toastrService = inject(ToastrService);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -151,19 +150,14 @@ export class PackageFormComponent implements OnInit {
 
     operation.subscribe({
       next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Succes',
-          detail: `Pakket ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
-        });
+        this.toastrService.success(
+          'Succes',
+          `Pakket ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
+        );
         this.router.navigate(['/packages']);
       },
       error: (err) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Fout',
-          detail: err.message,
-        });
+        this.toastrService.error('Fout', err.message);
       },
     });
   }
@@ -195,11 +189,7 @@ export class PackageFormComponent implements OnInit {
     historyArray.push(newPrice);
 
     this.packageService.update(this.selectedPackageForHistory).subscribe(() => {
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Succes',
-        detail: 'Prijshistorie bijgewerkt',
-      });
+      this.toastrService.success('Succes', 'Prijshistorie bijgewerkt');
       this.displayHistoryDialog = false;
     });
   }

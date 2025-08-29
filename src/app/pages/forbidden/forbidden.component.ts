@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 
 @Component({
+  selector: 'app-forbidden',
   standalone: true,
   imports: [ButtonModule, RouterLink],
   template: `

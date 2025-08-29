@@ -1,4 +1,3 @@
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import {
@@ -9,19 +8,16 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
-import { DatePickerModule } from 'primeng/datepicker';
 import { Dialog, DialogModule } from 'primeng/dialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { RippleModule } from 'primeng/ripple';
-import { ScrollPanelModule } from 'primeng/scrollpanel';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -30,8 +26,11 @@ import { Package } from '../../core/models/package.model';
 import { Price } from '../../core/models/price.model';
 import { Service } from '../../core/models/service.model';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { MobileService } from '../../core/services/mobile.service';
 import { PackageService } from '../../core/services/package.service';
 import { ServiceService } from '../../core/services/service.service';
+import { ToastrService } from '../../core/services/toastr.service';
+
 @Component({
   standalone: true,
   imports: [
@@ -51,11 +50,8 @@ import { ServiceService } from '../../core/services/service.service';
     IconFieldModule,
     InputIconModule,
     DataViewModule,
-    DatePickerModule,
-    InputNumberModule,
-    ScrollPanelModule,
   ],
-  providers: [MessageService, ConfirmationService],
+  providers: [ConfirmationService],
   templateUrl: './packages.component.html',
 })
 export class PackagesComponent implements OnInit {
@@ -64,10 +60,11 @@ export class PackagesComponent implements OnInit {
   selectedPackage: Package | null = null;
   sortField = 'name';
   sortOrder = 1;
-
   scrollableHeight = '50vh';
 
-  isMobile = false;
+  get isMobile() {
+    return this.mobileService.isMobile;
+  }
 
   @ViewChild('historyDialogEl') historyDialog: Dialog | undefined;
 
@@ -79,37 +76,14 @@ export class PackagesComponent implements OnInit {
 
   private readonly packageService = inject(PackageService);
   private readonly serviceService = inject(ServiceService);
-  private readonly messageService = inject(MessageService);
+  private readonly toastrService = inject(ToastrService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly fb = inject(FormBuilder);
-  private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
+  private readonly mobileService = inject(MobileService);
 
   constructor() {
-    this.breakpointObserver
-      .observe([
-        Breakpoints.XSmall,
-        '(max-height: 667px)',
-        '(min-height: 668px) and (max-height: 895px)',
-        '(min-height: 896px)',
-      ])
-      .subscribe((result) => {
-        this.isMobile = result.breakpoints[Breakpoints.XSmall];
-
-        if (result.breakpoints['(max-height: 667px)']) {
-          this.scrollableHeight = '45vh';
-        } else if (
-          result.breakpoints['(min-height: 668px) and (max-height: 895px)']
-        ) {
-          this.scrollableHeight = '55vh';
-        } else if (result.breakpoints['(min-height: 896px)']) {
-          this.scrollableHeight = '65vh';
-        } else {
-          this.scrollableHeight = '50vh';
-        }
-      });
-
     this.priceHistoryForm = this.fb.group({
       amount: [null, [Validators.required, Validators.min(0)]],
       fromDate: [new Date(), Validators.required],
@@ -152,19 +126,11 @@ export class PackagesComponent implements OnInit {
       accept: () => {
         this.packageService.delete(pkg.id!).subscribe({
           next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Succes',
-              detail: 'Pakket verwijderd',
-            });
+            this.toastrService.success('Succes', 'Pakket verwijderd');
             this.loadPackages();
           },
           error: (err) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Fout',
-              detail: err.message,
-            });
+            this.toastrService.error('Fout', err.message);
           },
         });
       },
@@ -196,11 +162,7 @@ export class PackagesComponent implements OnInit {
     historyArray.push(newPrice);
 
     this.packageService.update(this.selectedPackageForHistory).subscribe(() => {
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Succes',
-        detail: 'Prijshistorie bijgewerkt',
-      });
+      this.toastrService.success('Succes', 'Prijshistorie bijgewerkt');
       this.displayHistoryDialog = false;
     });
   }

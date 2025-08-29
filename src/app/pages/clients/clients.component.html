@@ -14,8 +14,8 @@
       (addClick)="showClientForm()"
     ></app-table-header>
   </ng-template>
-  <ng-template #list let-items>
-    @for (client of items; track client.id) {
+  <ng-template #list let-clients>
+    @for (client of clients; track client.id) {
       <div class="col-12 md:col-6 lg:col-4 p-2">
         <div
           class="p-4 border-1 surface-border surface-card border-round h-full flex flex-column"
@@ -29,7 +29,7 @@
                   [value]="
                     dog.name + ' (' + (dog.breed?.name || 'Onbekend ras') + ')'
                   "
-                  styleClass="mr-2 mb-2"
+                  class="mr-2 mb-2"
                 ></p-tag>
               }
             </div>

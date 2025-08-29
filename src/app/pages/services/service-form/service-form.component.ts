@@ -26,7 +26,6 @@ import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
 import { Subscription } from 'rxjs';
 import { ServiceService } from '../../../core/services/service.service';
 import { BreedService } from '../../../core/services/breed.service';
@@ -40,6 +39,7 @@ import { Dialog, DialogModule } from 'primeng/dialog';
 import { DatePickerModule } from 'primeng/datepicker';
 import { TableModule } from 'primeng/table';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
+import { ToastrService } from '../../../core/services/toastr.service';
 
 @Component({
   selector: 'app-service-form',
@@ -60,7 +60,6 @@ import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
     DatePickerModule,
     TableModule,
   ],
-  providers: [MessageService],
   templateUrl: './service-form.component.html',
   styleUrls: ['./service-form.component.css'],
 })
@@ -90,7 +89,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
 
   private readonly serviceService = inject(ServiceService);
   private readonly breedService = inject(BreedService);
-  private readonly messageService = inject(MessageService);
+  private readonly toastrService = inject(ToastrService);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -243,19 +242,14 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
 
     operation.subscribe({
       next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Succes',
-          detail: `Werkzaamheid ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
-        });
+        this.toastrService.success(
+          'Succes',
+          `Werkzaamheid ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
+        );
         this.router.navigate(['/services']);
       },
       error: (err) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Fout',
-          detail: err.message,
-        });
+        this.toastrService.error('Fout', err.message);
       },
     });
   }
@@ -345,11 +339,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
       historyArray.push(newPrice);
 
       this.serviceService.update(service).subscribe(() => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Succes',
-          detail: 'Prijshistorie bijgewerkt',
-        });
+        this.toastrService.success('Succes', 'Prijshistorie bijgewerkt');
         this.displayHistoryDialog = false;
         // Refresh the form with the new latest price
         const latestAmount = this.getLatestPrice(historyArray)?.amount;

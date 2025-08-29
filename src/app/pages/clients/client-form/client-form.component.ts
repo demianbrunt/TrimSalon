@@ -1,30 +1,30 @@
-import { Component, inject, OnInit, HostBinding } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, inject, OnInit } from '@angular/core';
 import {
+  FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
   FormsModule,
   ReactiveFormsModule,
-  FormBuilder,
-  FormGroup,
   Validators,
-  FormArray,
-  FormControl,
 } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { DividerModule } from 'primeng/divider';
+import { FloatLabelModule } from 'primeng/floatlabel';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import { FloatLabelModule } from 'primeng/floatlabel';
-import { DividerModule } from 'primeng/divider';
-import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
-import { ClientService } from '../../../core/services/client.service';
-import { BreedService } from '../../../core/services/breed.service';
-import { Client } from '../../../core/models/client.model';
+import { FormBaseComponent } from '../../../core/components/form-base/form-base.component';
 import { Breed } from '../../../core/models/breed.model';
+import { Client } from '../../../core/models/client.model';
 import { Dog } from '../../../core/models/dog.model';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
+import { BreedService } from '../../../core/services/breed.service';
+import { ClientService } from '../../../core/services/client.service';
+import { MobileService } from '../../../core/services/mobile.service';
+import { ToastrService } from '../../../core/services/toastr.service';
 
 @Component({
   selector: 'app-client-form',
@@ -38,75 +38,94 @@ import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
     SelectModule,
     FloatLabelModule,
     DividerModule,
-    MessageModule,
     ToastModule,
   ],
-  providers: [MessageService],
   templateUrl: './client-form.component.html',
   styleUrls: ['./client-form.component.css'],
 })
-export class ClientFormComponent implements OnInit {
-  @HostBinding('class.is-mobile') isMobile = false;
+export class ClientFormComponent extends FormBaseComponent implements OnInit {
+  override form: FormGroup<{
+    id: FormControl<string | null>;
+    name: FormControl<string | null>;
+    email: FormControl<string | null>;
+    phone: FormControl<string | null>;
+    dogs: FormArray<
+      FormGroup<{
+        name: FormControl<string | null>;
+        breed: FormControl<Breed | null>;
+      }>
+    >;
+  }>;
 
-  clientForm: FormGroup;
   allBreeds: Breed[] = [];
-  isEditMode = false;
-  clientId: string | null = null;
 
   private readonly clientService = inject(ClientService);
   private readonly breedService = inject(BreedService);
-  private readonly messageService = inject(MessageService);
+  private readonly toastrService = inject(ToastrService);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly breakpointObserver = inject(BreakpointObserver);
   private readonly breadcrumbService = inject(BreadcrumbService);
+  private readonly mobileService = inject(MobileService);
+
+  get isMobile() {
+    return this.mobileService.isMobile;
+  }
 
   constructor() {
-    this.breakpointObserver.observe(Breakpoints.XSmall).subscribe((result) => {
-      this.isMobile = result.matches;
-    });
+    super();
+  }
 
-    this.clientForm = this.fb.group({
-      id: new FormControl(null),
-      name: new FormControl(null, Validators.required),
-      email: new FormControl(null, [Validators.required, Validators.email]),
-      phone: new FormControl(null, Validators.required),
-      dogs: this.fb.array<
-        FormGroup<{
-          name: FormControl<string | null>;
-          breed: FormControl<Breed | null>;
-        }>
-      >([]),
+  override afterValidityEnsured(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  override initForm(): Promise<void> {
+    return new Promise((resolve) => {
+      this.form = this.fb.group({
+        id: new FormControl(null),
+        name: new FormControl(null, Validators.required),
+        email: new FormControl(null, [Validators.required, Validators.email]),
+        phone: new FormControl(null, Validators.required),
+        dogs: this.fb.array<
+          FormGroup<{
+            name: FormControl<string | null>;
+            breed: FormControl<Breed | null>;
+          }>
+        >([]),
+      });
+      resolve();
     });
   }
 
   ngOnInit(): void {
     this.loadBreeds();
-    this.clientId = this.route.snapshot.paramMap.get('id');
-    this.isEditMode = !!this.clientId;
+    this.initForm();
 
     if (this.isEditMode) {
-      this.loadClientData(this.clientId!);
-    } else {
-      this.addDog();
-      this.breadcrumbService.setItems([
-        { label: 'Klanten', routerLink: '/clients' },
-        { label: 'Nieuwe Klant' },
-      ]);
+      const clientId = this.route.snapshot.paramMap.get('id');
+      this.form.controls.id.patchValue(clientId);
+      this.loadClientData(clientId);
+      return;
     }
+
+    this.addDog();
+    this.breadcrumbService.setItems([
+      { label: 'Klanten', routerLink: '/clients' },
+      { label: 'Nieuwe Klant' },
+    ]);
   }
 
   get name() {
-    return this.clientForm.get('name') as FormControl;
+    return this.form.controls.name;
   }
 
   get email() {
-    return this.clientForm.get('email') as FormControl;
+    return this.form.controls.email;
   }
 
   get phone() {
-    return this.clientForm.get('phone') as FormControl;
+    return this.form.controls.phone;
   }
 
   loadBreeds(): void {
@@ -116,7 +135,7 @@ export class ClientFormComponent implements OnInit {
   loadClientData(id: string): void {
     this.clientService.getById(id).subscribe((client) => {
       if (client) {
-        this.clientForm.patchValue(client);
+        this.form.patchValue(client);
         client.dogs.forEach((dog) =>
           this.dogsArray.push(this.newDogGroup(dog)),
         );
@@ -128,8 +147,8 @@ export class ClientFormComponent implements OnInit {
     });
   }
 
-  get dogsArray(): FormArray {
-    return this.clientForm.get('dogs') as FormArray;
+  get dogsArray() {
+    return this.form.controls.dogs;
   }
 
   newDogGroup(dog?: Dog): FormGroup {
@@ -148,11 +167,20 @@ export class ClientFormComponent implements OnInit {
   }
 
   saveClient(): void {
-    if (this.clientForm.invalid) {
+    if (this.form.invalid) {
       return;
     }
 
-    const clientData: Client = this.clientForm.value;
+    const clientData: Client = {
+      id: this.form.value.id,
+      name: this.form.value.name,
+      email: this.form.value.email,
+      phone: this.form.value.phone,
+      dogs: this.form.value.dogs.map((dog) => ({
+        name: dog.name,
+        breed: dog.breed,
+      })),
+    };
 
     const operation = this.isEditMode
       ? this.clientService.update(clientData)
@@ -160,24 +188,22 @@ export class ClientFormComponent implements OnInit {
 
     operation.subscribe({
       next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Succes',
-          detail: `Klant ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
-        });
+        this.toastrService.success(
+          'Succes',
+          `Klant ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
+        );
         this.router.navigate(['/clients']);
       },
       error: (err) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Fout',
-          detail: err.message,
-        });
+        this.toastrService.error('Fout', err.message);
       },
     });
   }
 
-  cancel(): void {
-    this.router.navigate(['/clients']);
+  override cancel() {
+    return super.cancel().then(() => {
+      this.router.navigate(['/clients']);
+      return true;
+    });
   }
 }

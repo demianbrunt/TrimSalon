@@ -14,7 +14,7 @@
       (addClick)="showPackageForm()"
     ></app-table-header>
   </ng-template>
-  <ng-template #list let-pkg>
+  <ng-template #list let-packages>
     @for (pkg of packages; track pkg.id) {
       <div class="col-12 md:col-6 lg:col-4 p-2">
         <div
@@ -53,9 +53,8 @@
           </div>
         </div>
       </div>
+    } @empty {
+      <div class="text-center p-4">Geen pakketten gevonden.</div>
     }
-  </ng-template>
-  <ng-template pTemplate="empty">
-    <div class="text-center p-4">Geen pakketten gevonden.</div>
   </ng-template>
 </p-dataView>

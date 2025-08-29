@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
@@ -16,8 +16,9 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Client } from '../../core/models/client.model';
-import { ClientService } from '../../core/services/client.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { ClientService } from '../../core/services/client.service';
+import { ToastrService } from '../../core/services/toastr.service';
 
 @Component({
   standalone: true,
@@ -37,7 +38,7 @@ import { BreadcrumbService } from '../../core/services/breadcrumb.service';
     TableHeaderComponent,
     DataViewModule,
   ],
-  providers: [MessageService, ConfirmationService],
+  providers: [ConfirmationService],
   templateUrl: './clients.component.html',
 })
 export class ClientsComponent implements OnInit {
@@ -47,7 +48,7 @@ export class ClientsComponent implements OnInit {
   isIntialized = false;
 
   private readonly clientService = inject(ClientService);
-  private readonly messageService = inject(MessageService);
+  private readonly toastrService = inject(ToastrService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
@@ -68,11 +69,7 @@ export class ClientsComponent implements OnInit {
         this.isIntialized = true;
       },
       error: (err) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Fout',
-          detail: err.message,
-        });
+        this.toastrService.error('Fout', err.message);
       },
     });
   }
@@ -93,19 +90,11 @@ export class ClientsComponent implements OnInit {
       accept: () => {
         this.clientService.delete(client.id!).subscribe({
           next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Succes',
-              detail: 'Klant geanonimiseerd',
-            });
+            this.toastrService.success('Succes', 'Klant geanonimiseerd');
             this.loadClients();
           },
           error: (err) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Fout',
-              detail: err.message,
-            });
+            this.toastrService.error('Fout', err.message);
           },
         });
       },

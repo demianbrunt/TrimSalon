@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
@@ -17,6 +17,7 @@ import { TableHeaderComponent } from '../../core/components/table-header/table-h
 import { Service } from '../../core/models/service.model';
 import { ServiceService } from '../../core/services/service.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { ToastrService } from '../../core/services/toastr.service';
 
 @Component({
   standalone: true,
@@ -35,7 +36,7 @@ import { BreadcrumbService } from '../../core/services/breadcrumb.service';
     TableHeaderComponent,
     DataViewModule,
   ],
-  providers: [MessageService, ConfirmationService],
+  providers: [ConfirmationService],
   templateUrl: './services.component.html',
 })
 export class ServicesComponent implements OnInit {
@@ -45,7 +46,7 @@ export class ServicesComponent implements OnInit {
   isInitialized = false;
 
   private readonly serviceService = inject(ServiceService);
-  private readonly messageService = inject(MessageService);
+  private readonly toastrService = inject(ToastrService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
@@ -82,19 +83,11 @@ export class ServicesComponent implements OnInit {
       accept: () => {
         this.serviceService.delete(service.id!).subscribe({
           next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Succes',
-              detail: 'Werkzaamheid verwijderd',
-            });
+            this.toastrService.success('Succes', 'Werkzaamheid verwijderd');
             this.loadServices();
           },
           error: (err) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Fout',
-              detail: err.message,
-            });
+            this.toastrService.error('Fout', err.message);
           },
         });
       },
