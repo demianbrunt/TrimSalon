@@ -1,13 +1,13 @@
 import { inject } from '@angular/core';
 import {
   Firestore,
+  addDoc,
   collection,
   collectionData,
-  doc,
-  addDoc,
   deleteDoc,
-  updateDoc,
+  doc,
   docData,
+  updateDoc,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 

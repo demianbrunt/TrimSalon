@@ -8,12 +8,14 @@ import {
   signOut,
 } from '@angular/fire/auth';
 import {
-  RemoteConfig,
-  fetchAndActivate,
-  getString,
-} from '@angular/fire/remote-config';
+  Firestore,
+  collection,
+  getDocs,
+  query,
+  where,
+} from '@angular/fire/firestore';
 import { Router } from '@angular/router';
-import { Observable, combineLatest, from, of } from 'rxjs';
+import { Observable, from, of } from 'rxjs';
 import { catchError, map, shareReplay, switchMap, take } from 'rxjs/operators';
 
 @Injectable({
@@ -22,37 +24,20 @@ import { catchError, map, shareReplay, switchMap, take } from 'rxjs/operators';
 export class AuthenticationService {
   private readonly auth: Auth = inject(Auth);
   private readonly router: Router = inject(Router);
-  private readonly remoteConfig: RemoteConfig = inject(RemoteConfig);
-
-  private readonly allowedEmailsCache$: Observable<string[]>;
+  private readonly firestore: Firestore = inject(Firestore);
 
   readonly user$ = authState(this.auth);
   readonly isLoggedIn$: Observable<boolean>;
   readonly isAllowedUser$: Observable<boolean>;
 
   constructor() {
-    this.allowedEmailsCache$ = from(fetchAndActivate(this.remoteConfig)).pipe(
-      map(() => getString(this.remoteConfig, 'allowed_emails')),
-      map((emailsString) =>
-        emailsString.split(',').map((e) => e.trim().toLowerCase()),
-      ),
-      catchError((err) => {
-        console.error('Failed to load remote config for allowed emails', err);
-        return of([]);
-      }),
-      shareReplay(1),
-    );
-
     this.isLoggedIn$ = this.user$.pipe(map((user) => !!user));
-    this.isAllowedUser$ = combineLatest([
-      this.user$,
-      this.allowedEmailsCache$,
-    ]).pipe(
-      map(([user, allowedEmails]) => {
-        if (!user || !user.email) {
-          return false;
+    this.isAllowedUser$ = this.user$.pipe(
+      switchMap((user) => {
+        if (!user?.email) {
+          return of(false);
         }
-        return allowedEmails.includes(user.email.toLowerCase());
+        return this.checkIfUserIsAllowed(user.email);
       }),
       shareReplay(1),
     );
@@ -61,13 +46,16 @@ export class AuthenticationService {
   loginWithGoogle(): Observable<User | null> {
     const provider = new GoogleAuthProvider();
     return from(signInWithPopup(this.auth, provider)).pipe(
-      switchMap(({ user }) =>
-        this.allowedEmailsCache$.pipe(
-          map((allowedEmails) => {
-            if (
-              user.email &&
-              allowedEmails.includes(user.email.toLowerCase())
-            ) {
+      switchMap(({ user }) => {
+        if (!user.email) {
+          this.signOutUser().subscribe(() =>
+            this.router.navigate(['/forbidden']),
+          );
+          return of(null);
+        }
+        return this.checkIfUserIsAllowed(user.email).pipe(
+          map((isAllowed) => {
+            if (isAllowed) {
               return user;
             }
             this.signOutUser().subscribe(() =>
@@ -75,17 +63,13 @@ export class AuthenticationService {
             );
             return null;
           }),
-        ),
-      ),
+        );
+      }),
       catchError((err) => {
         console.error('Popup sign-in error', err);
         return of(null);
       }),
     );
-  }
-
-  signOutUser(): Observable<void> {
-    return from(signOut(this.auth));
   }
 
   logout(): Observable<boolean> {
@@ -95,7 +79,22 @@ export class AuthenticationService {
     );
   }
 
-  checkUserIsAllowed(): Observable<boolean> {
-    return this.isAllowedUser$;
+  private checkIfUserIsAllowed(email: string): Observable<boolean> {
+    const allowedUsersCollection = collection(this.firestore, 'allowed-users');
+    const q = query(
+      allowedUsersCollection,
+      where('email', '==', email.toLowerCase()),
+    );
+    return from(getDocs(q)).pipe(
+      map((querySnapshot) => !querySnapshot.empty),
+      catchError((err) => {
+        console.error('Error checking for allowed user in Firestore', err);
+        return of(false);
+      }),
+    );
+  }
+
+  private signOutUser(): Observable<void> {
+    return from(signOut(this.auth));
   }
 }

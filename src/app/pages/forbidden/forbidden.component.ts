@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { AuthenticationService } from './../../core/services/authentication.service';
 
 @Component({
   selector: 'app-forbidden',
@@ -18,9 +19,12 @@ import { ButtonModule } from 'primeng/button';
       <p-button
         label="Terug naar de startpagina"
         icon="pi pi-home"
+        (onClick)="authenticationService.loginWithGoogle()"
         routerLink="/calendar"
       ></p-button>
     </div>
   `,
 })
-export class ForbiddenComponent {}
+export class ForbiddenComponent {
+  protected authenticationService = inject(AuthenticationService);
+}

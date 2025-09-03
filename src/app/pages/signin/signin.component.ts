@@ -4,7 +4,6 @@ import { ButtonModule } from 'primeng/button';
 import { AuthenticationService } from '../../core/services/authentication.service';
 
 @Component({
-  selector: 'app-login',
   standalone: true,
   imports: [ButtonModule],
   template: `
@@ -19,7 +18,7 @@ import { AuthenticationService } from '../../core/services/authentication.servic
     </div>
   `,
 })
-export class LoginComponent {
+export class SignInComponent {
   private readonly authService = inject(AuthenticationService);
   private readonly router = inject(Router);
 

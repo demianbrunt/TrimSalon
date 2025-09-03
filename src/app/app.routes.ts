@@ -4,13 +4,13 @@ import { CalendarComponent } from './pages/calendar/calendar.component';
 import { ClientFormComponent } from './pages/clients/client-form/client-form.component';
 import { ClientsComponent } from './pages/clients/clients.component';
 import { ForbiddenComponent } from './pages/forbidden/forbidden.component';
-import { LoginComponent } from './pages/login/login.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { PackageFormComponent } from './pages/packages/package-form/package-form.component';
 import { PackagesComponent } from './pages/packages/packages.component';
 import { ReportsComponent } from './pages/reports/reports.component';
 import { ServiceFormComponent } from './pages/services/service-form/service-form.component';
 import { ServicesComponent } from './pages/services/services.component';
+import { SignInComponent } from './pages/signin/signin.component';
 import { SignoutComponent } from './pages/signout/signout.component';
 
 export const routes: Routes = [
@@ -20,8 +20,8 @@ export const routes: Routes = [
     pathMatch: 'full',
   },
   {
-    path: 'login',
-    component: LoginComponent,
+    path: 'signin',
+    component: SignInComponent,
   },
   {
     path: 'calendar',
