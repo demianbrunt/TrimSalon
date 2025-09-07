@@ -4,3 +4,38 @@
 body {
   margin: 0;
 }
+
+@keyframes jump-and-shake {
+  0% {
+    transform: translateY(0) rotate(0);
+  }
+  20% {
+    transform: translateY(-20px) rotate(0); /* jump up */
+  }
+  40% {
+    transform: translateY(0) rotate(0); /* land */
+  }
+  50% {
+    transform: rotate(15deg); /* shake right */
+  }
+  60% {
+    transform: rotate(-15deg); /* shake left */
+  }
+  70% {
+    transform: rotate(15deg); /* shake right */
+  }
+  80% {
+    transform: rotate(-15deg); /* shake left */
+  }
+  90% {
+    transform: rotate(0); /* stop shaking */
+  }
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+}
+
+.dog-animation {
+  animation: jump-and-shake 2s ease-in-out;
+  display: inline-block; /* To make transform work on span */
+}

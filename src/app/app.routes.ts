@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { FormMode } from './core/enums/form-mode.enum';
 import { authGuard } from './core/guards/auth.guard';
 import { CalendarComponent } from './pages/calendar/calendar.component';
 import { ClientFormComponent } from './pages/clients/client-form/client-form.component';
@@ -16,7 +17,7 @@ import { SignoutComponent } from './pages/signout/signout.component';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'calendar',
+    redirectTo: 'signin',
     pathMatch: 'full',
   },
   {
@@ -45,7 +46,7 @@ export const routes: Routes = [
     path: 'clients/:id',
     component: ClientFormComponent,
     canActivate: [authGuard],
-    data: { breadcrumb: 'Klant Bewerken' },
+    data: { breadcrumb: 'Klant Bewerken', formMode: FormMode.Edit },
   },
   {
     path: 'services',
@@ -90,9 +91,8 @@ export const routes: Routes = [
     data: { breadcrumb: 'Rapportages' },
   },
   {
-    path: 'signout',
+    path: 'signedout',
     component: SignoutComponent,
-    canActivate: [authGuard],
   },
   {
     path: 'forbidden',

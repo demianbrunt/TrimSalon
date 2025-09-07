@@ -72,6 +72,10 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
     return this.mobileService.isMobile;
   }
 
+  get canDeleteDog() {
+    return this.dogsArray.length > 1;
+  }
+
   constructor() {
     super();
   }
@@ -94,6 +98,10 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
           }>
         >([]),
       });
+
+      if (this.isCreateMode) {
+        this.addDog();
+      }
       resolve();
     });
   }
@@ -109,7 +117,6 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
       return;
     }
 
-    this.addDog();
     this.breadcrumbService.setItems([
       { label: 'Klanten', routerLink: '/clients' },
       { label: 'Nieuwe Klant' },
@@ -134,16 +141,17 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
 
   loadClientData(id: string): void {
     this.clientService.getById(id).subscribe((client) => {
-      if (client) {
-        this.form.patchValue(client);
-        client.dogs.forEach((dog) =>
-          this.dogsArray.push(this.newDogGroup(dog)),
-        );
-        this.breadcrumbService.setItems([
-          { label: 'Klanten', routerLink: '/clients' },
-          { label: client.name },
-        ]);
+      if (client == null) {
+        this.router.navigate(['/not-found']);
       }
+
+      this.form.patchValue(client);
+      this.dogsArray.clear();
+      client.dogs.forEach((dog) => this.dogsArray.push(this.newDogGroup(dog)));
+      this.breadcrumbService.setItems([
+        { label: 'Klanten', routerLink: '/clients' },
+        { label: client.name },
+      ]);
     });
   }
 

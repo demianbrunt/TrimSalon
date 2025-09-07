@@ -26,7 +26,7 @@ export class ConfirmationDialogService {
         rejectLabel: rejectLabel,
         acceptButtonStyleClass: acceptButtonStyleClass,
         rejectButtonStyleClass: cancelButtonStyleClass,
-        icon: 'bi-exclamation-triangle',
+        icon: 'pi pi-exclamation-triangle',
         accept: () => {
           resolve(true);
         },

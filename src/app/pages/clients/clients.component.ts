@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
@@ -14,6 +13,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Client } from '../../core/models/client.model';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
@@ -38,7 +38,7 @@ import { ToastrService } from '../../core/services/toastr.service';
     TableHeaderComponent,
     DataViewModule,
   ],
-  providers: [ConfirmationService],
+  providers: [ConfirmationDialogService],
   templateUrl: './clients.component.html',
 })
 export class ClientsComponent implements OnInit {
@@ -49,7 +49,9 @@ export class ClientsComponent implements OnInit {
 
   private readonly clientService = inject(ClientService);
   private readonly toastrService = inject(ToastrService);
-  private readonly confirmationService = inject(ConfirmationService);
+  private readonly confirmationDialogService = inject(
+    ConfirmationDialogService,
+  );
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
 
@@ -83,21 +85,25 @@ export class ClientsComponent implements OnInit {
   }
 
   deleteClient(client: Client): void {
-    this.confirmationService.confirm({
-      message: `Weet je zeker dat je ${client.name} wilt anonimiseren? Dit kan niet ongedaan worden gemaakt.`,
-      header: 'Bevestiging Anonimiseren',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.clientService.delete(client.id!).subscribe({
-          next: () => {
-            this.toastrService.success('Succes', 'Klant geanonimiseerd');
-            this.loadClients();
-          },
-          error: (err) => {
-            this.toastrService.error('Fout', err.message);
-          },
-        });
-      },
-    });
+    this.confirmationDialogService
+      .open(
+        'Bevestiging Anonimiseren',
+        `Weet je zeker dat je <b>${client.name}</b> wilt <b>anonimiseren</b>? Dit kan <u>niet</u> ongedaan worden gemaakt.`,
+        'Anonimiseren',
+        'Annuleren',
+      )
+      .then((confirmed) => {
+        if (confirmed) {
+          this.clientService.delete(client.id!).subscribe({
+            next: () => {
+              this.toastrService.success('Succes', 'Klant is geanonimiseerd');
+              this.loadClients();
+            },
+            error: (err) => {
+              this.toastrService.error('Fout', err.message);
+            },
+          });
+        }
+      });
   }
 }
