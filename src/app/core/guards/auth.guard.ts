@@ -1,20 +1,37 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import {
+  ActivatedRouteSnapshot,
+  CanActivateFn,
+  Router,
+  RouterStateSnapshot,
+  UrlTree,
+} from '@angular/router';
+import { Observable } from 'rxjs';
+import { filter, map, take } from 'rxjs/operators';
 import { AuthenticationService } from '../services/authentication.service';
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (
+  route: ActivatedRouteSnapshot,
+  state: RouterStateSnapshot,
+): Observable<boolean | UrlTree> => {
   const authService = inject(AuthenticationService);
   const router = inject(Router);
 
-  if (authService.isAuthenticated()) {
-    return true;
-  }
+  return authService.isAllowed$.pipe(
+    filter((isAllowed) => isAllowed !== undefined),
+    take(1),
+    map((isAllowed) => {
+      if (isAllowed) {
+        return true;
+      }
 
-  if (router.url.startsWith('/signin')) {
-    return true;
-  }
-
-  console.log('Triggered: forbidden guard');
-
-  return router.createUrlTree(['/forbidden']);
+      if (authService.user() === null) {
+        return router.createUrlTree(['/signin'], {
+          queryParams: { returnUrl: state.url },
+        });
+      } else {
+        return router.createUrlTree(['/forbidden']);
+      }
+    }),
+  );
 };

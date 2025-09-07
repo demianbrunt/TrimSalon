@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Button } from 'primeng/button';
+import { BaseComponent } from 'src/app/core/components/base/base.component';
 import { AuthenticationService } from '../../core/services/authentication.service';
 
 @Component({
@@ -23,13 +24,14 @@ import { AuthenticationService } from '../../core/services/authentication.servic
     </div>
   `,
 })
-export class SignInComponent implements OnInit {
+export class SignInComponent extends BaseComponent implements OnInit {
   protected readonly authService = inject(AuthenticationService);
   private readonly router = inject(Router);
 
   ngOnInit(): void {
+    const returnUrl = this.getFromQueryString('returnUrl') ?? '/calendar';
     if (this.authService.isAuthenticated()) {
-      this.navigateToCalendar();
+      this.router.navigate([returnUrl]);
       return;
     }
 
@@ -37,15 +39,14 @@ export class SignInComponent implements OnInit {
       return;
     }
 
-    this.signIn();
+    this.signIn(returnUrl);
   }
 
-  signIn() {
+  signIn(returnUrl = '/calendar') {
     this.authService
       .signIn()
       .then(() => {
-        console.log('AUTHED');
-        this.navigateToCalendar();
+        this.router.navigate([returnUrl]);
       })
       .catch(() => {
         this.router.navigate(['/forbidden']);

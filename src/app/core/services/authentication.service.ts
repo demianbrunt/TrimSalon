@@ -24,7 +24,7 @@ export class AuthenticationService {
   private user$ = authState(this.auth);
   user = toSignal(this.user$);
 
-  private isAllowed$ = this.user$.pipe(
+  isAllowed$ = this.user$.pipe(
     switchMap((user) => {
       if (!user || !user.email) {
         return of(false);
