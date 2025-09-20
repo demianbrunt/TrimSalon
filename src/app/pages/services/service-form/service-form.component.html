@@ -6,7 +6,7 @@
         {{ isEditMode ? "Werkzaamheid Bewerken" : "Nieuwe Werkzaamheid" }}
       </h2>
     </div>
-    <form [formGroup]="serviceForm">
+    <form [formGroup]="form">
       <div class="p-fluid">
         <div class="field">
           <p-floatlabel variant="on">
@@ -172,8 +172,8 @@
       <p-button
         label="Opslaan"
         icon="pi pi-check"
-        (click)="saveService()"
-        [disabled]="serviceForm.invalid"
+        (click)="save()"
+        [disabled]="form.invalid"
       ></p-button>
     </div>
   </div>

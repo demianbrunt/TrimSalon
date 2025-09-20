@@ -4,7 +4,7 @@
     <div class="flex justify-content-between align-items-center mb-4">
       <h2 class="m-0">{{ isEditMode ? "Pakket Bewerken" : "Nieuw Pakket" }}</h2>
     </div>
-    <form [formGroup]="packageForm">
+    <form [formGroup]="form">
       <div class="p-fluid">
         <div class="field">
           <p-floatlabel variant="on">
@@ -44,8 +44,8 @@
       <p-button
         label="Opslaan"
         icon="pi pi-check"
-        (click)="savePackage()"
-        [disabled]="packageForm.invalid"
+        (click)="save()"
+        [disabled]="form.invalid"
       ></p-button>
     </div>
   </div>

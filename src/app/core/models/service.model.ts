@@ -3,7 +3,7 @@ import { ServiceTimeRate } from './service-time-rate.model';
 
 export type PricingType = 'FIXED' | 'TIME_BASED';
 
-export interface Service {
+export class Service {
   id?: string;
   name: string;
   description: string;

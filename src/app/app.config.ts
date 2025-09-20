@@ -42,7 +42,7 @@ export const appConfig: ApplicationConfig = {
     provideFirebaseApp(() =>
       initializeApp({
         apiKey: 'AIzaSyApnb2vrrWaiewHEMzn73LbyPoBaPt4FUQ',
-        authDomain: 'trimsalon-9b823.firebaseapp.com',
+        authDomain: 'trim.demianbrunt.nl',
         projectId: 'trimsalon-9b823',
         storageBucket: 'trimsalon-9b823.firebasestorage.app',
         messagingSenderId: '495690826928',

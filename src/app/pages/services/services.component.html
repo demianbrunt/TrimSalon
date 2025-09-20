@@ -15,8 +15,8 @@
     ></app-table-header>
   </ng-template>
   <ng-template #emptymessage></ng-template>
-  <ng-template #list let-items>
-    @for (service of items; track service.id) {
+  <ng-template #list let-services: Service[]>
+    @for (service of services; track service.id) {
       <div class="col-12 md:col-6 lg:col-4 p-2">
         <div
           class="p-4 border-1 surface-border surface-card border-round h-full flex flex-column"

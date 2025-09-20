@@ -1,44 +1,38 @@
-import {
-  Component,
-  inject,
-  OnInit,
-  OnDestroy,
-  HostBinding,
-  ViewChild,
-} from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, ViewChild, inject } from '@angular/core';
 import {
+  AbstractControl,
+  FormArray,
+  FormBuilder,
+  FormControl,
+  FormGroup,
   FormsModule,
   ReactiveFormsModule,
-  FormBuilder,
-  FormGroup,
   Validators,
-  FormArray,
-  AbstractControl,
-  FormControl,
 } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { SelectButtonModule } from 'primeng/selectbutton';
-import { SelectModule } from 'primeng/select';
-import { InputNumberModule } from 'primeng/inputnumber';
+import { DatePickerModule } from 'primeng/datepicker';
+import { Dialog, DialogModule } from 'primeng/dialog';
 import { FloatLabelModule } from 'primeng/floatlabel';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { TableModule } from 'primeng/table';
+import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
 import { Subscription } from 'rxjs';
-import { ServiceService } from '../../../core/services/service.service';
-import { BreedService } from '../../../core/services/breed.service';
-import { Service, PricingType } from '../../../core/models/service.model';
+import { FormBaseComponent } from '../../../core/components/form-base/form-base.component';
 import { Breed } from '../../../core/models/breed.model';
+import { Price } from '../../../core/models/price.model';
 import { ServiceFixedPrice } from '../../../core/models/service-fixed-price.model';
 import { ServiceTimeRate } from '../../../core/models/service-time-rate.model';
-import { Price } from '../../../core/models/price.model';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-import { Dialog, DialogModule } from 'primeng/dialog';
-import { DatePickerModule } from 'primeng/datepicker';
-import { TableModule } from 'primeng/table';
+import { PricingType, Service } from '../../../core/models/service.model';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
+import { BreedService } from '../../../core/services/breed.service';
+import { MobileService } from '../../../core/services/mobile.service';
+import { ServiceService } from '../../../core/services/service.service';
 import { ToastrService } from '../../../core/services/toastr.service';
 
 @Component({
@@ -63,14 +57,36 @@ import { ToastrService } from '../../../core/services/toastr.service';
   templateUrl: './service-form.component.html',
   styleUrls: ['./service-form.component.css'],
 })
-export class ServiceFormComponent implements OnInit, OnDestroy {
-  @HostBinding('class.is-mobile') isMobile = false;
+export class ServiceFormComponent
+  extends FormBaseComponent
+  implements OnInit, OnDestroy
+{
   @ViewChild('historyDialogEl') historyDialog: Dialog | undefined;
 
-  serviceForm: FormGroup;
+  override form: FormGroup<{
+    id: FormControl<string | null>;
+    name: FormControl<string | null>;
+    description: FormControl<string | null>;
+    pricingType: FormControl<PricingType | null>;
+    fixedPrices: FormArray<
+      FormGroup<{
+        breed: FormControl<Breed | null>;
+        amount: FormControl<number | null>;
+      }>
+    >;
+    timeRates: FormArray<
+      FormGroup<{
+        breed: FormControl<Breed | null>;
+        amount: FormControl<number | null>;
+      }>
+    >;
+  }>;
+  priceHistoryForm: FormGroup<{
+    amount: FormControl<number | null>;
+    fromDate: FormControl<Date | null>;
+  }>;
+
   allBreeds: Breed[] = [];
-  isEditMode = false;
-  serviceId: string | null = null;
   pricingTypes = [
     { label: 'Vaste Prijs', value: 'FIXED' },
     { label: 'Per Tijd', value: 'TIME_BASED' },
@@ -78,7 +94,6 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
 
   // History Dialog
   displayHistoryDialog = false;
-  priceHistoryForm: FormGroup;
   historyData: Price[] = [];
   currentPriceRuleContext: {
     rule: ServiceFixedPrice | ServiceTimeRate;
@@ -93,36 +108,58 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly breakpointObserver = inject(BreakpointObserver);
+  private readonly mobileService = inject(MobileService);
   private readonly breadcrumbService = inject(BreadcrumbService);
 
+  get isMobile() {
+    return this.mobileService.isMobile;
+  }
+
   constructor() {
-    this.breakpointObserver.observe(Breakpoints.XSmall).subscribe((result) => {
-      this.isMobile = result.matches;
-    });
+    super();
+  }
 
-    this.serviceForm = this.fb.group({
-      id: [null],
-      name: ['', Validators.required],
-      description: ['', Validators.required],
-      pricingType: ['FIXED' as PricingType, Validators.required],
-      fixedPrices: this.fb.array([]),
-      timeRates: this.fb.array([]),
-    });
+  override afterValidityEnsured(): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
 
-    this.priceHistoryForm = this.fb.group({
-      amount: [null, [Validators.required, Validators.min(0)]],
-      fromDate: [new Date(), Validators.required],
+  override initForm(): Promise<void> {
+    return new Promise((resolve) => {
+      this.form = this.fb.group({
+        id: new FormControl(null),
+        name: new FormControl(null, Validators.required),
+        description: new FormControl(''),
+        pricingType: new FormControl<PricingType>('FIXED', Validators.required),
+        fixedPrices: this.fb.array<
+          FormGroup<{
+            breed: FormControl<Breed | null>;
+            amount: FormControl<number | null>;
+          }>
+        >([]),
+        timeRates: this.fb.array<
+          FormGroup<{
+            breed: FormControl<Breed | null>;
+            amount: FormControl<number | null>;
+          }>
+        >([]),
+      });
+
+      this.priceHistoryForm = this.fb.group({
+        amount: new FormControl(null, [Validators.required, Validators.min(0)]),
+        fromDate: new FormControl(new Date(), Validators.required),
+      });
+      resolve();
     });
   }
 
   ngOnInit(): void {
     this.loadBreeds();
-    this.serviceId = this.route.snapshot.paramMap.get('id');
-    this.isEditMode = !!this.serviceId;
+    this.initForm();
 
     if (this.isEditMode) {
-      this.loadServiceData(this.serviceId!);
+      const serviceId = this.route.snapshot.paramMap.get('id');
+      this.form.controls.id.patchValue(serviceId);
+      this.loadServiceData(serviceId);
     } else {
       this.breadcrumbService.setItems([
         { label: 'Werkzaamheden', routerLink: '/services' },
@@ -132,28 +169,28 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     this.onPricingTypeChange();
   }
 
-  ngOnDestroy(): void {
+  override ngOnDestroy(): void {
     this.formSubscription?.unsubscribe();
   }
 
   get name() {
-    return this.serviceForm.get('name') as FormControl;
+    return this.form.controls.name;
   }
 
   get description() {
-    return this.serviceForm.get('description') as FormControl;
+    return this.form.controls.description;
   }
 
   get pricingType() {
-    return this.serviceForm.get('pricingType') as FormControl;
+    return this.form.controls.pricingType;
   }
 
   get fixedPricesArray(): FormArray {
-    return this.serviceForm.get('fixedPrices') as FormArray;
+    return this.form.controls.fixedPrices;
   }
 
   get timeRatesArray(): FormArray {
-    return this.serviceForm.get('timeRates') as FormArray;
+    return this.form.controls.timeRates;
   }
 
   loadBreeds(): void {
@@ -163,7 +200,7 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
   loadServiceData(id: string): void {
     this.serviceService.getById(id).subscribe((service) => {
       if (service) {
-        this.serviceForm.patchValue(service);
+        this.form.patchValue(service);
         if (service.pricingType === 'FIXED') {
           service.fixedPrices?.forEach((p) =>
             this.fixedPricesArray.push(this.newFixedPriceGroup(p)),
@@ -177,24 +214,24 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
           { label: 'Werkzaamheden', routerLink: '/services' },
           { label: service.name },
         ]);
+      } else {
+        this.router.navigate(['/not-found']);
       }
     });
   }
 
   onPricingTypeChange(): void {
-    this.formSubscription = this.serviceForm
-      .get('pricingType')
-      ?.valueChanges.subscribe((type) => {
-        if (type === 'FIXED') {
-          this.timeRatesArray.clear();
-          this.timeRatesArray.disable();
-          this.fixedPricesArray.enable();
-        } else if (type === 'TIME_BASED') {
-          this.fixedPricesArray.clear();
-          this.fixedPricesArray.disable();
-          this.timeRatesArray.enable();
-        }
-      });
+    this.formSubscription = this.pricingType?.valueChanges.subscribe((type) => {
+      if (type === 'FIXED') {
+        this.timeRatesArray.clear();
+        this.timeRatesArray.disable();
+        this.fixedPricesArray.enable();
+      } else if (type === 'TIME_BASED') {
+        this.fixedPricesArray.clear();
+        this.fixedPricesArray.disable();
+        this.timeRatesArray.enable();
+      }
+    });
   }
 
   newFixedPriceGroup(price?: ServiceFixedPrice): FormGroup {
@@ -229,12 +266,12 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     this.timeRatesArray.removeAt(index);
   }
 
-  saveService(): void {
-    if (this.serviceForm.invalid) {
+  save(): void {
+    if (this.form.invalid) {
       return;
     }
 
-    const serviceData: Service = this.serviceForm.value;
+    const serviceData: Service = this.form.value as Service;
 
     const operation = this.isEditMode
       ? this.serviceService.update(serviceData)
@@ -254,14 +291,18 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
     });
   }
 
-  cancel(): void {
-    this.router.navigate(['/services']);
+  override cancel() {
+    return super.cancel().then(() => {
+      this.router.navigate(['/services']);
+      return true;
+    });
   }
 
   showHistory(ruleGroup: AbstractControl, type: 'FIXED' | 'TIME_BASED'): void {
-    if (!this.serviceId) return;
+    const serviceId = this.form.controls.id.value;
+    if (!serviceId) return;
 
-    this.serviceService.getById(this.serviceId).subscribe((service) => {
+    this.serviceService.getById(serviceId).subscribe((service) => {
       if (!service) return;
 
       const breedId = ruleGroup.value.breed?.id;
@@ -307,17 +348,18 @@ export class ServiceFormComponent implements OnInit, OnDestroy {
   }
 
   saveNewPrice(): void {
+    const serviceId = this.form.controls.id.value;
     if (
       !this.priceHistoryForm.valid ||
       !this.currentPriceRuleContext ||
-      !this.serviceId
+      !serviceId
     )
       return;
 
-    this.serviceService.getById(this.serviceId).subscribe((service) => {
+    this.serviceService.getById(serviceId).subscribe((service) => {
       if (!service) return;
 
-      const newPrice: Price = this.priceHistoryForm.value;
+      const newPrice: Price = this.priceHistoryForm.value as Price;
       const { rule, type } = this.currentPriceRuleContext!;
 
       const historyArray =
