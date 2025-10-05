@@ -8,8 +8,9 @@ import {
   signOut,
 } from '@angular/fire/auth';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
-import { firstValueFrom, from, of } from 'rxjs';
-import { catchError, finalize, map, switchMap } from 'rxjs/operators';
+import { from, lastValueFrom, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
+import { APP_CONFIG, AppConfig } from '../../app.config.model';
 
 @Injectable({
   providedIn: 'root',
@@ -17,6 +18,7 @@ import { catchError, finalize, map, switchMap } from 'rxjs/operators';
 export class AuthenticationService {
   private readonly auth: Auth = inject(Auth);
   private readonly firestore: Firestore = inject(Firestore);
+  private readonly config: AppConfig = inject(APP_CONFIG);
 
   private readonly _isSigningIn = signal(false);
   isSigningIn = this._isSigningIn.asReadonly();
@@ -36,24 +38,43 @@ export class AuthenticationService {
   isAllowed = toSignal(this.isAllowed$, { initialValue: undefined });
   isAuthenticated = computed(() => !!this.user() && this.isAllowed() === true);
 
-  signIn(): Promise<boolean> {
+  async signIn(): Promise<boolean> {
     this._isSigningIn.set(true);
     const provider = new GoogleAuthProvider();
-    return firstValueFrom(
-      from(signInWithPopup(this.auth, provider)).pipe(
-        switchMap((userCredential) => {
-          if (!userCredential?.user?.email) {
-            return of(false);
-          }
-          return this.checkIfUserIsAllowed(userCredential.user.email);
-        }),
-        catchError((err) => {
-          console.error('Popup sign-in error', err);
-          return of(false);
-        }),
-        finalize(() => this._isSigningIn.set(false)),
-      ),
-    );
+    provider.addScope(this.config.googleAuth.scope);
+
+    try {
+      const userCredential = await signInWithPopup(this.auth, provider);
+      if (!userCredential?.user?.email) {
+        throw new Error('Sign-in failed: No user email found.');
+      }
+
+      const isAllowed = await lastValueFrom(
+        this.checkIfUserIsAllowed(userCredential.user.email),
+      );
+
+      if (!isAllowed) {
+        await signOut(this.auth);
+        throw new Error('User is not allowed.');
+      }
+
+      const credential =
+        GoogleAuthProvider.credentialFromResult(userCredential);
+      if (credential?.accessToken) {
+        localStorage.setItem('google_oauth_token', credential.accessToken);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Sign-in error:', error);
+      // Ensure user is signed out in case of any error during the process
+      if (this.auth.currentUser) {
+        await signOut(this.auth);
+      }
+      return false;
+    } finally {
+      this._isSigningIn.set(false);
+    }
   }
 
   signOut(): void {

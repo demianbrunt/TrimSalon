@@ -1,3 +1,4 @@
+import { provideHttpClient, withFetch } from '@angular/common/http';
 import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
@@ -24,6 +25,27 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { ConfirmationDialogService } from './core/services/confirmation-dialog.service';
 
+import { getFunctions, provideFunctions } from '@angular/fire/functions';
+import { APP_CONFIG, AppConfig } from './app.config.model';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyApnb2vrrWaiewHEMzn73LbyPoBaPt4FUQ',
+  authDomain: 'trim.demianbrunt.nl',
+  projectId: 'trimsalon-9b823',
+  storageBucket: 'trimsalon-9b823.firebasestorage.app',
+  messagingSenderId: '495690826928',
+  appId: '1:495690826928:web:b787b6ce8d5dce8d09e775',
+  measurementId: 'G-KJC34PCNNY',
+};
+
+const appSettings: AppConfig = {
+  googleAuth: {
+    clientId:
+      '495690826928-k7jfduihumi360hkiitfupla794qpe99.apps.googleusercontent.com',
+    scope: '',
+  },
+};
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -39,22 +61,15 @@ export const appConfig: ApplicationConfig = {
         },
       },
     }),
-    provideFirebaseApp(() =>
-      initializeApp({
-        apiKey: 'AIzaSyApnb2vrrWaiewHEMzn73LbyPoBaPt4FUQ',
-        authDomain: 'trim.demianbrunt.nl',
-        projectId: 'trimsalon-9b823',
-        storageBucket: 'trimsalon-9b823.firebasestorage.app',
-        messagingSenderId: '495690826928',
-        appId: '1:495690826928:web:b787b6ce8d5dce8d09e775',
-        measurementId: 'G-KJC34PCNNY',
-      }),
-    ),
+    provideFirebaseApp(() => initializeApp(firebaseConfig)),
     provideAuth(() => getAuth()),
     provideRemoteConfig(() => getRemoteConfig()),
     provideFirestore(() => getFirestore()),
+    provideFunctions(() => getFunctions()),
+    provideHttpClient(withFetch()),
     MessageService,
     ConfirmationService,
     ConfirmationDialogService,
+    { provide: APP_CONFIG, useValue: appSettings },
   ],
 };

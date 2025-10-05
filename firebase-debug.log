@@ -1,144 +1,120 @@
-[debug] [2025-09-15T07:23:49.795Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.797Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.797Z] > refreshing access token with scopes: []
-[debug] [2025-09-15T07:23:49.798Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-09-15T07:23:49.798Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.810Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.810Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.810Z] > refreshing access token with scopes: []
-[debug] [2025-09-15T07:23:49.810Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-09-15T07:23:49.810Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.811Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.811Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.811Z] > refreshing access token with scopes: []
-[debug] [2025-09-15T07:23:49.811Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-09-15T07:23:49.811Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.812Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.812Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.812Z] > refreshing access token with scopes: []
-[debug] [2025-09-15T07:23:49.812Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-09-15T07:23:49.812Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.826Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.826Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.826Z] > refreshing access token with scopes: []
-[debug] [2025-09-15T07:23:49.826Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-09-15T07:23:49.826Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.827Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.827Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.827Z] > refreshing access token with scopes: []
-[debug] [2025-09-15T07:23:49.828Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-09-15T07:23:49.828Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.829Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.829Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.829Z] > refreshing access token with scopes: []
-[debug] [2025-09-15T07:23:49.829Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-09-15T07:23:49.829Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.830Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.830Z] Checked if tokens are valid: false, expires at: 1757862892190
-[debug] [2025-09-15T07:23:49.830Z] > refreshing access token with scopes: []
-[debug] [2025-09-15T07:23:49.830Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
-[debug] [2025-09-15T07:23:49.830Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.901Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-09-15T07:23:49.901Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.908Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [none]
-[debug] [2025-09-15T07:23:49.908Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:23:49.911Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-09-15T07:23:49.911Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.915Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [none]
-[debug] [2025-09-15T07:23:49.915Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:23:49.918Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-09-15T07:23:49.918Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.921Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [none]
-[debug] [2025-09-15T07:23:49.921Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:23:49.923Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-09-15T07:23:49.923Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.926Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [none]
-[debug] [2025-09-15T07:23:49.926Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:23:49.927Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-09-15T07:23:49.927Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.930Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [none]
-[debug] [2025-09-15T07:23:49.930Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:23:49.932Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-09-15T07:23:49.932Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.936Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [none]
-[debug] [2025-09-15T07:23:49.936Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:23:49.937Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-09-15T07:23:49.937Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.940Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [none]
-[debug] [2025-09-15T07:23:49.940Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:23:49.940Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
-[debug] [2025-09-15T07:23:49.940Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
-[debug] [2025-09-15T07:23:49.943Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [none]
-[debug] [2025-09-15T07:23:49.943Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:23:50.624Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com 403
-[debug] [2025-09-15T07:23:50.624Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [omitted]
-[debug] [2025-09-15T07:23:50.742Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com 200
-[debug] [2025-09-15T07:23:50.742Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [omitted]
-[debug] [2025-09-15T07:23:50.756Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com 200
-[debug] [2025-09-15T07:23:50.756Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [omitted]
-[debug] [2025-09-15T07:23:51.108Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ 200
-[debug] [2025-09-15T07:23:51.109Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [omitted]
-[debug] [2025-09-15T07:23:51.269Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com 403
-[debug] [2025-09-15T07:23:51.269Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [omitted]
-[debug] [2025-09-15T07:23:51.539Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com 200
-[debug] [2025-09-15T07:23:51.539Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [omitted]
-[debug] [2025-09-15T07:23:51.545Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com 200
-[debug] [2025-09-15T07:23:51.545Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [omitted]
-[debug] [2025-09-15T07:23:52.252Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ 200
-[debug] [2025-09-15T07:23:52.253Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [omitted]
-[debug] [2025-09-15T07:23:52.257Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2025-09-15T07:23:52.258Z] > authorizing via signed-in user (demian.brunt@gmail.com)
-[debug] [2025-09-15T07:23:52.261Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2025-09-15T07:23:52.261Z] > authorizing via signed-in user (demian.brunt@gmail.com)
-[debug] [2025-09-15T07:26:12.583Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.585Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.585Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.586Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.586Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.586Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.586Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.586Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.587Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [none]
-[debug] [2025-09-15T07:26:12.587Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:26:12.600Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [none]
-[debug] [2025-09-15T07:26:12.600Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:26:12.601Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [none]
-[debug] [2025-09-15T07:26:12.601Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:26:12.602Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [none]
-[debug] [2025-09-15T07:26:12.602Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:26:12.614Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.614Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.614Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.615Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.615Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.615Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.615Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.615Z] Checked if tokens are valid: true, expires at: 1757924628940
-[debug] [2025-09-15T07:26:12.615Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [none]
-[debug] [2025-09-15T07:26:12.615Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:26:12.616Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [none]
-[debug] [2025-09-15T07:26:12.616Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:26:12.616Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [none]
-[debug] [2025-09-15T07:26:12.617Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:26:12.617Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [none]
-[debug] [2025-09-15T07:26:12.617Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com x-goog-quota-user=projects/trimsalon-9b823
-[debug] [2025-09-15T07:26:13.324Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com 403
-[debug] [2025-09-15T07:26:13.324Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [omitted]
-[debug] [2025-09-15T07:26:13.327Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com 403
-[debug] [2025-09-15T07:26:13.327Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [omitted]
-[debug] [2025-09-15T07:26:13.431Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com 200
-[debug] [2025-09-15T07:26:13.431Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [omitted]
-[debug] [2025-09-15T07:26:13.450Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com 200
-[debug] [2025-09-15T07:26:13.450Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [omitted]
-[debug] [2025-09-15T07:26:13.464Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com 200
-[debug] [2025-09-15T07:26:13.464Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [omitted]
-[debug] [2025-09-15T07:26:13.476Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com 200
-[debug] [2025-09-15T07:26:13.476Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [omitted]
-[debug] [2025-09-15T07:26:13.640Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ 200
-[debug] [2025-09-15T07:26:13.641Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [omitted]
-[debug] [2025-09-15T07:26:13.644Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2025-09-15T07:26:13.644Z] > authorizing via signed-in user (demian.brunt@gmail.com)
-[debug] [2025-09-15T07:26:13.648Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2025-09-15T07:26:13.648Z] > authorizing via signed-in user (demian.brunt@gmail.com)
-[debug] [2025-09-15T07:26:13.689Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ 200
-[debug] [2025-09-15T07:26:13.689Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [omitted]
+[debug] [2025-10-01T14:40:11.493Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.494Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.495Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.495Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.495Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.495Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.496Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.496Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.497Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [none]
+[debug] [2025-10-01T14:40:11.497Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-01T14:40:11.522Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-10-01T14:40:11.522Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-01T14:40:11.523Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [none]
+[debug] [2025-10-01T14:40:11.523Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-01T14:40:11.524Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [none]
+[debug] [2025-10-01T14:40:11.524Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-01T14:40:11.540Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.540Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.541Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.541Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.541Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.541Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.541Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.542Z] Checked if tokens are valid: true, expires at: 1759330813867
+[debug] [2025-10-01T14:40:11.542Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [none]
+[debug] [2025-10-01T14:40:11.542Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-01T14:40:11.543Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-10-01T14:40:11.543Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-01T14:40:11.544Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [none]
+[debug] [2025-10-01T14:40:11.544Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-01T14:40:11.545Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [none]
+[debug] [2025-10-01T14:40:11.545Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-01T14:40:12.250Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com 403
+[debug] [2025-10-01T14:40:12.250Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [omitted]
+[debug] [2025-10-01T14:40:12.269Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com 403
+[debug] [2025-10-01T14:40:12.269Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [omitted]
+[debug] [2025-10-01T14:40:12.407Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com 200
+[debug] [2025-10-01T14:40:12.407Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [omitted]
+[debug] [2025-10-01T14:40:12.409Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-10-01T14:40:12.409Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-10-01T14:40:12.409Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-10-01T14:40:12.409Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-10-01T14:40:12.416Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com 200
+[debug] [2025-10-01T14:40:12.416Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [omitted]
+[debug] [2025-10-01T14:40:12.672Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ 200
+[debug] [2025-10-01T14:40:12.672Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [omitted]
+[debug] [2025-10-01T14:40:12.729Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ 200
+[debug] [2025-10-01T14:40:12.729Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [omitted]
+[debug] [2025-10-01T14:40:12.733Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-01T14:40:12.733Z] > authorizing via signed-in user (demian.brunt@gmail.com)
+[debug] [2025-10-01T14:40:12.742Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-01T14:40:12.743Z] > authorizing via signed-in user (demian.brunt@gmail.com)
+[debug] [2025-10-05T08:29:19.079Z] Checked if tokens are valid: false, expires at: 1759482176400
+[debug] [2025-10-05T08:29:19.082Z] Checked if tokens are valid: false, expires at: 1759482176400
+[debug] [2025-10-05T08:29:19.082Z] > refreshing access token with scopes: []
+[debug] [2025-10-05T08:29:19.084Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-10-05T08:29:19.084Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-05T08:29:19.126Z] Checked if tokens are valid: false, expires at: 1759482176400
+[debug] [2025-10-05T08:29:19.127Z] Checked if tokens are valid: false, expires at: 1759482176400
+[debug] [2025-10-05T08:29:19.127Z] > refreshing access token with scopes: []
+[debug] [2025-10-05T08:29:19.127Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-10-05T08:29:19.127Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-05T08:29:19.129Z] Checked if tokens are valid: false, expires at: 1759482176400
+[debug] [2025-10-05T08:29:19.129Z] Checked if tokens are valid: false, expires at: 1759482176400
+[debug] [2025-10-05T08:29:19.129Z] > refreshing access token with scopes: []
+[debug] [2025-10-05T08:29:19.130Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-10-05T08:29:19.130Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-05T08:29:19.131Z] Checked if tokens are valid: false, expires at: 1759482176400
+[debug] [2025-10-05T08:29:19.131Z] Checked if tokens are valid: false, expires at: 1759482176400
+[debug] [2025-10-05T08:29:19.131Z] > refreshing access token with scopes: []
+[debug] [2025-10-05T08:29:19.131Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2025-10-05T08:29:19.131Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-05T08:29:19.237Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-10-05T08:29:19.238Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-05T08:29:19.288Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-10-05T08:29:19.289Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-05T08:29:19.296Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-10-05T08:29:19.296Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-05T08:29:19.318Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [none]
+[debug] [2025-10-05T08:29:19.318Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-05T08:29:19.321Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-10-05T08:29:19.321Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-05T08:29:19.352Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [none]
+[debug] [2025-10-05T08:29:19.353Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-05T08:29:19.358Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2025-10-05T08:29:19.358Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2025-10-05T08:29:19.392Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [none]
+[debug] [2025-10-05T08:29:19.392Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-05T08:29:20.067Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com 403
+[debug] [2025-10-05T08:29:20.067Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [omitted]
+[debug] [2025-10-05T08:29:20.195Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-10-05T08:29:20.195Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-10-05T08:29:20.210Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com 200
+[debug] [2025-10-05T08:29:20.211Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [omitted]
+[debug] [2025-10-05T08:29:20.495Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ 200
+[debug] [2025-10-05T08:29:20.495Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [omitted]
+[debug] [2025-10-05T08:59:02.730Z] Checked if tokens are valid: true, expires at: 1759656558358
+[debug] [2025-10-05T08:59:02.732Z] Checked if tokens are valid: true, expires at: 1759656558358
+[debug] [2025-10-05T08:59:02.732Z] Checked if tokens are valid: true, expires at: 1759656558358
+[debug] [2025-10-05T08:59:02.732Z] Checked if tokens are valid: true, expires at: 1759656558358
+[debug] [2025-10-05T08:59:02.733Z] Checked if tokens are valid: true, expires at: 1759656558358
+[debug] [2025-10-05T08:59:02.733Z] Checked if tokens are valid: true, expires at: 1759656558358
+[debug] [2025-10-05T08:59:02.733Z] Checked if tokens are valid: true, expires at: 1759656558358
+[debug] [2025-10-05T08:59:02.733Z] Checked if tokens are valid: true, expires at: 1759656558358
+[debug] [2025-10-05T08:59:02.734Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [none]
+[debug] [2025-10-05T08:59:02.734Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-05T08:59:02.759Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [none]
+[debug] [2025-10-05T08:59:02.759Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-05T08:59:02.760Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [none]
+[debug] [2025-10-05T08:59:02.760Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-05T08:59:02.761Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [none]
+[debug] [2025-10-05T08:59:02.761Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com x-goog-quota-user=projects/trimsalon-9b823
+[debug] [2025-10-05T08:59:03.483Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com 403
+[debug] [2025-10-05T08:59:03.483Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebaseio.com [omitted]
+[debug] [2025-10-05T08:59:03.597Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com 200
+[debug] [2025-10-05T08:59:03.597Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasecrashlytics.googleapis.com [omitted]
+[debug] [2025-10-05T08:59:03.609Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com 200
+[debug] [2025-10-05T08:59:03.609Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/firebasedataconnect.googleapis.com [omitted]
+[debug] [2025-10-05T08:59:03.906Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ 200
+[debug] [2025-10-05T08:59:03.906Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/trimsalon-9b823/services/ [omitted]

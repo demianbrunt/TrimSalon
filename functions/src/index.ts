@@ -4,6 +4,8 @@ import {
   beforeUserCreated,
   HttpsError,
 } from 'firebase-functions/v2/identity';
+import { onCall } from 'firebase-functions/v2/https';
+import * as calendar from './calendar';
 
 admin.initializeApp();
 
@@ -47,3 +49,45 @@ export const beforeusercreate = beforeUserCreated(
     console.log(`User ${email} is allowed.`);
   },
 );
+
+export const exchangeAuthCode = onCall(async (request) => {
+  const { code, userId } = request.data;
+
+  if (!code || !userId) {
+    throw new HttpsError(
+      'invalid-argument',
+      'The function must be called with arguments "code" and "userId".',
+    );
+  }
+
+  try {
+    const tokens = await calendar.exchangeCodeForTokens(code);
+    await calendar.saveUserTokens(userId, tokens);
+    return { success: true };
+  } catch (error) {
+    console.error('Error exchanging auth code or saving tokens:', error);
+    throw new HttpsError(
+      'internal',
+      'Failed to process calendar authorization.',
+    );
+  }
+});
+
+export const getCalendarEvents = onCall(async (request) => {
+  const { userId } = request.data;
+
+  if (!userId) {
+    throw new HttpsError(
+      'invalid-argument',
+      'The function must be called with the argument "userId".',
+    );
+  }
+
+  try {
+    const events = await calendar.getCalendarEvents(userId);
+    return { events };
+  } catch (error) {
+    console.error('Error getting calendar events:', error);
+    throw new HttpsError('internal', 'Failed to retrieve calendar events.');
+  }
+});
