@@ -1,16 +1,12 @@
+import { registerLocaleData } from '@angular/common';
 import { provideHttpClient, withFetch } from '@angular/common/http';
+import localeNl from '@angular/common/locales/nl';
 import {
   ApplicationConfig,
-  provideBrowserGlobalErrorListeners,
+  LOCALE_ID,
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-
-import {
-  provideClientHydration,
-  withEventReplay,
-} from '@angular/platform-browser';
-import { routes } from './app.routes';
 
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
@@ -19,14 +15,17 @@ import {
   getRemoteConfig,
   provideRemoteConfig,
 } from '@angular/fire/remote-config';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import Aura from '@primeuix/themes/aura';
-import { ConfirmationService, MessageService } from 'primeng/api';
-import { providePrimeNG } from 'primeng/config';
-import { ConfirmationDialogService } from './core/services/confirmation-dialog.service';
 
 import { getFunctions, provideFunctions } from '@angular/fire/functions';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { providePrimeNG } from 'primeng/config';
 import { APP_CONFIG, AppConfig } from './app.config.model';
+import { routes } from './app.routes';
+import { GoogleAuthService } from './core/services/google-auth.service';
+
+import { provideClientHydration } from '@angular/platform-browser';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import Aura from '@primeuix/themes/aura';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyApnb2vrrWaiewHEMzn73LbyPoBaPt4FUQ',
@@ -42,34 +41,41 @@ const appSettings: AppConfig = {
   googleAuth: {
     clientId:
       '495690826928-k7jfduihumi360hkiitfupla794qpe99.apps.googleusercontent.com',
-    scope: '',
+    scope: 'https://www.googleapis.com/auth/calendar',
   },
 };
 
-export const appConfig: ApplicationConfig = {
-  providers: [
-    provideBrowserGlobalErrorListeners(),
-    provideZoneChangeDetection({ eventCoalescing: true }),
-    provideRouter(routes),
-    provideClientHydration(withEventReplay()),
-    provideAnimationsAsync(),
-    providePrimeNG({
-      theme: {
-        preset: Aura,
-        options: {
-          darkModeSelector: false,
-        },
+registerLocaleData(localeNl);
+
+export const commonProviders = [
+  provideZoneChangeDetection({ eventCoalescing: true }),
+  provideRouter(routes),
+  providePrimeNG({
+    theme: {
+      preset: Aura,
+      options: {
+        darkModeSelector: false,
       },
-    }),
-    provideFirebaseApp(() => initializeApp(firebaseConfig)),
-    provideAuth(() => getAuth()),
-    provideRemoteConfig(() => getRemoteConfig()),
-    provideFirestore(() => getFirestore()),
-    provideFunctions(() => getFunctions()),
-    provideHttpClient(withFetch()),
-    MessageService,
-    ConfirmationService,
-    ConfirmationDialogService,
-    { provide: APP_CONFIG, useValue: appSettings },
-  ],
+    },
+  }),
+  provideFirebaseApp(() => initializeApp(firebaseConfig)),
+  provideAuth(() => getAuth()),
+  provideRemoteConfig(() => getRemoteConfig()),
+  provideFirestore(() => getFirestore()),
+  provideFunctions(() => getFunctions()),
+  provideHttpClient(withFetch()),
+  { provide: APP_CONFIG, useValue: appSettings },
+  { provide: LOCALE_ID, useValue: 'nl' },
+];
+
+export const browserProviders = [
+  provideClientHydration(),
+  provideAnimationsAsync(),
+  MessageService,
+  ConfirmationService,
+  GoogleAuthService,
+];
+
+export const appConfig: ApplicationConfig = {
+  providers: [...commonProviders, ...browserProviders],
 };

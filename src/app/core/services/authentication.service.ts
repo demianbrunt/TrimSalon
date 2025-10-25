@@ -8,9 +8,11 @@ import {
   signOut,
 } from '@angular/fire/auth';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
+import { Router } from '@angular/router';
 import { from, lastValueFrom, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { APP_CONFIG, AppConfig } from '../../app.config.model';
+import { GoogleAuthService } from './google-auth.service';
 
 @Injectable({
   providedIn: 'root',
@@ -19,6 +21,8 @@ export class AuthenticationService {
   private readonly auth: Auth = inject(Auth);
   private readonly firestore: Firestore = inject(Firestore);
   private readonly config: AppConfig = inject(APP_CONFIG);
+  private readonly router: Router = inject(Router);
+  private readonly googleAuthService = inject(GoogleAuthService);
 
   private readonly _isSigningIn = signal(false);
   isSigningIn = this._isSigningIn.asReadonly();
@@ -55,8 +59,14 @@ export class AuthenticationService {
 
       if (!isAllowed) {
         await signOut(this.auth);
+        this.router.navigate(['/forbidden']);
         throw new Error('User is not allowed.');
       }
+
+      if (!userCredential.user.uid) {
+        throw new Error('Sign-in failed: No user uid found.');
+      }
+      this.googleAuthService.getAuthCode(userCredential.user.uid);
 
       const credential =
         GoogleAuthProvider.credentialFromResult(userCredential);
@@ -79,6 +89,10 @@ export class AuthenticationService {
 
   signOut(): void {
     signOut(this.auth);
+  }
+
+  getCurrentUserId(): string | null {
+    return this.auth.currentUser ? this.auth.currentUser.uid : null;
   }
 
   private checkIfUserIsAllowed(email: string) {

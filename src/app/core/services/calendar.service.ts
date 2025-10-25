@@ -1,80 +1,87 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { Observable, from } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
-import { APP_CONFIG, AppConfig } from '../../app.config.model';
-
-// This is needed to access the google object from the GSI script
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-declare let google: any;
-
-interface GoogleAuthResponse {
-  code: string;
-}
-
-export interface CalendarEvent {
-  summary: string;
-  start: {
-    dateTime: string;
-  };
-  end: {
-    dateTime: string;
-  };
-}
-
-interface CalendarEventsResponse {
-  events: CalendarEvent[];
-}
+import { from, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { Appointment } from '../models/appointment.model';
+import { GoogleCalendar, GoogleCalendarList } from '../models/calendar.model';
+import { AuthenticationService } from './authentication.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CalendarService {
-  private functions = inject(Functions);
-  private config: AppConfig = inject(APP_CONFIG);
-  private clientId = this.config.googleAuth.clientId;
+  private readonly functions: Functions = inject(Functions);
+  private readonly authService = inject(AuthenticationService);
 
-  initiateCalendarAccessFlow(userId: string): Observable<void> {
-    return new Observable<string>((observer) => {
-      try {
-        const client = google.accounts.oauth2.initCodeClient({
-          client_id: this.clientId,
-          scope: 'https://www.googleapis.com/auth/calendar.readonly',
-          access_type: 'offline',
-          ux_mode: 'popup',
-          callback: (response: GoogleAuthResponse) => {
-            if (response.code) {
-              observer.next(response.code);
-              observer.complete();
-            } else {
-              observer.error('No authorization code received from Google.');
-            }
-          },
-        });
-        client.requestCode();
-      } catch (error) {
-        observer.error(error);
-      }
-    }).pipe(
-      switchMap((code) => {
-        const exchangeAuthCode = httpsCallable(
-          this.functions,
-          'exchangeAuthCode',
-        );
-        return from(exchangeAuthCode({ code, userId })).pipe(
-          map(() => undefined),
-        );
-      }),
-    );
+  private call<T>(functionName: string, data?: unknown): Observable<T> {
+    const callable = httpsCallable(this.functions, functionName);
+    return from(callable(data)).pipe(map((result) => result.data as T));
   }
 
-  getCalendarEvents(userId: string): Observable<CalendarEvent[]> {
-    const getCalendarEventsFn = httpsCallable<
-      { userId: string },
-      CalendarEventsResponse
-    >(this.functions, 'getCalendarEvents');
-    return from(getCalendarEventsFn({ userId })).pipe(
-      map((result) => result.data.events),
-    );
+  listCalendars(): Observable<GoogleCalendarList> {
+    const userId = this.authService.getCurrentUserId();
+    return this.call<GoogleCalendarList>('listCalendars', { userId });
+  }
+
+  async ensureTrimSalonCalendar(): Promise<string> {
+    const calendars = await this.listCalendars().toPromise();
+    let calendar = calendars.items.find((cal) => cal.summary === 'TrimSalon');
+    if (!calendar) {
+      calendar = await this.createTrimSalonCalendar();
+    }
+    return calendar.id;
+  }
+
+  createTrimSalonCalendar(): Promise<GoogleCalendar> {
+    const userId = this.authService.getCurrentUserId();
+    return this.call<GoogleCalendar>('createCalendar', {
+      userId,
+      summary: 'TrimSalon',
+    }).toPromise();
+  }
+
+  getAppointments(calendarId: string): Observable<Appointment[]> {
+    const userId = this.authService.getCurrentUserId();
+    return this.call<Appointment[]>('getCalendarEvents', {
+      userId,
+      calendarId,
+    });
+  }
+
+  addAppointment(
+    calendarId: string,
+    appointment: Appointment,
+  ): Observable<Appointment> {
+    const userId = this.authService.getCurrentUserId();
+    return this.call<{ event: Appointment }>('createCalendarEvent', {
+      userId,
+      calendarId,
+      event: appointment,
+    }).pipe(map((result) => result.event));
+  }
+
+  updateAppointment(
+    calendarId: string,
+    appointment: Appointment,
+  ): Observable<Appointment> {
+    const userId = this.authService.getCurrentUserId();
+    return this.call<{ event: Appointment }>('updateCalendarEvent', {
+      userId,
+      calendarId,
+      eventId: appointment.id,
+      event: appointment,
+    }).pipe(map((result) => result.event));
+  }
+
+  deleteAppointment(
+    calendarId: string,
+    appointmentId: string,
+  ): Observable<void> {
+    const userId = this.authService.getCurrentUserId();
+    return this.call<void>('deleteCalendarEvent', {
+      userId,
+      calendarId,
+      eventId: appointmentId,
+    });
   }
 }
