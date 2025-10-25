@@ -23,8 +23,6 @@ import { APP_CONFIG, AppConfig } from './app.config.model';
 import { routes } from './app.routes';
 import { GoogleAuthService } from './core/services/google-auth.service';
 
-import { provideClientHydration } from '@angular/platform-browser';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import Aura from '@primeuix/themes/aura';
 
 const firebaseConfig = {
@@ -69,8 +67,6 @@ export const commonProviders = [
 ];
 
 export const browserProviders = [
-  provideClientHydration(),
-  provideAnimationsAsync(),
   MessageService,
   ConfirmationService,
   GoogleAuthService,
