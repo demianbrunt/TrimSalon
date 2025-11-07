@@ -104,6 +104,23 @@ export class MockAuth {
   );
 
   signOut = jasmine.createSpy('signOut').and.returnValue(Promise.resolve());
+
+  setPersistence = jasmine
+    .createSpy('setPersistence')
+    .and.returnValue(Promise.resolve());
+
+  // Add other common Auth properties
+  app = {
+    name: '[DEFAULT]',
+    options: {},
+  };
+
+  config = {
+    apiKey: 'test-api-key',
+    authDomain: 'test.firebaseapp.com',
+  };
+
+  name = '[DEFAULT]';
 }
 
 /**
