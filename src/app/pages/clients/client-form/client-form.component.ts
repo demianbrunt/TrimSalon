@@ -10,7 +10,12 @@ import {
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import {
+  AutoCompleteCompleteEvent,
+  AutoCompleteModule,
+} from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { InputTextModule } from 'primeng/inputtext';
@@ -39,6 +44,8 @@ import { ToastrService } from '../../../core/services/toastr.service';
     FloatLabelModule,
     DividerModule,
     ToastModule,
+    AutoCompleteModule,
+    CardModule,
   ],
   templateUrl: './client-form.component.html',
   styleUrls: ['./client-form.component.css'],
@@ -58,6 +65,7 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   }>;
 
   allBreeds: Breed[] = [];
+  filteredBreeds: Breed[] = [];
 
   private readonly clientService = inject(ClientService);
   private readonly breedService = inject(BreedService);
@@ -74,6 +82,18 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
 
   get canDeleteDog() {
     return this.dogsArray.length > 1;
+  }
+
+  get name() {
+    return this.form.controls.name;
+  }
+
+  get email() {
+    return this.form.controls.email;
+  }
+
+  get phone() {
+    return this.form.controls.phone;
   }
 
   constructor() {
@@ -123,20 +143,18 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
     ]);
   }
 
-  get name() {
-    return this.form.controls.name;
-  }
-
-  get email() {
-    return this.form.controls.email;
-  }
-
-  get phone() {
-    return this.form.controls.phone;
+  searchBreeds(event: AutoCompleteCompleteEvent) {
+    const query = event.query;
+    this.filteredBreeds = this.allBreeds.filter((breed) =>
+      breed.name.toLowerCase().includes(query.toLowerCase()),
+    );
   }
 
   loadBreeds(): void {
-    this.breedService.getData$().subscribe((data) => (this.allBreeds = data));
+    this.breedService.getData$().subscribe((data) => {
+      this.allBreeds = data;
+      this.filteredBreeds = this.allBreeds;
+    });
   }
 
   loadClientData(id: string): void {
@@ -209,9 +227,11 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   }
 
   override cancel() {
-    return super.cancel().then(() => {
-      this.router.navigate(['/clients']);
-      return true;
+    return super.cancel().then((confirmed) => {
+      if (confirmed) {
+        this.router.navigate(['/clients']);
+      }
+      return confirmed;
     });
   }
 }

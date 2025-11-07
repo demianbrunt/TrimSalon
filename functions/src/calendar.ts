@@ -51,7 +51,13 @@ export async function loadTokensFromFirestore(
   const firestore = admin.firestore();
   const userRef = firestore.collection('users').doc(userId);
   const doc = await userRef.get();
-  return doc.exists ? (doc.data()?.tokens as Credentials) : null;
+  if (doc.exists) {
+    console.log(`Tokens found for user ${userId}`);
+    return doc.data()?.tokens as Credentials;
+  } else {
+    console.log(`No tokens found for user ${userId}`);
+    return null;
+  }
 }
 
 /**
@@ -64,6 +70,9 @@ export async function getCalendarClient(
 ): Promise<calendar_v3.Calendar | null> {
   const tokens = await loadTokensFromFirestore(userId);
   if (!tokens) {
+    console.log(
+      `No tokens available for user ${userId}. Cannot get calendar client.`,
+    );
     return null;
   }
 
@@ -77,8 +86,10 @@ export async function getCalendarClient(
   oAuth2Client.on('tokens', (newTokens) => {
     const updatedTokens: Credentials = { ...tokens, ...newTokens };
     saveUserTokens(userId, updatedTokens);
+    console.log(`Tokens refreshed and saved for user ${userId}`);
   });
 
+  console.log(`Calendar client created for user ${userId}`);
   return google.calendar({ version: 'v3', auth: oAuth2Client });
 }
 
@@ -92,6 +103,7 @@ export async function getCalendarClient(
  */
 export async function getCalendarEvents(
   userId: string,
+  calendarId: string,
   options: { timeMin?: string; timeMax?: string } = {},
 ): Promise<calendar_v3.Schema$Event[] | null> {
   const calendarClient = await getCalendarClient(userId);
@@ -105,7 +117,7 @@ export async function getCalendarEvents(
   const dateStr = now.toISOString().split('T')[0];
 
   const res = await calendarClient.events.list({
-    calendarId: 'primary',
+    calendarId: calendarId,
     timeMin: timeMin || dateStr + 'T00:00:00Z',
     timeMax: timeMax || dateStr + 'T23:59:59Z',
     maxResults: 20,
@@ -134,6 +146,7 @@ export async function hasCalendarAccess(userId: string): Promise<boolean> {
  */
 export async function createCalendarEvent(
   userId: string,
+  calendarId: string,
   event: calendar_v3.Schema$Event,
 ): Promise<calendar_v3.Schema$Event | null> {
   const calendarClient = await getCalendarClient(userId);
@@ -142,7 +155,7 @@ export async function createCalendarEvent(
   }
 
   const res = await calendarClient.events.insert({
-    calendarId: 'primary',
+    calendarId: calendarId,
     requestBody: event,
   });
 
@@ -158,6 +171,7 @@ export async function createCalendarEvent(
  */
 export async function updateCalendarEvent(
   userId: string,
+  calendarId: string,
   eventId: string,
   event: calendar_v3.Schema$Event,
 ): Promise<calendar_v3.Schema$Event | null> {
@@ -167,7 +181,7 @@ export async function updateCalendarEvent(
   }
 
   const res = await calendarClient.events.update({
-    calendarId: 'primary',
+    calendarId: calendarId,
     eventId,
     requestBody: event,
   });
@@ -183,6 +197,7 @@ export async function updateCalendarEvent(
  */
 export async function deleteCalendarEvent(
   userId: string,
+  calendarId: string,
   eventId: string,
 ): Promise<void> {
   const calendarClient = await getCalendarClient(userId);
@@ -191,7 +206,7 @@ export async function deleteCalendarEvent(
   }
 
   await calendarClient.events.delete({
-    calendarId: 'primary',
+    calendarId: calendarId,
     eventId,
   });
 }

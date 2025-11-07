@@ -1,57 +1,135 @@
-<p-dataView
-  #dv
-  [value]="services"
-  [paginator]="true"
-  [rows]="9"
-  [sortField]="sortField"
-  [sortOrder]="sortOrder"
-  [filterBy]="'name,description'"
->
-  <ng-template #header>
-    <app-table-header
-      placeholder="Zoek werkzaamheid"
-      [table]="dv"
-      (addClick)="showServiceForm()"
-    ></app-table-header>
-  </ng-template>
-  <ng-template #emptymessage></ng-template>
-  <ng-template #list let-services: Service[]>
-    @for (service of services; track service.id) {
-      <div class="col-12 md:col-6 lg:col-4 p-2">
-        <div
-          class="p-4 border-1 surface-border surface-card border-round h-full flex flex-column"
-        >
-          <div class="flex-grow-1">
-            <div class="flex justify-content-between">
-              <div class="font-bold text-lg">{{ service.name }}</div>
+<ng-container *ngIf="isMobile; else desktopView">
+  <p-dataView
+    #dv
+    [value]="services"
+    [paginator]="true"
+    [rows]="9"
+    [sortField]="sortField"
+    [sortOrder]="sortOrder"
+    [filterBy]="'name,description'"
+  >
+    <ng-template #header>
+      <app-table-header
+        placeholder="Zoek werkzaamheid"
+        [table]="dv"
+        (addClick)="showServiceForm()"
+      ></app-table-header>
+    </ng-template>
+    <ng-template #emptymessage></ng-template>
+    <ng-template #list let-services: Service[]>
+      @for (service of services; track service.id) {
+        <div class="col-12 md:col-6 lg:col-4 p-2">
+          <div
+            class="p-4 border surface-border surface-card border-round h-full flex flex-column"
+          >
+            <div class="grow">
+              <div class="flex justify-content-between">
+                <div class="font-bold text-lg">{{ service.name }}</div>
+                <p-tag
+                  [value]="
+                    service.pricingType === 'FIXED' ? 'Vaste Prijs' : 'Per Tijd'
+                  "
+                ></p-tag>
+              </div>
+              <p class="mt-2 mb-0">{{ service.description }}</p>
+            </div>
+            <div class="shrink-0 mt-3">
+              <div class="flex justify-content-end gap-2">
+                <p-button
+                  icon="pi pi-pencil"
+                  styleClass="p-button-text p-button-rounded"
+                  (click)="showServiceForm(service)"
+                  pTooltip="Bewerken"
+                ></p-button>
+                <p-button
+                  icon="pi pi-trash"
+                  styleClass="p-button-text p-button-rounded p-button-danger"
+                  (click)="deleteService(service)"
+                  pTooltip="Verwijderen"
+                ></p-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      } @empty {
+        <div class="text-center p-4">Geen werkzaamheden gevonden.</div>
+      }
+    </ng-template>
+  </p-dataView>
+</ng-container>
+
+<ng-template #desktopView>
+  <div class="p-4">
+    <p-card>
+      <p-table
+        #dt
+        [value]="services"
+        [paginator]="true"
+        [rows]="10"
+        [sortField]="sortField"
+        [sortOrder]="sortOrder"
+        [filterDelay]="0"
+        [globalFilterFields]="['name', 'description']"
+        [tableStyle]="{ 'min-width': '75rem' }"
+      >
+        <ng-template pTemplate="caption">
+          <app-table-header
+            placeholder="Zoek werkzaamheid"
+            [table]="dt"
+            (addClick)="showServiceForm()"
+          ></app-table-header>
+        </ng-template>
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="name">
+              Naam <p-sortIcon field="name"></p-sortIcon>
+            </th>
+            <th pSortableColumn="description">
+              Omschrijving <p-sortIcon field="description"></p-sortIcon>
+            </th>
+            <th pSortableColumn="pricingType">
+              Prijsmodel <p-sortIcon field="pricingType"></p-sortIcon>
+            </th>
+            <th style="width: 10rem"></th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-service>
+          <tr>
+            <td>{{ service.name }}</td>
+            <td>{{ service.description }}</td>
+            <td>
               <p-tag
                 [value]="
                   service.pricingType === 'FIXED' ? 'Vaste Prijs' : 'Per Tijd'
                 "
               ></p-tag>
-            </div>
-            <p class="mt-2 mb-0">{{ service.description }}</p>
-          </div>
-          <div class="flex-shrink-0 mt-3">
-            <div class="flex justify-content-end gap-2">
-              <p-button
-                icon="pi pi-pencil"
-                styleClass="p-button-text p-button-rounded"
-                (click)="showServiceForm(service)"
-                pTooltip="Bewerken"
-              ></p-button>
-              <p-button
-                icon="pi pi-trash"
-                styleClass="p-button-text p-button-rounded p-button-danger"
-                (click)="deleteService(service)"
-                pTooltip="Verwijderen"
-              ></p-button>
-            </div>
-          </div>
-        </div>
-      </div>
-    } @empty {
-      <div class="text-center p-4">Geen werkzaamheden gevonden.</div>
-    }
-  </ng-template>
-</p-dataView>
+            </td>
+            <td>
+              <div class="flex justify-content-end gap-2">
+                <p-button
+                  icon="pi pi-pencil"
+                  styleClass="p-button-text p-button-rounded"
+                  (click)="showServiceForm(service)"
+                  pTooltip="Bewerken"
+                ></p-button>
+                <p-button
+                  icon="pi pi-trash"
+                  styleClass="p-button-text p-button-rounded p-button-danger"
+                  (click)="deleteService(service)"
+                  pTooltip="Verwijderen"
+                ></p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="text-center">
+              Geen werkzaamheden gevonden.
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </div>
+</ng-template>

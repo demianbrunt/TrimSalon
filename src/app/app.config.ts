@@ -7,6 +7,7 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
@@ -15,15 +16,18 @@ import {
   getRemoteConfig,
   provideRemoteConfig,
 } from '@angular/fire/remote-config';
+import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { getFunctions, provideFunctions } from '@angular/fire/functions';
+
+import Aura from '@primeuix/themes/aura';
+
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
+import { DialogService } from 'primeng/dynamicdialog';
 import { APP_CONFIG, AppConfig } from './app.config.model';
 import { routes } from './app.routes';
 import { GoogleAuthService } from './core/services/google-auth.service';
-
-import Aura from '@primeuix/themes/aura';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyApnb2vrrWaiewHEMzn73LbyPoBaPt4FUQ',
@@ -62,6 +66,7 @@ export const commonProviders = [
   provideFirestore(() => getFirestore()),
   provideFunctions(() => getFunctions()),
   provideHttpClient(withFetch()),
+  provideAnimations(),
   { provide: APP_CONFIG, useValue: appSettings },
   { provide: LOCALE_ID, useValue: 'nl' },
 ];
@@ -70,6 +75,8 @@ export const browserProviders = [
   MessageService,
   ConfirmationService,
   GoogleAuthService,
+  DialogService,
+  ConfirmationDialogService,
 ];
 
 export const appConfig: ApplicationConfig = {

@@ -1,0 +1,17 @@
+.field {
+  margin-bottom: 1.5rem;
+}
+
+:host ::ng-deep .mobile-card {
+  box-shadow: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+:host ::ng-deep .mobile-card .p-card-body {
+  padding: 0;
+}
+
+:host ::ng-deep .mobile-card .p-card-content {
+  padding: 0;
+}

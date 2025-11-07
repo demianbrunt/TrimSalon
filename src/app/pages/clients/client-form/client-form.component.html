@@ -1,12 +1,13 @@
 <div class="p-4">
-  <p-toast></p-toast>
-  <div class="card">
-    <div class="flex justify-content-between align-items-center mb-4">
-      <h2 class="m-0">{{ isEditMode ? "Klant Bewerken" : "Nieuwe Klant" }}</h2>
-    </div>
-    <form class="formgrid grid">
-      <div class="field col-12 mt-1">
-        <p-floatlabel variant="on">
+  <p-card [ngClass]="{ 'mobile-card': isMobile }" class="mx-auto max-w-2xl">
+    <ng-template pTemplate="title">
+      <h2 class="m-0 mb-5">
+        {{ isEditMode ? "Klant Bewerken" : "Nieuwe Klant" }}
+      </h2>
+    </ng-template>
+    <form [formGroup]="form" class="p-fluid">
+      <div class="field">
+        <p-floatlabel>
           <input
             pInputText
             id="naam"
@@ -17,8 +18,8 @@
           <label for="naam">Naam</label>
         </p-floatlabel>
       </div>
-      <div class="field col-12">
-        <p-floatlabel variant="on">
+      <div class="field">
+        <p-floatlabel>
           <input
             pInputText
             id="email"
@@ -29,8 +30,8 @@
           <label for="email">E-mail</label>
         </p-floatlabel>
       </div>
-      <div class="field col-12">
-        <p-floatlabel variant="on">
+      <div class="field">
+        <p-floatlabel>
           <input
             pInputText
             id="telefoon"
@@ -57,10 +58,10 @@
       @for (dogGroup of dogsArray.controls; track $index) {
         <div
           [formGroup]="$any(dogGroup)"
-          class="formgrid grid grid-nogutter border-1 surface-border p-3 border-round mb-2 align-items-end w-full"
+          class="formgrid grid p-2 align-items-center"
         >
-          <div class="field col-12">
-            <p-floatlabel variant="on">
+          <div class="field col-12 md:col-5">
+            <p-floatlabel>
               <input
                 pInputText
                 id="naamHond"
@@ -71,20 +72,22 @@
               <label for="email">Naam</label>
             </p-floatlabel>
           </div>
-          <div class="field col-12">
-            <p-floatlabel class="w-full md:w-56" variant="on">
-              <p-select
-                [formControl]="dogGroup.controls.breed"
-                inputId="ras"
-                [options]="allBreeds"
-                optionLabel="name"
+          <div class="field col-12 md:col-5">
+            <p-floatlabel class="w-full">
+              <p-autocomplete
                 class="w-full"
+                [formControl]="dogGroup.controls.breed"
+                [dropdown]="true"
+                [suggestions]="filteredBreeds"
+                (completeMethod)="searchBreeds($event)"
+                optionLabel="name"
+                appendTo="body"
               />
               <label for="ras">Ras</label>
             </p-floatlabel>
           </div>
           @if (canDeleteDog) {
-            <div class="field col">
+            <div class="field col-12 md:col-2">
               <p-button
                 icon="pi pi-trash"
                 styleClass="p-button-danger w-full"
@@ -96,20 +99,22 @@
         </div>
       }
     </form>
-    <div class="flex justify-content-end mt-4 gap-2">
-      <p-button
-        label="Annuleren"
-        icon="pi pi-times"
-        styleClass="p-button-text"
-        (click)="cancel()"
-        type="button"
-      ></p-button>
-      <p-button
-        label="Opslaan"
-        icon="pi pi-check"
-        (click)="saveClient()"
-        [disabled]="form?.invalid || isSaving"
-      ></p-button>
-    </div>
-  </div>
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-end gap-2">
+        <p-button
+          label="Annuleren"
+          icon="pi pi-times"
+          styleClass="p-button-text"
+          (click)="cancel()"
+          type="button"
+        ></p-button>
+        <p-button
+          label="Opslaan"
+          icon="pi pi-check"
+          (click)="saveClient()"
+          [disabled]="form?.invalid || isSaving"
+        ></p-button>
+      </div>
+    </ng-template>
+  </p-card>
 </div>

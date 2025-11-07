@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { ConfirmDialog } from 'primeng/confirmdialog';
+import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
 import { BreadcrumbComponent } from './core/components/breadcrumb/breadcrumb.component';
 import { SubNavComponent } from './core/components/sub-nav/sub-nav.component';
@@ -23,27 +22,27 @@ import { MobileService } from './core/services/mobile.service';
     BreadcrumbComponent,
     SubNavComponent,
     TopNavComponent,
+    ConfirmDialogModule,
   ],
-  providers: [ConfirmationService],
   template: `
+    <p-confirmDialog />
     <p-toast
       [class]="isMobile ? 'px-5 pb-4' : ''"
       [position]="isMobile ? 'bottom-center' : 'top-right'"
       [preventOpenDuplicates]="true"
     />
 
-    <p-confirmdialog />
-    <div class="flex flex-column" style="height: 100dvh">
+    @if (authService.isAuthenticated()) {
+      <app-sub-nav></app-sub-nav>
+    }
+    <div class="main-container">
       @if (authService.isAuthenticated()) {
         <app-top-nav></app-top-nav>
         <app-breadcrumb></app-breadcrumb>
       }
-      <div class="flex-grow-1" style="overflow: auto">
+      <div class="content-outlet">
         <router-outlet></router-outlet>
       </div>
-      @if (authService.isAuthenticated()) {
-        <app-sub-nav></app-sub-nav>
-      }
     </div>
   `,
 })

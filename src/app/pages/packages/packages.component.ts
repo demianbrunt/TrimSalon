@@ -10,6 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
 import { Dialog, DialogModule } from 'primeng/dialog';
@@ -17,10 +18,11 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Package } from '../../core/models/package.model';
 import { Price } from '../../core/models/price.model';
@@ -40,7 +42,6 @@ import { ToastrService } from '../../core/services/toastr.service';
     TableModule,
     InputTextModule,
     ButtonModule,
-    RippleModule,
     DialogModule,
     ToastModule,
     MultiSelectModule,
@@ -49,7 +50,9 @@ import { ToastrService } from '../../core/services/toastr.service';
     TableHeaderComponent,
     IconFieldModule,
     InputIconModule,
+    TooltipModule,
     DataViewModule,
+    CardModule,
   ],
   providers: [ConfirmationService],
   templateUrl: './packages.component.html',
@@ -77,7 +80,7 @@ export class PackagesComponent implements OnInit {
   private readonly packageService = inject(PackageService);
   private readonly serviceService = inject(ServiceService);
   private readonly toastrService = inject(ToastrService);
-  private readonly confirmationService = inject(ConfirmationService);
+  private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
@@ -119,22 +122,24 @@ export class PackagesComponent implements OnInit {
   }
 
   deletePackage(pkg: Package): void {
-    this.confirmationService.confirm({
-      message: `Weet je zeker dat je ${pkg.name} wilt verwijderen?`,
-      header: 'Bevestiging',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.packageService.delete(pkg.id!).subscribe({
-          next: () => {
-            this.toastrService.success('Succes', 'Pakket verwijderd');
-            this.loadPackages();
-          },
-          error: (err) => {
-            this.toastrService.error('Fout', err.message);
-          },
-        });
-      },
-    });
+    this.confirmationService
+      .open(
+        'Bevestiging',
+        `Weet je zeker dat je <b>${pkg.name}</b> wilt verwijderen? Dit kan <u>niet</u> ongedaan worden gemaakt.`,
+      )
+      .then((confirmed) => {
+        if (confirmed) {
+          this.packageService.delete(pkg.id!).subscribe({
+            next: () => {
+              this.toastrService.success('Succes', 'Pakket verwijderd');
+              this.loadPackages();
+            },
+            error: (err) => {
+              this.toastrService.error('Fout', err.message);
+            },
+          });
+        }
+      });
   }
 
   showPriceHistory(pkg: Package): void {

@@ -12,6 +12,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DatePickerModule } from 'primeng/datepicker';
 import { Dialog, DialogModule } from 'primeng/dialog';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -53,6 +54,7 @@ import { ToastrService } from '../../../core/services/toastr.service';
     DialogModule,
     DatePickerModule,
     TableModule,
+    CardModule,
   ],
   templateUrl: './service-form.component.html',
   styleUrls: ['./service-form.component.css'],
@@ -292,9 +294,11 @@ export class ServiceFormComponent
   }
 
   override cancel() {
-    return super.cancel().then(() => {
-      this.router.navigate(['/services']);
-      return true;
+    return super.cancel().then((confirmed) => {
+      if (confirmed) {
+        this.router.navigate(['/services']);
+      }
+      return confirmed;
     });
   }
 

@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Table } from 'primeng/table';
+import { MobileService } from '../../services/mobile.service';
 
 @Component({
   selector: 'app-table-header',
@@ -17,14 +18,13 @@ import { Table } from 'primeng/table';
     InputIconModule,
     InputTextModule,
   ],
+  styleUrls: ['./table-header.component.css'],
   template: `
-    <div
-      class="flex justify-content-between align-items-center flex-column md:flex-row"
-    >
+    <div class="grid grid-nogutter justify-content-between align-items-center">
       @if (title) {
-        <h2 class="m-0 mb-2 md:mb-0">{{ title }}</h2>
+        <h2 class="col-12 md:col-6 m-0">{{ title }}</h2>
       }
-      <div class="flex justify-content-between gap-2 w-full md:w-auto">
+      <div class="col-12 md:col-6 flex justify-content-end gap-2">
         <p-iconfield>
           <p-inputicon class="pi pi-search" />
           <input
@@ -33,20 +33,30 @@ import { Table } from 'primeng/table';
             #searchInput
             (input)="filter(searchInput.value)"
             [placeholder]="placeholder"
-            class="p-inputtext-sm w-full"
+            class="w-full"
+            [ngClass]="{
+              'p-inputtext-lg': !isMobile,
+              'p-inputtext-sm': isMobile,
+            }"
           />
         </p-iconfield>
         <p-button
           [label]="addLabel"
           icon="pi pi-plus"
+          [size]="isMobile ? 'small' : 'large'"
           (click)="addClick.emit()"
-          styleClass="p-button-sm"
         ></p-button>
       </div>
     </div>
   `,
 })
 export class TableHeaderComponent {
+  private readonly mobileService = inject(MobileService);
+
+  get isMobile() {
+    return this.mobileService.isMobile;
+  }
+
   @Input() title!: string;
   @Input() placeholder = 'Zoeken...';
   @Input() addLabel = 'Nieuw';

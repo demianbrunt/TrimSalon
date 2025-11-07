@@ -10,6 +10,6 @@ export class BreadcrumbService {
   items$ = this.items.asObservable();
 
   setItems(items: MenuItem[]) {
-    this.items.next(items);
+    setTimeout(() => this.items.next(items), 0);
   }
 }

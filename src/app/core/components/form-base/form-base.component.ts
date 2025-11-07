@@ -20,9 +20,7 @@ export abstract class FormBaseComponent
 
   protected readonly formBuilder: FormBuilder = inject(FormBuilder);
   protected readonly toastr: ToastrService = inject(ToastrService);
-  protected readonly confirmationDialogService = inject(
-    ConfirmationDialogService,
-  );
+  protected readonly confirmationService = inject(ConfirmationDialogService);
 
   abstract form: FormGroup | FormArray;
 
@@ -64,7 +62,7 @@ export abstract class FormBaseComponent
 
   canDeactivate(): Promise<boolean> {
     if ((this?.form?.dirty || this?.form?.touched) && !this.isCanceling) {
-      return this.confirmationDialogService.open(
+      return this.confirmationService.open(
         'Openstaande wijzigingen',
         '<b>Let op!</b> Vergeten op te slaan? Als je doorgaat zullen de niet opgeslagen wijzigingen verloren gaan.',
       );
@@ -86,7 +84,7 @@ export abstract class FormBaseComponent
       return Promise.resolve(true);
     }
 
-    return this.confirmationDialogService
+    return this.confirmationService
       .open(
         'Wijzigingen annuleren',
         'Weet je zeker dat je wilt annuleren? De gemaakte wijzigingen zullen verloren gaan.',

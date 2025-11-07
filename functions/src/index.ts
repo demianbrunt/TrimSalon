@@ -54,6 +54,7 @@ export const exchangeAuthCode = onCall(async (request) => {
   const { code, userId } = request.data;
 
   if (!code || !userId) {
+    console.error('exchangeAuthCode: Missing code or userId');
     throw new HttpsError(
       'invalid-argument',
       'The function must be called with arguments "code" and "userId".',
@@ -61,8 +62,11 @@ export const exchangeAuthCode = onCall(async (request) => {
   }
 
   try {
+    console.log(`Attempting to exchange code for tokens for user ${userId}`);
     const tokens = await calendar.exchangeCodeForTokens(code);
+    console.log(`Tokens exchanged for user ${userId}. Saving tokens...`);
     await calendar.saveUserTokens(userId, tokens);
+    console.log(`Tokens saved for user ${userId}.`);
     return { success: true };
   } catch (error) {
     console.error('Error exchanging auth code or saving tokens:', error);
@@ -74,17 +78,17 @@ export const exchangeAuthCode = onCall(async (request) => {
 });
 
 export const getCalendarEvents = onCall(async (request) => {
-  const { userId, timeMin, timeMax } = request.data;
+  const { userId, calendarId, timeMin, timeMax } = request.data;
 
-  if (!userId) {
+  if (!userId || !calendarId) {
     throw new HttpsError(
       'invalid-argument',
-      'The function must be called with the argument "userId".',
+      'The function must be called with the arguments "userId" and "calendarId".',
     );
   }
 
   try {
-    const events = await calendar.getCalendarEvents(userId, {
+    const events = await calendar.getCalendarEvents(userId, calendarId, {
       timeMin,
       timeMax,
     });
@@ -115,17 +119,21 @@ export const hasCalendarAccess = onCall(async (request) => {
 });
 
 export const createCalendarEvent = onCall(async (request) => {
-  const { userId, event } = request.data;
+  const { userId, calendarId, event } = request.data;
 
-  if (!userId || !event) {
+  if (!userId || !calendarId || !event) {
     throw new HttpsError(
       'invalid-argument',
-      'The function must be called with arguments "userId" and "event".',
+      'The function must be called with arguments "userId", "calendarId", and "event".',
     );
   }
 
   try {
-    const newEvent = await calendar.createCalendarEvent(userId, event);
+    const newEvent = await calendar.createCalendarEvent(
+      userId,
+      calendarId,
+      event,
+    );
     return { event: newEvent };
   } catch (error) {
     console.error('Error creating calendar event:', error);
@@ -134,18 +142,19 @@ export const createCalendarEvent = onCall(async (request) => {
 });
 
 export const updateCalendarEvent = onCall(async (request) => {
-  const { userId, eventId, event } = request.data;
+  const { userId, calendarId, eventId, event } = request.data;
 
-  if (!userId || !eventId || !event) {
+  if (!userId || !calendarId || !eventId || !event) {
     throw new HttpsError(
       'invalid-argument',
-      'The function must be called with arguments "userId", "eventId", and "event".',
+      'The function must be called with arguments "userId", "calendarId", "eventId", and "event".',
     );
   }
 
   try {
     const updatedEvent = await calendar.updateCalendarEvent(
       userId,
+      calendarId,
       eventId,
       event,
     );
@@ -157,17 +166,17 @@ export const updateCalendarEvent = onCall(async (request) => {
 });
 
 export const deleteCalendarEvent = onCall(async (request) => {
-  const { userId, eventId } = request.data;
+  const { userId, calendarId, eventId } = request.data;
 
-  if (!userId || !eventId) {
+  if (!userId || !calendarId || !eventId) {
     throw new HttpsError(
       'invalid-argument',
-      'The function must be called with arguments "userId" and "eventId".',
+      'The function must be called with arguments "userId", "calendarId", and "eventId".',
     );
   }
 
   try {
-    await calendar.deleteCalendarEvent(userId, eventId);
+    await calendar.deleteCalendarEvent(userId, calendarId, eventId);
     return { success: true };
   } catch (error) {
     console.error('Error deleting calendar event:', error);

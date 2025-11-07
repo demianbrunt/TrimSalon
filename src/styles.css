@@ -39,3 +39,30 @@ body {
   animation: jump-and-shake 2s ease-in-out;
   display: inline-block; /* To make transform work on span */
 }
+
+.main-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.content-outlet {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+/* Desktop styles */
+@media (min-width: 769px) {
+  html {
+    font-size: 16px;
+  }
+  .main-container {
+    margin-left: 80px;
+  }
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .main-container {
+    padding-bottom: 70px;
+  }
+}

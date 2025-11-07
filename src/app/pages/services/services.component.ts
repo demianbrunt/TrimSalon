@@ -3,6 +3,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
 import { DialogModule } from 'primeng/dialog';
@@ -13,10 +14,12 @@ import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Service } from '../../core/models/service.model';
-import { ServiceService } from '../../core/services/service.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { MobileService } from '../../core/services/mobile.service';
+import { ServiceService } from '../../core/services/service.service';
 import { ToastrService } from '../../core/services/toastr.service';
 
 @Component({
@@ -35,6 +38,7 @@ import { ToastrService } from '../../core/services/toastr.service';
     InputIconModule,
     TableHeaderComponent,
     DataViewModule,
+    CardModule,
   ],
   providers: [ConfirmationService],
   templateUrl: './services.component.html',
@@ -47,9 +51,14 @@ export class ServicesComponent implements OnInit {
 
   private readonly serviceService = inject(ServiceService);
   private readonly toastrService = inject(ToastrService);
-  private readonly confirmationService = inject(ConfirmationService);
+  private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
+  private readonly mobileService = inject(MobileService);
+
+  get isMobile() {
+    return this.mobileService.isMobile;
+  }
 
   ngOnInit(): void {
     this.loadServices();
@@ -76,21 +85,23 @@ export class ServicesComponent implements OnInit {
   }
 
   deleteService(service: Service): void {
-    this.confirmationService.confirm({
-      message: `Weet je zeker dat je ${service.name} wilt verwijderen?`,
-      header: 'Bevestiging',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.serviceService.delete(service.id!).subscribe({
-          next: () => {
-            this.toastrService.success('Succes', 'Werkzaamheid verwijderd');
-            this.loadServices();
-          },
-          error: (err) => {
-            this.toastrService.error('Fout', err.message);
-          },
-        });
-      },
-    });
+    this.confirmationService
+      .open(
+        'Bevestiging',
+        `Weet je zeker dat je <b>${service.name}</b> wilt verwijderen? Dit kan <u>niet</u> ongedaan worden gemaakt.`,
+      )
+      .then((confirmed) => {
+        if (confirmed) {
+          this.serviceService.delete(service.id!).subscribe({
+            next: () => {
+              this.toastrService.success('Succes', 'Werkzaamheid verwijderd');
+              this.loadServices();
+            },
+            error: (err) => {
+              this.toastrService.error('Fout', err.message);
+            },
+          });
+        }
+      });
   }
 }

@@ -1,182 +1,180 @@
 <div class="p-4">
-  <p-toast></p-toast>
-  <div class="card">
-    <div class="flex justify-content-between align-items-center mb-4">
-      <h2 class="m-0">
+  <p-card
+    [ngClass]="{ 'mobile-card': isMobile }"
+    styleClass="mx-auto max-w-3xl"
+  >
+    <ng-template pTemplate="title">
+      <h2 class="m-0 mb-5">
         {{ isEditMode ? "Werkzaamheid Bewerken" : "Nieuwe Werkzaamheid" }}
       </h2>
-    </div>
-    <form [formGroup]="form">
-      <div class="p-fluid">
-        <div class="field">
-          <p-floatlabel variant="on">
-            <input
-              pInputText
-              id="name"
-              [formControl]="name"
-              class="w-full"
-              autocomplete="off"
-            />
-            <label for="name">Naam</label>
-          </p-floatlabel>
-        </div>
-        <div class="field">
-          <p-floatlabel variant="on">
-            <textarea
-              pInputTextarea
-              id="description"
-              [formControl]="description"
-              rows="3"
-              class="w-full"
-            ></textarea>
-            <label for="description">Omschrijving</label>
-          </p-floatlabel>
-        </div>
-        <div class="field">
-          <label for="pricingType">Prijsmodel</label>
-          <p-selectButton
-            [options]="pricingTypes"
-            [formControl]="pricingType"
-            optionLabel="label"
-            optionValue="value"
-          ></p-selectButton>
-        </div>
-
-        <!-- Fixed Prices Section -->
-        @if (pricingType?.value === "FIXED") {
-          <div class="mt-4" formArrayName="fixedPrices">
-            <div class="flex justify-content-between align-items-center mb-2">
-              <h4 class="m-0">Vaste Prijzen per Ras</h4>
-              <p-button
-                icon="pi pi-plus"
-                label="Prijs Toevoegen"
-                (click)="addFixedPrice()"
-                type="button"
-              ></p-button>
-            </div>
-            @for (priceGroup of fixedPricesArray.controls; track $index) {
-              <div
-                [formGroupName]="$index"
-                class="formgrid grid grid-nogutter border-1 surface-border p-2 border-round mb-2 align-items-center"
-              >
-                <div class="field col-12 md:col-5 px-1">
-                  <p-floatlabel variant="on">
-                    <p-select
-                      id="fixed-breed-{{ $index }}"
-                      formControlName="breed"
-                      [options]="allBreeds"
-                      optionLabel="name"
-                      placeholder="Alle Rassen"
-                      [showClear]="true"
-                      class="w-full"
-                    ></p-select>
-                    <label for="fixed-breed-{{ $index }}"
-                      >Ras (leeg = Alle Rassen)</label
-                    >
-                  </p-floatlabel>
-                </div>
-                <div class="field col-12 md:col-4 px-1">
-                  <p-floatlabel variant="on">
-                    <p-inputNumber
-                      id="fixed-amount-{{ $index }}"
-                      formControlName="amount"
-                      mode="currency"
-                      currency="EUR"
-                    ></p-inputNumber>
-                    <label for="fixed-amount-{{ $index }}">Prijs</label>
-                  </p-floatlabel>
-                </div>
-
-                <div class="field col-12 md:col-2 px-1 flex-shrink-0">
-                  <p-button
-                    icon="pi pi-trash"
-                    styleClass="p-button-danger w-full"
-                    (click)="removeFixedPrice($index)"
-                    type="button"
-                  ></p-button>
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Time-Based Rates Section -->
-        @if (pricingType?.value === "TIME_BASED") {
-          <div class="mt-4" formArrayName="timeRates">
-            <div class="flex justify-content-between align-items-center mb-2">
-              <h4 class="m-0">Tarieven per Ras (€/min)</h4>
-              <p-button
-                icon="pi pi-plus"
-                label="Tarief Toevoegen"
-                (click)="addTimeRate()"
-                type="button"
-              ></p-button>
-            </div>
-            @for (rateGroup of timeRatesArray.controls; track $index) {
-              <div
-                [formGroupName]="$index"
-                class="formgrid grid grid-nogutter border-1 surface-border p-2 border-round mb-2 align-items-end"
-              >
-                <div class="field col-12 md:col-5 px-1">
-                  <p-floatlabel variant="on">
-                    <p-select
-                      id="time-breed-{{ $index }}"
-                      formControlName="breed"
-                      [options]="allBreeds"
-                      optionLabel="name"
-                      placeholder="Basis Tarief"
-                      [showClear]="true"
-                      class="w-full"
-                    ></p-select>
-                    <label for="time-breed-{{ $index }}"
-                      >Ras (leeg = Basis Tarief)</label
-                    >
-                  </p-floatlabel>
-                </div>
-                <div class="field col-12 md:col-4 px-1">
-                  <p-floatlabel variant="on">
-                    <p-inputNumber
-                      id="time-amount-{{ $index }}"
-                      formControlName="amount"
-                      mode="currency"
-                      currency="EUR"
-                    ></p-inputNumber>
-                    <label for="time-amount-{{ $index }}"
-                      >Tarief per minuut</label
-                    >
-                  </p-floatlabel>
-                </div>
-
-                <div class="field col-12 md:col-2 px-1 flex-shrink-0">
-                  <p-button
-                    icon="pi pi-trash"
-                    styleClass="p-button-danger w-full"
-                    (click)="removeTimeRate($index)"
-                    type="button"
-                  ></p-button>
-                </div>
-              </div>
-            }
-          </div>
-        }
+    </ng-template>
+    <form [formGroup]="form" class="p-fluid">
+      <div class="field">
+        <p-floatlabel>
+          <input
+            pInputText
+            id="name"
+            [formControl]="name"
+            class="w-full"
+            autocomplete="off"
+          />
+          <label for="name">Naam</label>
+        </p-floatlabel>
       </div>
+      <div class="field">
+        <p-floatlabel>
+          <textarea
+            pInputTextarea
+            id="description"
+            [formControl]="description"
+            rows="3"
+            class="w-full"
+          ></textarea>
+          <label for="description">Omschrijving</label>
+        </p-floatlabel>
+      </div>
+      <div class="field">
+        <label for="pricingType">Prijsmodel</label>
+        <p-selectButton
+          [options]="pricingTypes"
+          [formControl]="pricingType"
+          optionLabel="label"
+          optionValue="value"
+        ></p-selectButton>
+      </div>
+
+      <!-- Fixed Prices Section -->
+      @if (pricingType?.value === "FIXED") {
+        <div class="mt-4" formArrayName="fixedPrices">
+          <div class="flex justify-content-between align-items-center mb-2">
+            <h4 class="m-0">Vaste Prijzen per Ras</h4>
+            <p-button
+              icon="pi pi-plus"
+              label="Prijs Toevoegen"
+              (click)="addFixedPrice()"
+              type="button"
+            ></p-button>
+          </div>
+          <p-table
+            [value]="fixedPricesArray.controls"
+            styleClass="p-datatable-sm"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Ras (leeg = Alle Rassen)</th>
+                <th>Prijs</th>
+                <th style="width: 5rem"></th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-priceGroup let-i="rowIndex">
+              <tr [formGroupName]="i">
+                <td>
+                  <p-select
+                    formControlName="breed"
+                    [options]="allBreeds"
+                    optionLabel="name"
+                    placeholder="Alle Rassen"
+                    [showClear]="true"
+                    styleClass="w-full"
+                    appendTo="body"
+                  ></p-select>
+                </td>
+                <td>
+                  <p-inputNumber
+                    formControlName="amount"
+                    mode="currency"
+                    currency="EUR"
+                    styleClass="w-full"
+                  ></p-inputNumber>
+                </td>
+                <td>
+                  <p-button
+                    icon="pi pi-trash"
+                    styleClass="p-button-danger"
+                    (click)="removeFixedPrice(i)"
+                    type="button"
+                  ></p-button>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      }
+      @if (pricingType?.value === "TIME_BASED") {
+        <div class="mt-4" formArrayName="timeRates">
+          <div class="flex justify-content-between align-items-center mb-2">
+            <h4 class="m-0">Tarieven per Ras (€/min)</h4>
+            <p-button
+              icon="pi pi-plus"
+              label="Tarief Toevoegen"
+              (click)="addTimeRate()"
+              type="button"
+            ></p-button>
+          </div>
+          <p-table
+            [value]="timeRatesArray.controls"
+            styleClass="p-datatable-sm"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Ras (leeg = Basis Tarief)</th>
+                <th>Tarief per minuut</th>
+                <th style="width: 5rem"></th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-rateGroup let-i="rowIndex">
+              <tr [formGroupName]="i">
+                <td>
+                  <p-select
+                    formControlName="breed"
+                    [options]="allBreeds"
+                    optionLabel="name"
+                    placeholder="Basis Tarief"
+                    [showClear]="true"
+                    styleClass="w-full"
+                    appendTo="body"
+                  ></p-select>
+                </td>
+                <td>
+                  <p-inputNumber
+                    formControlName="amount"
+                    mode="currency"
+                    currency="EUR"
+                    styleClass="w-full"
+                  ></p-inputNumber>
+                </td>
+                <td>
+                  <p-button
+                    icon="pi pi-trash"
+                    styleClass="p-button-danger"
+                    (click)="removeTimeRate(i)"
+                    type="button"
+                  ></p-button>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+      }
     </form>
-    <div class="flex justify-content-end mt-4 gap-2">
-      <p-button
-        label="Annuleren"
-        icon="pi pi-times"
-        styleClass="p-button-text"
-        (click)="cancel()"
-        type="button"
-      ></p-button>
-      <p-button
-        label="Opslaan"
-        icon="pi pi-check"
-        (click)="save()"
-        [disabled]="form.invalid"
-      ></p-button>
-    </div>
-  </div>
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-end gap-2">
+        <p-button
+          label="Annuleren"
+          icon="pi pi-times"
+          styleClass="p-button-text"
+          (click)="cancel()"
+          type="button"
+        ></p-button>
+        <p-button
+          label="Opslaan"
+          icon="pi pi-check"
+          (click)="save()"
+          [disabled]="form.invalid"
+        ></p-button>
+      </div>
+    </ng-template>
+  </p-card>
 </div>
 
 <!-- History Dialog -->

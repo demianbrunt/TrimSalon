@@ -1,0 +1,171 @@
+<div class="p-4">
+  <p-card
+    [ngClass]="{ 'mobile-card': isMobile }"
+    styleClass="mx-auto max-w-3xl"
+  >
+    <ng-template pTemplate="title">
+      <h2 class="m-0 mb-5">
+        {{ isEditMode ? "Afspraak Bewerken" : "Nieuwe Afspraak" }}
+      </h2>
+    </ng-template>
+    <form [formGroup]="form" class="p-fluid">
+      <div class="formgrid grid">
+        <!-- Klant Selectie -->
+        <div class="field col-12 md:col-6">
+          <p-floatlabel>
+            <p-select
+              id="client"
+              [formControl]="client"
+              [options]="clients"
+              optionLabel="name"
+              [filter]="true"
+              filterBy="name"
+              placeholder="Selecteer een klant"
+              [showClear]="true"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <label for="client">Klant *</label>
+          </p-floatlabel>
+        </div>
+
+        <!-- Hond Selectie -->
+        <div class="field col-12 md:col-6">
+          <p-floatlabel>
+            <p-select
+              id="dog"
+              [formControl]="dog"
+              [options]="dogs"
+              optionLabel="name"
+              [filter]="true"
+              filterBy="name"
+              placeholder="Selecteer een hond"
+              [showClear]="true"
+              [disabled]="!client.value"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <label for="dog">Hond *</label>
+          </p-floatlabel>
+          @if (!client.value) {
+            <small class="text-color-secondary"
+              >Selecteer eerst een klant</small
+            >
+          }
+        </div>
+
+        <!-- Pakketten -->
+        <div class="field col-12 md:col-6">
+          <p-floatlabel>
+            <p-multiSelect
+              id="packages"
+              [options]="packages"
+              [formControl]="packagesControl"
+              optionLabel="name"
+              placeholder="Selecteer pakketten"
+              display="chip"
+              [showClear]="true"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <label for="packages">Pakketten</label>
+          </p-floatlabel>
+          <small class="text-color-secondary"
+            >Optioneel - selecteer vooraf gedefinieerde pakketten</small
+          >
+        </div>
+
+        <!-- Extra Werkzaamheden -->
+        <div class="field col-12 md:col-6">
+          <p-floatlabel>
+            <p-multiSelect
+              id="services"
+              [options]="services"
+              [formControl]="servicesControl"
+              optionLabel="name"
+              placeholder="Selecteer extra services"
+              display="chip"
+              [showClear]="true"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <label for="services">Extra Werkzaamheden</label>
+          </p-floatlabel>
+          <small class="text-color-secondary"
+            >Optioneel - voeg extra werkzaamheden toe</small
+          >
+        </div>
+
+        <!-- Tijden -->
+        <div class="field col-12 md:col-6">
+          <p-floatlabel>
+            <p-datepicker
+              id="startTime"
+              formControlName="startTime"
+              [showTime]="true"
+              hourFormat="24"
+              dateFormat="dd-mm-yy"
+              appendTo="body"
+            />
+            <label for="startTime">Starttijd{{ isEditMode ? " *" : "" }}</label>
+          </p-floatlabel>
+          <small class="text-color-secondary">{{
+            isEditMode ? "Verplicht" : "Optioneel - voeg een starttijd toe"
+          }}</small>
+        </div>
+
+        @if (isEditMode) {
+          <div class="field col-12 md:col-6">
+            <p-floatlabel>
+              <p-datepicker
+                id="endTime"
+                formControlName="endTime"
+                [showTime]="true"
+                hourFormat="24"
+                dateFormat="dd-mm-yy"
+                appendTo="body"
+              />
+              <label for="endTime">Eindtijd *</label>
+            </p-floatlabel>
+            <small class="text-color-secondary">Verplicht in edit mode</small>
+          </div>
+        }
+
+        <!-- Notities -->
+        <div class="field col-12">
+          <p-floatlabel>
+            <textarea
+              id="notes"
+              pTextarea
+              formControlName="notes"
+              rows="4"
+              styleClass="w-full"
+            ></textarea>
+            <label for="notes">Notities</label>
+          </p-floatlabel>
+          <small class="text-color-secondary"
+            >Optioneel - voeg extra notities toe over de afspraak</small
+          >
+        </div>
+      </div>
+    </form>
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-end gap-2">
+        <p-button
+          label="Annuleren"
+          icon="pi pi-times"
+          styleClass="p-button-text"
+          (click)="cancel()"
+          type="button"
+        />
+        <p-button
+          label="Opslaan"
+          icon="pi pi-check"
+          (click)="save()"
+          [disabled]="form.invalid"
+          type="button"
+        />
+      </div>
+    </ng-template>
+  </p-card>
+</div>

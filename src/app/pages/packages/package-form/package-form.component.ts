@@ -10,6 +10,7 @@ import {
 } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DatePickerModule } from 'primeng/datepicker';
 import { Dialog, DialogModule } from 'primeng/dialog';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -44,6 +45,7 @@ import { ToastrService } from '../../../core/services/toastr.service';
     DatePickerModule,
     TableModule,
     InputNumberModule,
+    CardModule,
   ],
   templateUrl: './package-form.component.html',
   styleUrls: ['./package-form.component.css'],
@@ -178,9 +180,11 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
   }
 
   override cancel() {
-    return super.cancel().then(() => {
-      this.router.navigate(['/packages']);
-      return true;
+    return super.cancel().then((confirmed) => {
+      if (confirmed) {
+        this.router.navigate(['/packages']);
+      }
+      return confirmed;
     });
   }
 

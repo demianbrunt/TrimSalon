@@ -1,54 +1,54 @@
 <ng-container *ngIf="isMobile; else desktopView">
   <p-dataView
     #dv
-    [value]="packages"
+    [value]="appointments"
     [paginator]="true"
     [rows]="9"
     [sortField]="sortField"
     [sortOrder]="sortOrder"
-    [filterBy]="'name,services.name'"
+    [filterBy]="'client.name, dog.name,service.name'"
   >
     <ng-template #header>
       <app-table-header
-        placeholder="Zoek pakket"
+        placeholder="Zoek afspraak"
         [table]="dv"
-        (addClick)="showPackageForm()"
+        (addClick)="showAppointmentForm()"
       ></app-table-header>
     </ng-template>
     <ng-template #emptymessage></ng-template>
-    <ng-template #list let-packages>
-      @for (pkg of packages; track pkg.id) {
+    <ng-template #list let-appointments: Appointment[]>
+      @for (appointment of appointments; track appointment.id) {
         <div class="col-12 md:col-6 lg:col-4 p-2">
           <div
             class="p-4 border surface-border surface-card border-round h-full flex flex-column"
           >
             <div class="grow">
-              <div class="font-bold text-lg">{{ pkg.name }}</div>
+              <div class="font-bold text-lg">
+                {{ appointment.client.name }} - {{ appointment.dog.name }}
+              </div>
+              <div class="text-secondary">
+                {{ appointment.startTime | date: "fullDate" }}
+              </div>
+              <div class="text-secondary">
+                {{ appointment.startTime | date: "shortTime" }} -
+                {{ appointment.endTime | date: "shortTime" }}
+              </div>
               <div class="mt-2">
-                <p>Bevat de volgende werkzaamheden:</p>
-                @for (service of pkg.services; track service.id) {
-                  <p-tag [value]="service.name" styleClass="mr-2 mb-2"></p-tag>
-                }
+                <p-tag [value]="appointment.service.name"></p-tag>
               </div>
             </div>
             <div class="shrink-0 mt-3">
               <div class="flex justify-content-end gap-2">
                 <p-button
-                  icon="pi pi-history"
-                  styleClass="p-button-text p-button-rounded"
-                  (click)="showPriceHistory(pkg)"
-                  pTooltip="Prijs historie"
-                ></p-button>
-                <p-button
                   icon="pi pi-pencil"
                   styleClass="p-button-text p-button-rounded"
-                  (click)="showPackageForm(pkg)"
+                  (click)="showAppointmentForm(appointment)"
                   pTooltip="Bewerken"
                 ></p-button>
                 <p-button
                   icon="pi pi-trash"
                   styleClass="p-button-text p-button-rounded p-button-danger"
-                  (click)="deletePackage(pkg)"
+                  (click)="deleteAppointment(appointment)"
                   pTooltip="Verwijderen"
                 ></p-button>
               </div>
@@ -56,7 +56,7 @@
           </div>
         </div>
       } @empty {
-        <div class="text-center p-4">Geen pakketten gevonden.</div>
+        <div class="text-center p-4">Geen afspraken gevonden.</div>
       }
     </ng-template>
   </p-dataView>
@@ -67,57 +67,61 @@
     <p-card>
       <p-table
         #dt
-        [value]="packages"
+        [value]="appointments"
         [paginator]="true"
         [rows]="10"
         [sortField]="sortField"
         [sortOrder]="sortOrder"
         [filterDelay]="0"
-        [globalFilterFields]="['name', 'services.name']"
+        [globalFilterFields]="['client.name', 'dog.name', 'service.name']"
         [tableStyle]="{ 'min-width': '75rem' }"
       >
         <ng-template pTemplate="caption">
           <app-table-header
-            placeholder="Zoek pakket"
+            placeholder="Zoek afspraak"
             [table]="dt"
-            (addClick)="showPackageForm()"
+            (addClick)="showAppointmentForm()"
           ></app-table-header>
         </ng-template>
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="name">
-              Naam <p-sortIcon field="name"></p-sortIcon>
+            <th pSortableColumn="client.name">
+              Klant <p-sortIcon field="client.name"></p-sortIcon>
             </th>
-            <th>Werkzaamheden</th>
+            <th pSortableColumn="dog.name">
+              Hond <p-sortIcon field="dog.name"></p-sortIcon>
+            </th>
+            <th pSortableColumn="service.name">
+              Werkzaamheid <p-sortIcon field="service.name"></p-sortIcon>
+            </th>
+            <th pSortableColumn="startTime">
+              Starttijd <p-sortIcon field="startTime"></p-sortIcon>
+            </th>
+            <th pSortableColumn="endTime">
+              Eindtijd <p-sortIcon field="endTime"></p-sortIcon>
+            </th>
             <th style="width: 10rem"></th>
           </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-pkg>
+        <ng-template pTemplate="body" let-appointment>
           <tr>
-            <td>{{ pkg.name }}</td>
-            <td>
-              @for (service of pkg.services; track service.id) {
-                <p-tag [value]="service.name" styleClass="mr-2"></p-tag>
-              }
-            </td>
+            <td>{{ appointment.client.name }}</td>
+            <td>{{ appointment.dog.name }}</td>
+            <td>{{ appointment.service.name }}</td>
+            <td>{{ appointment.startTime | date: "dd-MM-yyyy HH:mm" }}</td>
+            <td>{{ appointment.endTime | date: "dd-MM-yyyy HH:mm" }}</td>
             <td>
               <div class="flex justify-content-end gap-2">
                 <p-button
-                  icon="pi pi-history"
-                  styleClass="p-button-text p-button-rounded"
-                  (click)="showPriceHistory(pkg)"
-                  pTooltip="Prijs historie"
-                ></p-button>
-                <p-button
                   icon="pi pi-pencil"
                   styleClass="p-button-text p-button-rounded"
-                  (click)="showPackageForm(pkg)"
+                  (click)="showAppointmentForm(appointment)"
                   pTooltip="Bewerken"
                 ></p-button>
                 <p-button
                   icon="pi pi-trash"
                   styleClass="p-button-text p-button-rounded p-button-danger"
-                  (click)="deletePackage(pkg)"
+                  (click)="deleteAppointment(appointment)"
                   pTooltip="Verwijderen"
                 ></p-button>
               </div>
@@ -126,7 +130,7 @@
         </ng-template>
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="3" class="text-center">Geen pakketten gevonden.</td>
+            <td colspan="6" class="text-center">Geen afspraken gevonden.</td>
           </tr>
         </ng-template>
       </p-table>

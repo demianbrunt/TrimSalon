@@ -1,0 +1,25 @@
+.table-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.table-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .table-header-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-header-left {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+}

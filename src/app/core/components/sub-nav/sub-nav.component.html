@@ -1,0 +1,16 @@
+<div class="sub-nav-container">
+  @for (item of navItems; track item.link) {
+    <p-button
+      [routerLink]="item.link"
+      pButton
+      [rounded]="true"
+      size="large"
+      routerLinkActive="active-nav-button"
+      [text]="true"
+      [icon]="item.icon"
+      link
+      appLongPress
+      (longPress)="item.longPressAction?.()"
+    ></p-button>
+  }
+</div>

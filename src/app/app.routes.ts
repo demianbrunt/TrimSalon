@@ -1,7 +1,10 @@
 import { Routes } from '@angular/router';
 import { FormMode } from './core/enums/form-mode.enum';
 import { authGuard } from './core/guards/auth.guard';
-import { CalendarComponent } from './pages/calendar/calendar.component';
+
+import { CanDeactivateComponentGuard } from './core/guards/can-deactivate.guard';
+import { AppointmentsComponent } from './pages/appointments/appointments.component';
+import { AppointmentFormComponent } from './pages/appointments/appointment-form/appointment-form.component';
 import { ClientFormComponent } from './pages/clients/client-form/client-form.component';
 import { ClientsComponent } from './pages/clients/clients.component';
 import { ForbiddenComponent } from './pages/forbidden/forbidden.component';
@@ -25,11 +28,26 @@ export const routes: Routes = [
     component: SignInComponent,
   },
   {
-    path: 'calendar',
-    component: CalendarComponent,
+    path: 'appointments',
+    component: AppointmentsComponent,
     canActivate: [authGuard],
-    data: { breadcrumb: 'Kalender' },
+    data: { breadcrumb: 'Afspraken' },
   },
+  {
+    path: 'appointments/new',
+    component: AppointmentFormComponent,
+    canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
+    data: { breadcrumb: 'Nieuwe Afspraak' },
+  },
+  {
+    path: 'appointments/:id',
+    component: AppointmentFormComponent,
+    canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
+    data: { breadcrumb: 'Afspraak Bewerken', formMode: FormMode.Edit },
+  },
+
   {
     path: 'clients',
     component: ClientsComponent,
