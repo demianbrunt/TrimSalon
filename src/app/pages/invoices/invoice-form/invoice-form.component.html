@@ -1,0 +1,201 @@
+<div class="p-4">
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="p-3">
+        <h2 class="text-2xl font-bold">
+          {{ isEditMode ? "Factuur Bewerken" : "Nieuwe Factuur" }}
+        </h2>
+      </div>
+    </ng-template>
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+      <div class="grid">
+        <!-- Invoice Number -->
+        <div class="col-12 md:col-6">
+          <label for="invoiceNumber" class="block mb-2">Factuurnummer *</label>
+          <input
+            pInputText
+            id="invoiceNumber"
+            formControlName="invoiceNumber"
+            class="w-full"
+            placeholder="Bijv. INV-2024-001"
+          />
+          <small
+            class="text-red-500"
+            *ngIf="
+              form.get('invoiceNumber')?.invalid &&
+              form.get('invoiceNumber')?.touched
+            "
+          >
+            Factuurnummer is verplicht
+          </small>
+        </div>
+
+        <!-- Client -->
+        <div class="col-12 md:col-6">
+          <label for="client" class="block mb-2">Klant *</label>
+          <p-select
+            id="client"
+            formControlName="client"
+            [options]="clients"
+            optionLabel="name"
+            placeholder="Selecteer klant"
+            class="w-full"
+          ></p-select>
+          <small
+            class="text-red-500"
+            *ngIf="
+              form.get('client')?.invalid && form.get('client')?.touched
+            "
+          >
+            Klant is verplicht
+          </small>
+        </div>
+
+        <!-- Issue Date -->
+        <div class="col-12 md:col-6">
+          <label for="issueDate" class="block mb-2">Factuurdatum *</label>
+          <p-datepicker
+            id="issueDate"
+            formControlName="issueDate"
+            dateFormat="dd-mm-yy"
+            placeholder="Selecteer datum"
+            [showIcon]="true"
+            class="w-full"
+          ></p-datepicker>
+        </div>
+
+        <!-- Due Date -->
+        <div class="col-12 md:col-6">
+          <label for="dueDate" class="block mb-2">Vervaldatum *</label>
+          <p-datepicker
+            id="dueDate"
+            formControlName="dueDate"
+            dateFormat="dd-mm-yy"
+            placeholder="Selecteer datum"
+            [showIcon]="true"
+            class="w-full"
+          ></p-datepicker>
+        </div>
+
+        <!-- Subtotal -->
+        <div class="col-12 md:col-4">
+          <label for="subtotal" class="block mb-2">Subtotaal (€) *</label>
+          <p-inputNumber
+            id="subtotal"
+            formControlName="subtotal"
+            mode="currency"
+            currency="EUR"
+            locale="nl-NL"
+            class="w-full"
+            [minFractionDigits]="2"
+          ></p-inputNumber>
+        </div>
+
+        <!-- VAT Rate -->
+        <div class="col-12 md:col-4">
+          <label for="vatRate" class="block mb-2">BTW (%) *</label>
+          <p-inputNumber
+            id="vatRate"
+            formControlName="vatRate"
+            [min]="0"
+            [max]="100"
+            suffix="%"
+            class="w-full"
+          ></p-inputNumber>
+        </div>
+
+        <!-- VAT Amount (readonly) -->
+        <div class="col-12 md:col-4">
+          <label for="vatAmount" class="block mb-2">BTW Bedrag (€)</label>
+          <p-inputNumber
+            id="vatAmount"
+            formControlName="vatAmount"
+            mode="currency"
+            currency="EUR"
+            locale="nl-NL"
+            [disabled]="true"
+            class="w-full"
+            [minFractionDigits]="2"
+          ></p-inputNumber>
+        </div>
+
+        <!-- Total Amount (readonly) -->
+        <div class="col-12 md:col-6">
+          <label for="totalAmount" class="block mb-2">Totaal Bedrag (€)</label>
+          <p-inputNumber
+            id="totalAmount"
+            formControlName="totalAmount"
+            mode="currency"
+            currency="EUR"
+            locale="nl-NL"
+            [disabled]="true"
+            class="w-full"
+            [minFractionDigits]="2"
+          ></p-inputNumber>
+        </div>
+
+        <!-- Payment Status -->
+        <div class="col-12 md:col-6">
+          <label for="paymentStatus" class="block mb-2">Status *</label>
+          <p-select
+            id="paymentStatus"
+            formControlName="paymentStatus"
+            [options]="paymentStatuses"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Selecteer status"
+            class="w-full"
+          ></p-select>
+        </div>
+
+        <!-- Paid Date (only show if status is PAID) -->
+        <div
+          class="col-12 md:col-6"
+          *ngIf="form.get('paymentStatus')?.value === 'PAID'"
+        >
+          <label for="paidDate" class="block mb-2">Betaaldatum</label>
+          <p-datepicker
+            id="paidDate"
+            formControlName="paidDate"
+            dateFormat="dd-mm-yy"
+            placeholder="Selecteer datum"
+            [showIcon]="true"
+            class="w-full"
+          ></p-datepicker>
+        </div>
+
+        <!-- Notes -->
+        <div class="col-12">
+          <label for="notes" class="block mb-2">Notities</label>
+          <textarea
+            pTextarea
+            id="notes"
+            formControlName="notes"
+            rows="3"
+            class="w-full"
+            placeholder="Optionele notities"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-content-end gap-2 mt-4">
+        <p-button
+          label="Annuleren"
+          icon="pi pi-times"
+          styleClass="p-button-secondary"
+          (click)="cancel()"
+          type="button"
+        ></p-button>
+        <p-button
+          label="Opslaan"
+          icon="pi pi-check"
+          type="submit"
+          [loading]="isSaving"
+          [disabled]="form.invalid"
+        ></p-button>
+      </div>
+    </form>
+  </p-card>
+</div>

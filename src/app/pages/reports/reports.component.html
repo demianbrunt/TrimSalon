@@ -1,0 +1,277 @@
+<div class="p-4">
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="p-4">
+        <h2 class="text-2xl font-bold mb-3">Rapportages & Analytics</h2>
+        <div
+          class="flex flex-column md:flex-row gap-3 align-items-start md:align-items-center"
+        >
+          <!-- Period Selection -->
+          <div class="flex gap-2 flex-wrap">
+            <p-button
+              label="Week"
+              (onClick)="setQuickPeriod('week')"
+              styleClass="p-button-sm"
+            ></p-button>
+            <p-button
+              label="Maand"
+              (onClick)="setQuickPeriod('month')"
+              styleClass="p-button-sm"
+            ></p-button>
+            <p-button
+              label="Kwartaal"
+              (onClick)="setQuickPeriod('quarter')"
+              styleClass="p-button-sm"
+            ></p-button>
+            <p-button
+              label="Jaar"
+              (onClick)="setQuickPeriod('year')"
+              styleClass="p-button-sm"
+            ></p-button>
+          </div>
+
+          <!-- Custom Date Range -->
+          <div class="flex gap-2 align-items-center">
+            <p-datepicker
+              [(ngModel)]="startDate"
+              (onSelect)="onDateChange()"
+              dateFormat="dd-mm-yy"
+              placeholder="Startdatum"
+              [showIcon]="true"
+            ></p-datepicker>
+            <span>tot</span>
+            <p-datepicker
+              [(ngModel)]="endDate"
+              (onSelect)="onDateChange()"
+              dateFormat="dd-mm-yy"
+              placeholder="Einddatum"
+              [showIcon]="true"
+            ></p-datepicker>
+          </div>
+
+          <!-- Export Buttons -->
+          <div class="flex gap-2 ml-auto">
+            <p-button
+              label="PDF"
+              icon="pi pi-file-pdf"
+              (onClick)="exportToPDF()"
+              styleClass="p-button-sm p-button-outlined"
+            ></p-button>
+            <p-button
+              label="Excel"
+              icon="pi pi-file-excel"
+              (onClick)="exportToExcel()"
+              styleClass="p-button-sm p-button-outlined p-button-success"
+            ></p-button>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+
+    <!-- Dashboard Content -->
+    <div class="grid">
+      <!-- Revenue Summary Cards -->
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Totale Omzet</div>
+            <div class="text-3xl font-bold text-primary">
+              {{ formatCurrency(revenueReport?.totalRevenue || 0) }}
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Aantal Afspraken</div>
+            <div class="text-3xl font-bold text-primary">
+              {{ revenueReport?.appointmentCount || 0 }}
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Gemiddelde Omzet</div>
+            <div class="text-3xl font-bold text-primary">
+              {{
+                formatCurrency(revenueReport?.averageRevenuePerAppointment || 0)
+              }}
+            </div>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Bezettingsgraad</div>
+            <div class="text-3xl font-bold text-primary">
+              {{ formatPercentage(occupancy?.occupancyRate || 0) }}
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+
+    <!-- Charts and Tables Row -->
+    <div class="grid mt-3">
+      <!-- Top Clients -->
+      <div class="col-12 lg:col-6">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="text-xl font-semibold">Top Klanten</h3>
+            </div>
+          </ng-template>
+          <p-table [value]="topClients || []" [rows]="5">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Klant</th>
+                <th>Afspraken</th>
+                <th>Omzet</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-client>
+              <tr>
+                <td>{{ client.clientName }}</td>
+                <td>{{ client.appointmentCount }}</td>
+                <td>{{ formatCurrency(client.totalRevenue) }}</td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="3" class="text-center">
+                  Geen gegevens beschikbaar
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </div>
+
+      <!-- Popular Services -->
+      <div class="col-12 lg:col-6">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="text-xl font-semibold">Populairste Werkzaamheden</h3>
+            </div>
+          </ng-template>
+          <p-table [value]="popularServices || []" [rows]="5">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Werkzaamheid</th>
+                <th>Gebruik</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-service>
+              <tr>
+                <td>{{ service.serviceName }}</td>
+                <td>{{ service.usageCount }}x</td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="2" class="text-center">
+                  Geen gegevens beschikbaar
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </div>
+
+      <!-- Popular Packages -->
+      <div class="col-12 lg:col-6">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="text-xl font-semibold">Populairste Pakketten</h3>
+            </div>
+          </ng-template>
+          <p-table [value]="popularPackages || []" [rows]="5">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Pakket</th>
+                <th>Gebruik</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-package>
+              <tr>
+                <td>{{ package.packageName }}</td>
+                <td>{{ package.usageCount }}x</td>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="2" class="text-center">
+                  Geen gegevens beschikbaar
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </p-card>
+      </div>
+
+      <!-- Occupancy Details -->
+      <div class="col-12 lg:col-6">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="text-xl font-semibold">Bezettingsgraad</h3>
+            </div>
+          </ng-template>
+          <div class="p-3">
+            <div class="flex justify-content-between mb-2">
+              <span>Beschikbare uren:</span>
+              <span class="font-semibold">{{
+                occupancy?.totalAvailableHours?.toFixed(1) || 0
+              }}</span>
+            </div>
+            <div class="flex justify-content-between mb-2">
+              <span>Geboekte uren:</span>
+              <span class="font-semibold">{{
+                occupancy?.totalBookedHours?.toFixed(1) || 0
+              }}</span>
+            </div>
+            <div class="flex justify-content-between mb-2">
+              <span>Bezettingsgraad:</span>
+              <span class="font-semibold text-primary">{{
+                formatPercentage(occupancy?.occupancyRate || 0)
+              }}</span>
+            </div>
+          </div>
+        </p-card>
+      </div>
+    </div>
+
+    <!-- Financial Section -->
+    <div class="grid mt-3">
+      <div class="col-12">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="text-xl font-semibold">Financieel Overzicht</h3>
+            </div>
+          </ng-template>
+          <div class="p-3">
+            <p class="text-500">
+              Facturen en betalingen worden hier weergegeven wanneer deze
+              beschikbaar zijn.
+            </p>
+            <p class="text-500 mt-2">
+              <i class="pi pi-info-circle mr-2"></i>
+              Tip: Koppel afspraken aan facturen om financiële rapportages te
+              genereren.
+            </p>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  </p-card>
+</div>

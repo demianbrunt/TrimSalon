@@ -1,0 +1,47 @@
+export interface ReportPeriod {
+  startDate: Date;
+  endDate: Date;
+}
+
+export interface RevenueReport {
+  period: ReportPeriod;
+  totalRevenue: number;
+  appointmentCount: number;
+  averageRevenuePerAppointment: number;
+}
+
+export interface TopClient {
+  clientId: string;
+  clientName: string;
+  appointmentCount: number;
+  totalRevenue: number;
+}
+
+export interface PopularService {
+  serviceId: string;
+  serviceName: string;
+  usageCount: number;
+  totalRevenue: number;
+}
+
+export interface PopularPackage {
+  packageId: string;
+  packageName: string;
+  usageCount: number;
+  totalRevenue: number;
+}
+
+export interface CalendarOccupancy {
+  period: ReportPeriod;
+  totalAvailableHours: number;
+  totalBookedHours: number;
+  occupancyRate: number; // percentage
+}
+
+export interface DashboardReport {
+  revenueReport: RevenueReport;
+  topClients: TopClient[];
+  popularServices: PopularService[];
+  popularPackages: PopularPackage[];
+  occupancy: CalendarOccupancy;
+}
