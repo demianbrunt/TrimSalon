@@ -122,12 +122,14 @@ export const routes: Routes = [
     path: 'expenses/new',
     component: ExpenseFormComponent,
     canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Nieuwe Uitgave' },
   },
   {
     path: 'expenses/:id',
     component: ExpenseFormComponent,
     canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Uitgave Bewerken', formMode: FormMode.Edit },
   },
   {

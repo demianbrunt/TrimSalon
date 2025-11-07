@@ -79,7 +79,7 @@ export class ExpenseFormComponent extends FormBaseComponent implements OnInit {
   }
 
   override afterValidityEnsured(): Promise<void> {
-    throw new Error('Method not implemented.');
+    return Promise.resolve();
   }
 
   override initForm(): Promise<void> {
