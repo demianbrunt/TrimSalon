@@ -11,7 +11,12 @@ export interface Appointment {
   packages?: Package[];
   startTime?: Date;
   endTime?: Date;
-  actualEndTime?: Date; // Werkelijke eindtijd wanneer afspraak wordt afgerond
   notes?: string;
-  completed?: boolean; // Of de afspraak is afgerond
+  // Estimated values (set when creating appointment)
+  estimatedDuration?: number; // in minutes
+  estimatedPrice?: number;
+  // Actual values (set after appointment completion)
+  actualServices?: Service[]; // Services actually performed
+  actualPackages?: Package[]; // Packages actually performed
+  actualEndTime?: Date; // Actual end time (can differ from estimated endTime)
 }

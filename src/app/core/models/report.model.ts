@@ -10,6 +10,22 @@ export interface RevenueReport {
   averageRevenuePerAppointment: number;
 }
 
+export interface ExpenseReport {
+  period: ReportPeriod;
+  totalExpenses: number;
+  expenseCount: number;
+  averageExpense: number;
+}
+
+export interface ProfitLossReport {
+  period: ReportPeriod;
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  profitMargin: number; // percentage
+  breakEven: boolean;
+}
+
 export interface TopClient {
   clientId: string;
   clientName: string;
@@ -40,6 +56,8 @@ export interface CalendarOccupancy {
 
 export interface DashboardReport {
   revenueReport: RevenueReport;
+  expenseReport: ExpenseReport;
+  profitLossReport: ProfitLossReport;
   topClients: TopClient[];
   popularServices: PopularService[];
   popularPackages: PopularPackage[];

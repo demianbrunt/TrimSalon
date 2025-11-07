@@ -45,6 +45,12 @@ export class AuthenticationService {
 
   isAllowed$ = this.user$.pipe(
     switchMap((user) => {
+      // DEV MODE: Bypass authentication check
+      if (this.config.devMode) {
+        this.startSessionManagement();
+        return of(true);
+      }
+      
       if (!user?.email) {
         this.clearSessionTimers();
         return of(false);
@@ -55,7 +61,13 @@ export class AuthenticationService {
   );
 
   isAllowed = toSignal(this.isAllowed$, { initialValue: undefined });
-  isAuthenticated = computed(() => !!this.user() && this.isAllowed() === true);
+  isAuthenticated = computed(() => {
+    // DEV MODE: Always return true if in dev mode
+    if (this.config.devMode) {
+      return true;
+    }
+    return !!this.user() && this.isAllowed() === true;
+  });
 
   constructor() {
     // Set persistence to LOCAL for better auth state management

@@ -273,6 +273,10 @@ export class ServiceFormComponent
       return;
     }
 
+    // Mark form as pristine to prevent CanDeactivate warning
+    this.form.markAsPristine();
+    console.log('[AppointmentForm] ✨ Form marked as pristine');
+
     const serviceData: Service = this.form.value as Service;
 
     const operation = this.isEditMode

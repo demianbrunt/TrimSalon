@@ -1,0 +1,101 @@
+<div class="p-4">
+  <p-card
+    [ngClass]="{ 'mobile-card': isMobile }"
+    styleClass="mx-auto max-w-3xl"
+  >
+    <ng-template pTemplate="title">
+      <h2 class="m-0 mb-5">
+        {{ isEditMode ? "Uitgave Bewerken" : "Nieuwe Uitgave" }}
+      </h2>
+    </ng-template>
+    
+    <form [formGroup]="form" class="p-fluid">
+      <div class="field">
+        <p-floatlabel>
+          <input
+            pInputText
+            id="description"
+            formControlName="description"
+            class="w-full"
+            autocomplete="off"
+          />
+          <label for="description">Omschrijving *</label>
+        </p-floatlabel>
+      </div>
+
+      <div class="formgrid grid">
+        <div class="field col-12 md:col-6">
+          <p-floatlabel>
+            <p-inputNumber
+              id="amount"
+              formControlName="amount"
+              mode="currency"
+              currency="EUR"
+              styleClass="w-full"
+            ></p-inputNumber>
+            <label for="amount">Bedrag *</label>
+          </p-floatlabel>
+        </div>
+
+        <div class="field col-12 md:col-6">
+          <p-floatlabel>
+            <p-datepicker
+              id="date"
+              formControlName="date"
+              dateFormat="dd-mm-yy"
+              [showIcon]="true"
+              styleClass="w-full"
+            ></p-datepicker>
+            <label for="date">Datum *</label>
+          </p-floatlabel>
+        </div>
+      </div>
+
+      <div class="field">
+        <p-floatlabel>
+          <p-select
+            id="type"
+            formControlName="type"
+            [options]="expenseTypes"
+            optionLabel="label"
+            optionValue="value"
+            styleClass="w-full"
+          ></p-select>
+          <label for="type">Type *</label>
+        </p-floatlabel>
+      </div>
+
+      <div class="field">
+        <p-floatlabel>
+          <textarea
+            pInputTextarea
+            id="notes"
+            formControlName="notes"
+            rows="3"
+            class="w-full"
+          ></textarea>
+          <label for="notes">Notities (optioneel)</label>
+        </p-floatlabel>
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-end gap-2">
+        <p-button
+          label="Annuleren"
+          icon="pi pi-times"
+          styleClass="p-button-text"
+          (click)="cancel()"
+          type="button"
+        ></p-button>
+        <p-button
+          label="Opslaan"
+          icon="pi pi-check"
+          (click)="save()"
+          [disabled]="form.invalid"
+          type="button"
+        ></p-button>
+      </div>
+    </ng-template>
+  </p-card>
+</div>

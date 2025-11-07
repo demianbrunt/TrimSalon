@@ -7,6 +7,8 @@ import { AppointmentsComponent } from './pages/appointments/appointments.compone
 import { AppointmentFormComponent } from './pages/appointments/appointment-form/appointment-form.component';
 import { ClientFormComponent } from './pages/clients/client-form/client-form.component';
 import { ClientsComponent } from './pages/clients/clients.component';
+import { ExpenseFormComponent } from './pages/expenses/expense-form/expense-form.component';
+import { ExpensesComponent } from './pages/expenses/expenses.component';
 import { ForbiddenComponent } from './pages/forbidden/forbidden.component';
 import { InvoiceFormComponent } from './pages/invoices/invoice-form/invoice-form.component';
 import { InvoicesComponent } from './pages/invoices/invoices.component';
@@ -109,6 +111,26 @@ export const routes: Routes = [
     component: ReportsComponent,
     canActivate: [authGuard],
     data: { breadcrumb: 'Rapportages' },
+  },
+  {
+    path: 'expenses',
+    component: ExpensesComponent,
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Uitgaven' },
+  },
+  {
+    path: 'expenses/new',
+    component: ExpenseFormComponent,
+    canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
+    data: { breadcrumb: 'Nieuwe Uitgave' },
+  },
+  {
+    path: 'expenses/:id',
+    component: ExpenseFormComponent,
+    canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
+    data: { breadcrumb: 'Uitgave Bewerken', formMode: FormMode.Edit },
   },
   {
     path: 'invoices',
