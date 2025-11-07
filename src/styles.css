@@ -1,33 +1,6 @@
 /* You can add global styles to this file, and also import other style files */
 @import "primeicons/primeicons.css";
 
-/* Cactus Green Branding Theme */
-:root {
-  /* Primary cactus green colors */
-  --cactus-green-50: #f0f7f4;
-  --cactus-green-100: #dceee5;
-  --cactus-green-200: #b9ddcb;
-  --cactus-green-300: #8bc7ad;
-  --cactus-green-400: #5caa88;
-  --cactus-green-500: #4a9070;
-  --cactus-green-600: #3d7359;
-  --cactus-green-700: #335d49;
-  --cactus-green-800: #2c4a3c;
-  --cactus-green-900: #263d32;
-
-  /* Override PrimeNG primary color with cactus green */
-  --p-primary-50: var(--cactus-green-50);
-  --p-primary-100: var(--cactus-green-100);
-  --p-primary-200: var(--cactus-green-200);
-  --p-primary-300: var(--cactus-green-300);
-  --p-primary-400: var(--cactus-green-400);
-  --p-primary-500: var(--cactus-green-500);
-  --p-primary-600: var(--cactus-green-600);
-  --p-primary-700: var(--cactus-green-700);
-  --p-primary-800: var(--cactus-green-800);
-  --p-primary-900: var(--cactus-green-900);
-}
-
 body {
   margin: 0;
 }
@@ -123,74 +96,43 @@ body {
   }
 }
 
-/* Enhance branding colors */
-.text-primary {
-  color: var(--cactus-green-600) !important;
-}
-
-.bg-primary {
-  background-color: var(--cactus-green-500) !important;
-}
-
-.border-primary {
-  border-color: var(--cactus-green-500) !important;
-}
-
-/* Enhanced PrimeNG table styling with cactus green */
+/* Enhanced PrimeNG table styling */
 ::ng-deep .p-datatable .p-datatable-tbody > tr:hover {
-  background: var(--cactus-green-50) !important;
+  background: var(--p-highlight-bg) !important;
 }
 
 ::ng-deep .p-datatable .p-sortable-column:hover {
-  background: var(--cactus-green-50) !important;
+  background: var(--p-surface-100) !important;
 }
 
 ::ng-deep .p-datatable .p-sortable-column.p-highlight {
-  background: var(--cactus-green-100) !important;
-  color: var(--cactus-green-900) !important;
+  background: var(--p-highlight-bg) !important;
+  color: var(--p-highlight-text-color) !important;
 }
 
 /* Enhanced button styling */
 ::ng-deep .p-button:focus {
-  box-shadow: 0 0 0 0.2rem rgba(74, 144, 112, 0.25) !important;
-}
-
-::ng-deep .p-button.p-button-success {
-  background: var(--cactus-green-600) !important;
-  border-color: var(--cactus-green-600) !important;
-}
-
-::ng-deep .p-button.p-button-success:hover {
-  background: var(--cactus-green-700) !important;
-  border-color: var(--cactus-green-700) !important;
-}
-
-/* Enhanced tag styling with cactus green for success tags */
-::ng-deep .p-tag.p-tag-success {
-  background: var(--cactus-green-500) !important;
-  color: white !important;
+  box-shadow: 0 0 0 0.2rem var(--p-focus-ring) !important;
 }
 
 /* Enhanced paginator styling */
 ::ng-deep .p-paginator .p-paginator-page.p-highlight {
-  background: var(--cactus-green-500) !important;
-  border-color: var(--cactus-green-500) !important;
-  color: white !important;
+  background: var(--p-primary-color) !important;
+  border-color: var(--p-primary-color) !important;
+  color: var(--p-primary-contrast-color) !important;
 }
 
 ::ng-deep .p-paginator .p-paginator-page:hover {
-  background: var(--cactus-green-100) !important;
-  border-color: var(--cactus-green-300) !important;
-  color: var(--cactus-green-900) !important;
+  background: var(--p-surface-100) !important;
+  border-color: var(--p-surface-300) !important;
 }
 
 /* Enhanced card styling for data views */
 ::ng-deep .p-dataview .p-dataview-content .border.surface-border {
-  border-color: var(--cactus-green-100) !important;
   transition: all 0.3s ease;
 }
 
 ::ng-deep .p-dataview .p-dataview-content .border.surface-border:hover {
-  border-color: var(--cactus-green-300) !important;
-  box-shadow: 0 4px 12px rgba(74, 144, 112, 0.15) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-2px);
 }

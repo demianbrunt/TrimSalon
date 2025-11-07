@@ -10,10 +10,9 @@ import { AuthenticationService } from './../../core/services/authentication.serv
   template: `
     <div
       class="flex flex-column align-items-center justify-content-center p-4 h-full text-center"
-      style="background: linear-gradient(135deg, var(--cactus-green-50) 0%, var(--p-surface-0) 100%);"
     >
       <span class="text-8xl mb-4 dog-animation">🐶</span>
-      <h1 class="text-5xl font-bold mb-3 text-primary">Toegang geweigerd</h1>
+      <h1 class="text-5xl font-bold mb-3">Toegang geweigerd</h1>
       <p class="text-xl mb-5 text-600">
         Oeps! Het lijkt erop dat je geen toegang hebt tot dit hondenmandje.
       </p>

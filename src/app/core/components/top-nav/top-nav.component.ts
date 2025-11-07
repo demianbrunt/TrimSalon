@@ -22,7 +22,6 @@ import { AuthenticationService } from '../../services/authentication.service';
           <p-button
             (click)="signOut()"
             icon="pi pi-sign-out"
-            [rounded]="true"
             [text]="true"
             severity="secondary"
             pTooltip="Uitloggen"

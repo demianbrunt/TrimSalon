@@ -11,16 +11,15 @@ import { AuthenticationService } from '../../core/services/authentication.servic
   template: `
     <div
       class="flex flex-column align-items-center justify-content-center p-4 h-full text-center"
-      style="background: linear-gradient(135deg, var(--cactus-green-50) 0%, var(--p-surface-0) 100%);"
     >
       <div class="max-w-30rem w-full">
         <span class="text-8xl mb-4" [class.pi-spin]="authService.isSigningIn()"
           >🐶</span
         >
-        <h1 class="text-5xl font-bold mb-3 text-primary">Inloggen</h1>
+        <h1 class="text-5xl font-bold mb-3">Inloggen</h1>
         <p class="text-xl mb-5 text-600">
           @if (authService.isSigningIn()) {
-            <span class="text-primary">Je wordt doorgestuurd naar Google...</span>
+            <span>Je wordt doorgestuurd naar Google...</span>
           } @else {
             Klik hieronder om in te loggen met je Google account
           }

@@ -19,15 +19,6 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
       ::ng-deep .breadcrumb-custom {
         padding: 0.75rem 1rem !important;
         background: var(--p-surface-0) !important;
-        border-bottom: 1px solid var(--cactus-green-100) !important;
-      }
-      
-      ::ng-deep .breadcrumb-custom .p-menuitem-link {
-        color: var(--cactus-green-700) !important;
-      }
-      
-      ::ng-deep .breadcrumb-custom .p-menuitem-link:hover {
-        color: var(--cactus-green-900) !important;
       }
       
       @media (max-width: 768px) {
