@@ -185,7 +185,7 @@ describe('PricingService', () => {
         timeRates: [
           {
             breed: null,
-            rates: [{ amount: 1, validFrom: new Date() }],
+            rates: [{ amount: 1, fromDate: new Date() }],
           },
         ],
       };

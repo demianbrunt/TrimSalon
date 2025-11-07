@@ -31,8 +31,12 @@ export class MockDialogService {
  * Mock Router for testing
  */
 export class MockRouter {
-  navigate = jasmine.createSpy('navigate').and.returnValue(Promise.resolve(true));
-  navigateByUrl = jasmine.createSpy('navigateByUrl').and.returnValue(Promise.resolve(true));
+  navigate = jasmine
+    .createSpy('navigate')
+    .and.returnValue(Promise.resolve(true));
+  navigateByUrl = jasmine
+    .createSpy('navigateByUrl')
+    .and.returnValue(Promise.resolve(true));
   createUrlTree = jasmine.createSpy('createUrlTree').and.returnValue({});
   url = '/';
 }
@@ -46,6 +50,12 @@ export class MockActivatedRoute {
     queryParams: {},
     data: {},
     url: [],
+    paramMap: {
+      get: (key: string) => null as any,
+    },
+    queryParamMap: {
+      get: (key: string) => null as any,
+    },
   };
   params = of({});
   queryParams = of({});

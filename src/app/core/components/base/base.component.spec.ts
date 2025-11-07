@@ -33,7 +33,7 @@ describe('BaseComponent', () => {
   it('should get value from route params', () => {
     mockActivatedRoute.snapshot.params = { id: '123' };
     mockActivatedRoute.snapshot.paramMap.get = (key: string) =>
-      mockActivatedRoute.snapshot.params[key];
+      mockActivatedRoute.snapshot.params[key] || null;
 
     const id = component['getFromRoute']('id');
     expect(id).toBe('123');
@@ -42,7 +42,7 @@ describe('BaseComponent', () => {
   it('should get value from query params', () => {
     mockActivatedRoute.snapshot.queryParams = { filter: 'active' };
     mockActivatedRoute.snapshot.queryParamMap.get = (key: string) =>
-      mockActivatedRoute.snapshot.queryParams[key];
+      mockActivatedRoute.snapshot.queryParams[key] || null;
 
     const filter = component['getFromQueryString']('filter');
     expect(filter).toBe('active');

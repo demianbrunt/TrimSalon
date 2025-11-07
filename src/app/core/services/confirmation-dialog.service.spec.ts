@@ -18,7 +18,9 @@ describe('ConfirmationDialogService', () => {
     });
 
     service = TestBed.inject(ConfirmationDialogService);
-    confirmationService = TestBed.inject(ConfirmationService) as jasmine.SpyObj<ConfirmationService>;
+    confirmationService = TestBed.inject(
+      ConfirmationService,
+    ) as jasmine.SpyObj<ConfirmationService>;
   });
 
   it('should be created', () => {
@@ -28,7 +30,7 @@ describe('ConfirmationDialogService', () => {
   it('should open confirmation dialog with default labels', async () => {
     confirmationService.confirm.and.callFake((config: any) => {
       config.accept();
-      return;
+      return confirmationService;
     });
 
     const result = await service.open('Test Title', 'Test Message');
@@ -42,7 +44,7 @@ describe('ConfirmationDialogService', () => {
         acceptButtonStyleClass: 'p-button-danger',
         rejectButtonStyleClass: 'p-button-outlined p-button-secondary',
         icon: 'pi pi-exclamation-triangle',
-      })
+      }),
     );
     expect(result).toBe(true);
   });
@@ -50,7 +52,7 @@ describe('ConfirmationDialogService', () => {
   it('should resolve true when user accepts', async () => {
     confirmationService.confirm.and.callFake((config: any) => {
       config.accept();
-      return;
+      return confirmationService;
     });
 
     const result = await service.open('Delete', 'Are you sure?');
@@ -60,7 +62,7 @@ describe('ConfirmationDialogService', () => {
   it('should resolve false when user rejects', async () => {
     confirmationService.confirm.and.callFake((config: any) => {
       config.reject();
-      return;
+      return confirmationService;
     });
 
     const result = await service.open('Delete', 'Are you sure?');
@@ -70,7 +72,7 @@ describe('ConfirmationDialogService', () => {
   it('should use custom labels when provided', async () => {
     confirmationService.confirm.and.callFake((config: any) => {
       config.accept();
-      return;
+      return confirmationService;
     });
 
     await service.open(
@@ -79,7 +81,7 @@ describe('ConfirmationDialogService', () => {
       'Yes',
       'No',
       'p-button-success',
-      'p-button-text'
+      'p-button-text',
     );
 
     expect(confirmationService.confirm).toHaveBeenCalledWith(
@@ -88,7 +90,7 @@ describe('ConfirmationDialogService', () => {
         rejectLabel: 'No',
         acceptButtonStyleClass: 'p-button-success',
         rejectButtonStyleClass: 'p-button-text',
-      })
+      }),
     );
   });
 });

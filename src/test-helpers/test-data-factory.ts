@@ -30,12 +30,12 @@ export const TestDataFactory = {
   createAppointment(overrides?: Partial<any>) {
     return {
       id: 'appointment-1',
-      clientId: 'client-1',
-      date: new Date(),
-      startTime: '10:00',
-      endTime: '11:00',
-      status: 'scheduled',
+      client: this.createClient(),
+      dog: this.createDog(),
+      startTime: new Date(),
+      endTime: new Date(),
       services: [],
+      packages: [],
       notes: '',
       ...overrides,
     };
@@ -57,10 +57,7 @@ export const TestDataFactory = {
     return {
       id: 'package-1',
       name: 'Basic Package',
-      description: 'Basic grooming package',
-      services: ['service-1'],
-      price: 50,
-      active: true,
+      services: [],
       ...overrides,
     };
   },
@@ -79,11 +76,16 @@ export const TestDataFactory = {
   createInvoice(overrides?: Partial<any>) {
     return {
       id: 'invoice-1',
-      clientId: 'client-1',
-      date: new Date(),
+      invoiceNumber: 'INV-001',
+      client: this.createClient(),
       items: [],
-      total: 0,
-      status: 'draft',
+      subtotal: 0,
+      vatRate: 0,
+      vatAmount: 0,
+      totalAmount: 0,
+      paymentStatus: 'PENDING',
+      issueDate: new Date(),
+      dueDate: new Date(),
       ...overrides,
     };
   },
