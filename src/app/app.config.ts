@@ -63,9 +63,6 @@ export const commonProviders = [
         },
       },
     },
-    csp: {
-      nonce: undefined,
-    },
   }),
   provideFirebaseApp(() => initializeApp(firebaseConfig)),
   provideAuth(() => getAuth()),
