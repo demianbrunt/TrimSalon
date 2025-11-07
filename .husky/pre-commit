@@ -1,6 +1,11 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Pre-commit hook disabled - linting is optional
-# npx pretty-quick --staged
-# npm run lint
+# Run prettier on staged files
+npx pretty-quick --staged
+
+# Run linter (without --fix to prevent auto-changes during commit)
+npm run lint:check
+
+# Optional: Run quick tests on changed files (commented out for performance)
+# npm run test -- --include='**/*.spec.ts' --watch=false

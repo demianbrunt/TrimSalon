@@ -7,7 +7,7 @@ import {
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { ConfirmationDialogService } from './core/services/confirmation-dialog.service';
 
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';

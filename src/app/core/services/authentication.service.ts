@@ -20,6 +20,36 @@ import { APP_CONFIG, AppConfig } from '../../app.config.model';
 import { GoogleAuthService } from './google-auth.service';
 import { ToastrService } from './toastr.service';
 
+/**
+ * AuthenticationService
+ *
+ * Beheert volledige authenticatie flow voor de applicatie:
+ * - Google Sign-In (popup voor localhost, redirect voor productie)
+ * - Autorisatie check via Firestore 'allowed-users' collection
+ * - Session management (24u inactivity timeout)
+ * - Token refresh (elke 50 minuten)
+ * - Activity tracking (mouse, keyboard, scroll events)
+ *
+ * BELANGRIJK:
+ * - Gebruik `isAuthenticated` signal voor UI auth checks
+ * - Gebruik `isAllowed$` observable voor route guards
+ * - Dev mode (devMode: true) ALLEEN voor development!
+ *
+ * @example
+ * // In component
+ * constructor(private auth: AuthenticationService) {}
+ *
+ * // Check auth status
+ * if (this.auth.isAuthenticated()) {
+ *   // User is logged in and allowed
+ * }
+ *
+ * // Login
+ * await this.auth.signIn();
+ *
+ * // Logout
+ * await this.auth.signOut();
+ */
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
   private readonly auth: Auth = inject(Auth);

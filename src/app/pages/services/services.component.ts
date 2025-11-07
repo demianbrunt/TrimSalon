@@ -14,7 +14,7 @@ import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
-import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Service } from '../../core/models/service.model';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
