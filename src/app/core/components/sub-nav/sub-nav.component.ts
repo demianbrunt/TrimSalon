@@ -19,6 +19,7 @@ export class SubNavComponent {
     { icon: 'pi pi-address-book', link: '/clients' },
     { icon: 'pi pi-box', link: '/packages' },
     { icon: 'pi pi-wrench', link: '/services' },
+    { icon: 'pi pi-file-edit', link: '/invoices' },
     { icon: 'pi pi-chart-bar', link: '/reports' },
   ];
 
