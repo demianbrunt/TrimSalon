@@ -8,6 +8,11 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
+.completed-appointment {
+  background: var(--p-green-50) !important;
+  border-color: var(--p-green-200) !important;
+}
+
 @media (max-width: 768px) {
   ::ng-deep .p-dataview .p-dataview-content {
     padding: 0.5rem !important;

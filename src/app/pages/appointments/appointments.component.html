@@ -21,10 +21,16 @@
         <div class="col-12 md:col-6 lg:col-4 p-2">
           <div
             class="p-4 border surface-border surface-card border-round h-full flex flex-column"
+            [class.completed-appointment]="appointment.completed"
           >
             <div class="grow">
-              <div class="font-bold text-lg">
-                {{ appointment.client.name }} - {{ appointment.dog.name }}
+              <div class="flex justify-content-between align-items-start mb-2">
+                <div class="font-bold text-lg">
+                  {{ appointment.client.name }} - {{ appointment.dog.name }}
+                </div>
+                @if (appointment.completed) {
+                  <p-tag value="Afgerond" severity="success" [rounded]="true"></p-tag>
+                }
               </div>
               <div class="text-secondary">
                 {{ appointment.startTime | date: "fullDate" }}
@@ -33,17 +39,31 @@
                 {{ appointment.startTime | date: "shortTime" }} -
                 {{ appointment.endTime | date: "shortTime" }}
               </div>
+              @if (appointment.completed && appointment.actualEndTime) {
+                <div class="text-sm text-primary mt-1">
+                  Afgerond om {{ appointment.actualEndTime | date: "shortTime" }}
+                </div>
+              }
               <div class="mt-2">
                 @for (service of appointment.services; track service.id) {
-                  <p-tag [value]="service.name" class="mr-1"></p-tag>
+                  <p-tag [value]="service.name" class="mr-1 mb-1"></p-tag>
                 }
                 @for (pkg of appointment.packages; track pkg.id) {
-                  <p-tag [value]="pkg.name" severity="success" class="mr-1"></p-tag>
+                  <p-tag [value]="pkg.name" severity="success" class="mr-1 mb-1"></p-tag>
                 }
               </div>
             </div>
             <div class="shrink-0 mt-3">
               <div class="flex justify-content-end gap-2">
+                @if (!appointment.completed) {
+                  <p-button
+                    icon="pi pi-check"
+                    severity="success"
+                    styleClass="p-button-text p-button-rounded"
+                    (click)="completeAppointment(appointment)"
+                    pTooltip="Afronden"
+                  ></p-button>
+                }
                 <p-button
                   icon="pi pi-pencil"
                   styleClass="p-button-text p-button-rounded"
@@ -124,6 +144,15 @@
             <td>{{ appointment.endTime | date: "dd-MM-yyyy HH:mm" }}</td>
             <td>
               <div class="flex justify-content-end gap-2">
+                @if (!appointment.completed) {
+                  <p-button
+                    icon="pi pi-check"
+                    severity="success"
+                    styleClass="p-button-text p-button-rounded"
+                    (click)="completeAppointment(appointment)"
+                    pTooltip="Afronden"
+                  ></p-button>
+                }
                 <p-button
                   icon="pi pi-pencil"
                   styleClass="p-button-text p-button-rounded"

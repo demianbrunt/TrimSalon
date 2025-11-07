@@ -11,5 +11,7 @@ export interface Appointment {
   packages?: Package[];
   startTime?: Date;
   endTime?: Date;
+  actualEndTime?: Date; // Werkelijke eindtijd wanneer afspraak wordt afgerond
   notes?: string;
+  completed?: boolean; // Of de afspraak is afgerond
 }
