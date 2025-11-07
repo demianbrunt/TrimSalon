@@ -212,9 +212,7 @@ export class AuthenticationService {
   }
 
   // Shared logic for handling auth result (used by both popup and redirect)
-  private async handleAuthResult(
-    result: UserCredential,
-  ): Promise<boolean> {
+  private async handleAuthResult(result: UserCredential): Promise<boolean> {
     const email = result.user?.email;
     if (!email) {
       this.toastr.error('Geen e-mailadres gevonden', 'Inloggen mislukt');
