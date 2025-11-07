@@ -12,24 +12,28 @@ import { AuthenticationService } from '../../core/services/authentication.servic
     <div
       class="flex flex-column align-items-center justify-content-center p-4 h-full text-center"
     >
-      <span class="text-8xl mb-4" [class.pi-spin]="authService.isSigningIn()"
-        >🐶</span
-      >
-      <h1 class="text-4xl font-bold mb-2">Inloggen</h1>
-      <p class="text-lg mb-4">
-        @if (authService.isSigningIn()) {
-          Je wordt doorgestuurd naar Google...
-        } @else {
-          Klik hieronder om in te loggen met je Google account
-        }
-      </p>
-      <p-button
-        label="Inloggen met Google"
-        icon="pi pi-google"
-        (onClick)="signIn()"
-        [disabled]="authService.isSigningIn()"
-      >
-      </p-button>
+      <div class="max-w-30rem w-full">
+        <span class="text-8xl mb-4" [class.pi-spin]="authService.isSigningIn()"
+          >🐶</span
+        >
+        <h1 class="text-5xl font-bold mb-3">Inloggen</h1>
+        <p class="text-xl mb-5 text-600">
+          @if (authService.isSigningIn()) {
+            <span>Je wordt doorgestuurd naar Google...</span>
+          } @else {
+            Klik hieronder om in te loggen met je Google account
+          }
+        </p>
+        <p-button
+          label="Inloggen met Google"
+          icon="pi pi-google"
+          (onClick)="signIn()"
+          [disabled]="authService.isSigningIn()"
+          size="large"
+          styleClass="w-full md:w-auto"
+        >
+        </p-button>
+      </div>
     </div>
   `,
 })

@@ -1,17 +1,49 @@
-.field {
-  margin-bottom: 1.5rem;
+/* Better mobile styling for client forms */
+@media (max-width: 768px) {
+  ::ng-deep .mobile-card {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  ::ng-deep .p-card-body {
+    padding: 1rem !important;
+  }
+  
+  /* Better spacing for dog sections on mobile */
+  .dog-section {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid var(--cactus-green-200);
+    border-radius: 0.5rem;
+    background: var(--cactus-green-50);
+  }
 }
 
-:host ::ng-deep .mobile-card {
-  box-shadow: none;
-  border-radius: 0;
-  background: transparent;
+/* Desktop styling */
+@media (min-width: 769px) {
+  ::ng-deep .p-card {
+    box-shadow: 0 2px 8px rgba(74, 144, 112, 0.08);
+  }
+  
+  .dog-section {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--cactus-green-200);
+    border-radius: 0.5rem;
+    background: var(--cactus-green-50);
+  }
 }
 
-:host ::ng-deep .mobile-card .p-card-body {
-  padding: 0;
+/* Enhanced autocomplete styling with cactus green */
+::ng-deep .p-autocomplete:focus,
+::ng-deep .p-autocomplete-input:focus {
+  border-color: var(--cactus-green-500);
+  box-shadow: 0 0 0 0.2rem rgba(74, 144, 112, 0.25);
 }
 
-:host ::ng-deep .mobile-card .p-card-content {
-  padding: 0;
+/* Dog section headers */
+.dog-section h4 {
+  color: var(--cactus-green-700);
+  margin-top: 0;
+  margin-bottom: 0.75rem;
 }

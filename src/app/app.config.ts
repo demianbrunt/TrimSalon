@@ -62,6 +62,10 @@ export const commonProviders = [
       preset: Aura,
       options: {
         darkModeSelector: false,
+        cssLayer: {
+          name: 'primeng',
+          order: 'tailwind-base, primeng, tailwind-utilities',
+        },
       },
     },
   }),

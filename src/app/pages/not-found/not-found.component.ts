@@ -10,14 +10,15 @@ import { ButtonModule } from 'primeng/button';
       class="flex flex-column align-items-center justify-content-center p-4 h-full text-center"
     >
       <span class="text-8xl mb-4 dog-animation">🐶</span>
-      <h1 class="text-4xl font-bold mb-2">Pagina niet gevonden</h1>
-      <p class="text-lg mb-4">
+      <h1 class="text-5xl font-bold mb-3">Pagina niet gevonden</h1>
+      <p class="text-xl mb-5 text-600">
         Woef! We hebben overal gesnuffeld, maar konden de pagina niet vinden.
       </p>
       <p-button
         label="Terug naar de startpagina"
         icon="pi pi-home"
         routerLink="/calendar"
+        size="large"
       ></p-button>
     </div>
   `,

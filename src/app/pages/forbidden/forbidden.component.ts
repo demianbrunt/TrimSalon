@@ -12,14 +12,15 @@ import { AuthenticationService } from './../../core/services/authentication.serv
       class="flex flex-column align-items-center justify-content-center p-4 h-full text-center"
     >
       <span class="text-8xl mb-4 dog-animation">🐶</span>
-      <h1 class="text-4xl font-bold mb-2">Toegang geweigerd</h1>
-      <p class="text-lg mb-4">
+      <h1 class="text-5xl font-bold mb-3">Toegang geweigerd</h1>
+      <p class="text-xl mb-5 text-600">
         Oeps! Het lijkt erop dat je geen toegang hebt tot dit hondenmandje.
       </p>
       <p-button
         label="Terug naar de startpagina"
         icon="pi pi-home"
         routerLink="/signin"
+        size="large"
       ></p-button>
     </div>
   `,

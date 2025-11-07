@@ -1,0 +1,39 @@
+.mobile-card {
+  border-radius: 0.5rem !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  transition: box-shadow 0.3s ease;
+}
+
+.mobile-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.completed-appointment {
+  background: var(--p-green-50) !important;
+  border-color: var(--p-green-200) !important;
+}
+
+@media (max-width: 768px) {
+  ::ng-deep .p-dataview .p-dataview-content {
+    padding: 0.5rem !important;
+  }
+  
+  .col-12.p-2 {
+    padding: 0.5rem !important;
+  }
+  
+  ::ng-deep .p-tag {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+@media (min-width: 769px) {
+  ::ng-deep .p-card {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+  
+  ::ng-deep .p-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+}

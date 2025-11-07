@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
+import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -13,6 +14,7 @@ import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Appointment } from '../../core/models/appointment.model';
 import { AppointmentService } from '../../core/services/appointment.service';
@@ -20,6 +22,7 @@ import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
+import { CompleteAppointmentDialogComponent } from './complete-appointment-dialog/complete-appointment-dialog.component';
 
 @Component({
   standalone: true,
@@ -37,8 +40,9 @@ import { ToastrService } from '../../core/services/toastr.service';
     DataViewModule,
     ConfirmDialogModule,
     CardModule,
+    TooltipModule,
   ],
-  providers: [ConfirmationService],
+  providers: [ConfirmationService, DialogService],
   templateUrl: './appointments.component.html',
   styleUrls: ['./appointments.component.css'],
 })
@@ -54,6 +58,7 @@ export class AppointmentsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
+  private readonly dialogService = inject(DialogService);
 
   get isMobile() {
     return this.mobileService.isMobile;
@@ -86,6 +91,37 @@ export class AppointmentsComponent implements OnInit {
     } else {
       this.router.navigate(['/appointments/new']);
     }
+  }
+
+  completeAppointment(appointment: Appointment): void {
+    const ref = this.dialogService.open(CompleteAppointmentDialogComponent, {
+      header: 'Afspraak Afronden',
+      width: this.isMobile ? '95vw' : '600px',
+      data: {
+        appointment: appointment,
+      },
+    });
+
+    ref.onClose.subscribe((result) => {
+      if (result) {
+        const updatedAppointment: Appointment = {
+          ...appointment,
+          actualEndTime: result.actualEndTime,
+          notes: result.notes,
+          completed: result.completed,
+        };
+
+        this.appointmentService.update(updatedAppointment).subscribe({
+          next: () => {
+            this.toastrService.success('Succes', 'Afspraak afgerond');
+            this.loadAppointments();
+          },
+          error: (err) => {
+            this.toastrService.error('Fout', err.message);
+          },
+        });
+      }
+    });
   }
 
   deleteAppointment(appointment: Appointment): void {

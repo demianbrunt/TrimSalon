@@ -44,6 +44,7 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--p-surface-50);
 }
 .content-outlet {
   flex-grow: 1;
@@ -65,4 +66,73 @@ body {
   .main-container {
     padding-bottom: 70px;
   }
+}
+
+/* Improved responsive utilities */
+@media (max-width: 576px) {
+  .p-card {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  
+  .p-card .p-card-body {
+    padding: 1rem;
+  }
+  
+  .p-dialog {
+    width: 95vw !important;
+    max-width: 95vw !important;
+  }
+}
+
+/* Better spacing for mobile forms */
+@media (max-width: 768px) {
+  .p-field {
+    margin-bottom: 1.5rem;
+  }
+  
+  .p-button {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Enhanced PrimeNG table styling */
+::ng-deep .p-datatable .p-datatable-tbody > tr:hover {
+  background: var(--p-highlight-bg) !important;
+}
+
+::ng-deep .p-datatable .p-sortable-column:hover {
+  background: var(--p-surface-100) !important;
+}
+
+::ng-deep .p-datatable .p-sortable-column.p-highlight {
+  background: var(--p-highlight-bg) !important;
+  color: var(--p-highlight-text-color) !important;
+}
+
+/* Enhanced button styling */
+::ng-deep .p-button:focus {
+  box-shadow: 0 0 0 0.2rem var(--p-focus-ring) !important;
+}
+
+/* Enhanced paginator styling */
+::ng-deep .p-paginator .p-paginator-page.p-highlight {
+  background: var(--p-primary-color) !important;
+  border-color: var(--p-primary-color) !important;
+  color: var(--p-primary-contrast-color) !important;
+}
+
+::ng-deep .p-paginator .p-paginator-page:hover {
+  background: var(--p-surface-100) !important;
+  border-color: var(--p-surface-300) !important;
+}
+
+/* Enhanced card styling for data views */
+::ng-deep .p-dataview .p-dataview-content .border.surface-border {
+  transition: all 0.3s ease;
+}
+
+::ng-deep .p-dataview .p-dataview-content .border.surface-border:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-2px);
 }
