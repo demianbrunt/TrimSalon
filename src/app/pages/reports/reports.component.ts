@@ -81,21 +81,24 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
   }
 
   setQuickPeriod(period: 'week' | 'month' | 'quarter' | 'year'): void {
-    const today = new Date();
     this.endDate = new Date();
 
     switch (period) {
       case 'week':
-        this.startDate = new Date(today.setDate(today.getDate() - 7));
+        this.startDate = new Date();
+        this.startDate.setDate(this.startDate.getDate() - 7);
         break;
       case 'month':
-        this.startDate = new Date(today.setMonth(today.getMonth() - 1));
+        this.startDate = new Date();
+        this.startDate.setMonth(this.startDate.getMonth() - 1);
         break;
       case 'quarter':
-        this.startDate = new Date(today.setMonth(today.getMonth() - 3));
+        this.startDate = new Date();
+        this.startDate.setMonth(this.startDate.getMonth() - 3);
         break;
       case 'year':
-        this.startDate = new Date(today.setFullYear(today.getFullYear() - 1));
+        this.startDate = new Date();
+        this.startDate.setFullYear(this.startDate.getFullYear() - 1);
         break;
     }
 
