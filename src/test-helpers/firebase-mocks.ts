@@ -1,12 +1,77 @@
 import { Observable, of } from 'rxjs';
 
 /**
- * Mock Firestore implementation for testing
+ * Create a proper Firestore mock factory for TestBed
+ *
+ * This creates a mock that passes Firebase's type checks by including
+ * all the properties Firebase expects on a Firestore instance.
+ */
+export function createMockFirestore() {
+  const mockFirestore: any = {
+    // Required Firestore properties that Firebase checks for
+    type: 'firestore',
+    _databaseId: {
+      projectId: 'test-project',
+      database: '(default)',
+    },
+    _settings: {},
+    _persistenceKey: '[DEFAULT]',
+
+    // Mock app property
+    app: {
+      name: '[DEFAULT]',
+      options: {
+        projectId: 'test-project',
+      },
+      automaticDataCollectionEnabled: false,
+    },
+
+    // These are checked by Firebase internally
+    _delegate: {
+      type: 'firestore',
+      _databaseId: {
+        projectId: 'test-project',
+        database: '(default)',
+      },
+    },
+  };
+
+  return mockFirestore;
+}
+
+/**
+ * Mock Firestore implementation for testing (legacy - use createMockFirestore instead)
  */
 export class MockFirestore {
+  type = 'firestore';
+  _databaseId = {
+    projectId: 'test-project',
+    database: '(default)',
+  };
+  _settings = {};
+  _persistenceKey = '[DEFAULT]';
+
+  app = {
+    name: '[DEFAULT]',
+    options: {
+      projectId: 'test-project',
+    },
+    automaticDataCollectionEnabled: false,
+  };
+
+  _delegate: any = {
+    type: 'firestore',
+    _databaseId: {
+      projectId: 'test-project',
+      database: '(default)',
+    },
+  };
+
   collection(path: string) {
     return {
       path,
+      id: path,
+      parent: null,
       withConverter: () => this.collection(path),
     };
   }
@@ -14,6 +79,8 @@ export class MockFirestore {
   doc(path: string) {
     return {
       path,
+      id: path.split('/').pop(),
+      parent: null,
       withConverter: () => this.doc(path),
     };
   }
@@ -26,18 +93,45 @@ export class MockAuth {
   currentUser: any = null;
   authState$ = of(null);
 
-  signInWithPopup = jasmine.createSpy('signInWithPopup').and.returnValue(Promise.resolve({
-    user: { uid: 'test-uid', email: 'test@example.com', displayName: 'Test User' }
-  }));
+  signInWithPopup = jasmine.createSpy('signInWithPopup').and.returnValue(
+    Promise.resolve({
+      user: {
+        uid: 'test-uid',
+        email: 'test@example.com',
+        displayName: 'Test User',
+      },
+    }),
+  );
 
   signOut = jasmine.createSpy('signOut').and.returnValue(Promise.resolve());
 }
 
 /**
  * Mock Functions implementation for testing
+ *
+ * Properly mocks Firebase Functions with required properties
  */
 export class MockFunctions {
-  httpsCallable = jasmine.createSpy('httpsCallable').and.returnValue(() => of({ data: {} }));
+  // Mock the internal _url function that Firebase uses
+  _url = jasmine
+    .createSpy('_url')
+    .and.returnValue('https://mock-function-url.com');
+
+  // Mock the region property
+  region = 'us-central1';
+
+  // Mock the customDomain property
+  customDomain = null;
+
+  // Mock app property
+  app = {
+    name: '[DEFAULT]',
+    options: {},
+  };
+
+  httpsCallable = jasmine
+    .createSpy('httpsCallable')
+    .and.returnValue(() => of({ data: {} }));
 }
 
 /**
@@ -58,7 +152,10 @@ export function mockDocData<T>(data: T): Observable<T> {
  * Mock Timestamp for Firestore
  */
 export class MockTimestamp {
-  constructor(public seconds: number, public nanoseconds: number) {}
+  constructor(
+    public seconds: number,
+    public nanoseconds: number,
+  ) {}
 
   toDate(): Date {
     return new Date(this.seconds * 1000);

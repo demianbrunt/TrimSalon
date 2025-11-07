@@ -2,15 +2,15 @@ import { TestBed } from '@angular/core/testing';
 import { Firestore } from '@angular/fire/firestore';
 import { of } from 'rxjs';
 import { ClientService } from './client.service';
-import { MockFirestore } from '../../../test-helpers/firebase-mocks';
+import { createMockFirestore } from '../../../test-helpers/firebase-mocks';
 import { TestDataFactory } from '../../../test-helpers/test-data-factory';
 
 describe('ClientService', () => {
   let service: ClientService;
-  let mockFirestore: MockFirestore;
+  let mockFirestore: any;
 
   beforeEach(() => {
-    mockFirestore = new MockFirestore();
+    mockFirestore = createMockFirestore();
 
     TestBed.configureTestingModule({
       providers: [
@@ -33,16 +33,30 @@ describe('ClientService', () => {
   describe('getData$', () => {
     it('should filter out anonymized clients', (done) => {
       const clients = [
-        TestDataFactory.createClient({ id: '1', name: 'Client 1', isAnonymized: false }),
-        TestDataFactory.createClient({ id: '2', name: 'Geanonimiseerde Klant', isAnonymized: true }),
-        TestDataFactory.createClient({ id: '3', name: 'Client 3', isAnonymized: false }),
+        TestDataFactory.createClient({
+          id: '1',
+          name: 'Client 1',
+          isAnonymized: false,
+        }),
+        TestDataFactory.createClient({
+          id: '2',
+          name: 'Geanonimiseerde Klant',
+          isAnonymized: true,
+        }),
+        TestDataFactory.createClient({
+          id: '3',
+          name: 'Client 3',
+          isAnonymized: false,
+        }),
       ];
 
-      spyOn<any>(Object.getPrototypeOf(service), 'getData$').and.returnValue(of(clients));
+      spyOn<any>(Object.getPrototypeOf(service), 'getData$').and.returnValue(
+        of(clients),
+      );
 
       service.getData$().subscribe((result) => {
         expect(result.length).toBe(2);
-        expect(result.find(c => c.id === '2')).toBeUndefined();
+        expect(result.find((c) => c.id === '2')).toBeUndefined();
         done();
       });
     });
@@ -59,7 +73,9 @@ describe('ClientService', () => {
       });
 
       spyOn(service, 'getById').and.returnValue(of(client));
-      spyOn(service, 'update').and.returnValue(of({ ...client, isAnonymized: true }));
+      spyOn(service, 'update').and.returnValue(
+        of({ ...client, isAnonymized: true }),
+      );
 
       service.delete('1').subscribe(() => {
         expect(service.update).toHaveBeenCalledWith(
@@ -69,7 +85,7 @@ describe('ClientService', () => {
             email: '',
             phone: '',
             isAnonymized: true,
-          })
+          }),
         );
         done();
       });
@@ -85,10 +101,13 @@ describe('ClientService', () => {
       });
 
       spyOn(service, 'getById').and.returnValue(of(client));
-      spyOn(service, 'update').and.returnValue(of({ ...client, isAnonymized: true }));
+      spyOn(service, 'update').and.returnValue(
+        of({ ...client, isAnonymized: true }),
+      );
 
       service.delete('1').subscribe(() => {
-        const updateCall = (service.update as jasmine.Spy).calls.mostRecent().args[0];
+        const updateCall = (service.update as jasmine.Spy).calls.mostRecent()
+          .args[0];
         expect(updateCall.dogs[0].name).toBe('Geanonimiseerd');
         expect(updateCall.dogs[1].name).toBe('Geanonimiseerd');
         done();

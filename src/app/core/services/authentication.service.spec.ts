@@ -2,19 +2,21 @@ import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { Auth, authState } from '@angular/fire/auth';
 import { Firestore } from '@angular/fire/firestore';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { AuthenticationService } from './authentication.service';
 import { GoogleAuthService } from './google-auth.service';
 import { ToastrService } from './toastr.service';
 import { APP_CONFIG } from '../../app.config.model';
-import { MockAuth, MockFirestore } from '../../../test-helpers/firebase-mocks';
+import {
+  MockAuth,
+  createMockFirestore,
+} from '../../../test-helpers/firebase-mocks';
 import { MockRouter } from '../../../test-helpers/angular-mocks';
-import { TestDataFactory } from '../../../test-helpers/test-data-factory';
 
 describe('AuthenticationService', () => {
   let service: AuthenticationService;
   let mockAuth: MockAuth;
-  let mockFirestore: MockFirestore;
+  let mockFirestore: any;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockGoogleAuthService: jasmine.SpyObj<GoogleAuthService>;
   let mockToastr: jasmine.SpyObj<ToastrService>;
@@ -29,10 +31,12 @@ describe('AuthenticationService', () => {
 
   beforeEach(() => {
     mockAuth = new MockAuth();
-    mockFirestore = new MockFirestore();
+    mockFirestore = createMockFirestore();
     const router = new MockRouter();
-    
-    mockGoogleAuthService = jasmine.createSpyObj('GoogleAuthService', ['getAuthCode']);
+
+    mockGoogleAuthService = jasmine.createSpyObj('GoogleAuthService', [
+      'getAuthCode',
+    ]);
     mockToastr = jasmine.createSpyObj('ToastrService', [
       'success',
       'error',
@@ -71,7 +75,7 @@ describe('AuthenticationService', () => {
     it('should return true in dev mode', () => {
       TestBed.resetTestingModule();
       const devConfig = { ...mockConfig, devMode: true };
-      
+
       TestBed.configureTestingModule({
         providers: [
           AuthenticationService,
@@ -97,7 +101,10 @@ describe('AuthenticationService', () => {
       tick();
 
       expect(mockAuth.signOut).toHaveBeenCalled();
-      expect(mockToastr.info).toHaveBeenCalledWith('Je bent uitgelogd', 'Tot ziens!');
+      expect(mockToastr.info).toHaveBeenCalledWith(
+        'Je bent uitgelogd',
+        'Tot ziens!',
+      );
       expect(mockRouter.navigate).toHaveBeenCalledWith(['/signedout']);
     }));
 
@@ -108,7 +115,10 @@ describe('AuthenticationService', () => {
       service.signOut();
       tick();
 
-      expect(mockToastr.error).toHaveBeenCalledWith('Fout bij uitloggen', 'Authenticatie');
+      expect(mockToastr.error).toHaveBeenCalledWith(
+        'Fout bij uitloggen',
+        'Authenticatie',
+      );
     }));
 
     it('should clear session storage on sign out', fakeAsync(() => {
@@ -120,7 +130,9 @@ describe('AuthenticationService', () => {
       tick();
 
       expect(sessionStorage.clear).toHaveBeenCalled();
-      expect(localStorage.removeItem).toHaveBeenCalledWith('google_oauth_token');
+      expect(localStorage.removeItem).toHaveBeenCalledWith(
+        'google_oauth_token',
+      );
     }));
   });
 
@@ -169,7 +181,9 @@ describe('AuthenticationService', () => {
 
     it('should return token when user is logged in', async () => {
       mockAuth.currentUser = {
-        getIdToken: jasmine.createSpy('getIdToken').and.returnValue(Promise.resolve('test-token')),
+        getIdToken: jasmine
+          .createSpy('getIdToken')
+          .and.returnValue(Promise.resolve('test-token')),
       };
       const token = await service.getCurrentUserToken();
       expect(token).toBe('test-token');
@@ -177,7 +191,9 @@ describe('AuthenticationService', () => {
 
     it('should return null on token retrieval error', async () => {
       mockAuth.currentUser = {
-        getIdToken: jasmine.createSpy('getIdToken').and.returnValue(Promise.reject(new Error())),
+        getIdToken: jasmine
+          .createSpy('getIdToken')
+          .and.returnValue(Promise.reject(new Error())),
       };
       const token = await service.getCurrentUserToken();
       expect(token).toBeNull();

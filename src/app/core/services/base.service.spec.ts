@@ -2,7 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { Firestore } from '@angular/fire/firestore';
 import { of, throwError } from 'rxjs';
 import { BaseService } from './base.service';
-import { MockFirestore, MockTimestamp } from '../../../test-helpers/firebase-mocks';
+import {
+  createMockFirestore,
+  MockTimestamp,
+} from '../../../test-helpers/firebase-mocks';
 
 // Test implementation of BaseService
 class TestService extends BaseService<{ id?: string; name: string }> {
@@ -13,16 +16,13 @@ class TestService extends BaseService<{ id?: string; name: string }> {
 
 describe('BaseService', () => {
   let service: TestService;
-  let mockFirestore: MockFirestore;
+  let mockFirestore: any;
 
   beforeEach(() => {
-    mockFirestore = new MockFirestore();
+    mockFirestore = createMockFirestore();
 
     TestBed.configureTestingModule({
-      providers: [
-        TestService,
-        { provide: Firestore, useValue: mockFirestore },
-      ],
+      providers: [TestService, { provide: Firestore, useValue: mockFirestore }],
     });
 
     service = TestBed.inject(TestService);
@@ -51,12 +51,10 @@ describe('BaseService', () => {
 
     it('should handle Timestamp conversion', (done) => {
       const timestamp = MockTimestamp.fromDate(new Date('2024-01-01'));
-      const mockData = [
-        { id: '1', name: 'Test', createdAt: timestamp },
-      ];
+      const mockData = [{ id: '1', name: 'Test', createdAt: timestamp }];
 
       spyOn<any>(service, 'getData$').and.returnValue(
-        of([{ id: '1', name: 'Test', createdAt: timestamp.toDate() }])
+        of([{ id: '1', name: 'Test', createdAt: timestamp.toDate() }]),
       );
 
       service.getData$().subscribe((data: any) => {

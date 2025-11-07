@@ -1,14 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { Firestore } from '@angular/fire/firestore';
 import { PackageService } from './package.service';
-import { MockFirestore } from '../../../test-helpers/firebase-mocks';
+import { createMockFirestore } from '../../../test-helpers/firebase-mocks';
 
 describe('PackageService', () => {
   let service: PackageService;
-  let mockFirestore: MockFirestore;
+  let mockFirestore: any;
 
   beforeEach(() => {
-    mockFirestore = new MockFirestore();
+    mockFirestore = createMockFirestore();
 
     TestBed.configureTestingModule({
       providers: [

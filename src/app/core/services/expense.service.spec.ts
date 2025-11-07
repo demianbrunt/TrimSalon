@@ -1,14 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { Firestore } from '@angular/fire/firestore';
 import { ExpenseService } from './expense.service';
-import { MockFirestore } from '../../../test-helpers/firebase-mocks';
+import { createMockFirestore } from '../../../test-helpers/firebase-mocks';
 
 describe('ExpenseService', () => {
   let service: ExpenseService;
-  let mockFirestore: MockFirestore;
+  let mockFirestore: any;
 
   beforeEach(() => {
-    mockFirestore = new MockFirestore();
+    mockFirestore = createMockFirestore();
 
     TestBed.configureTestingModule({
       providers: [
@@ -25,6 +25,9 @@ describe('ExpenseService', () => {
   });
 
   it('should use "expenses" collection', () => {
-    expect((service as any).collection.path).toBe('expenses');
+    expect(mockFirestore.collection).toHaveBeenCalledWith(
+      mockFirestore,
+      'expenses',
+    );
   });
 });
