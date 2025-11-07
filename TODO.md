@@ -17,7 +17,7 @@ Deployment firebase
 - **Voorbeeld**: "Je bezettingsgraad is 45%. Probeer meer afspraken op dinsdag en woensdag te plannen."
 
 #### 2. Automatische Inzichten Genereren
-- **Trends herkennen**: "Je hebt 20% meer klanten met Labrador's dit kwartaal"
+- **Trends herkennen**: "Je hebt 20% meer klanten met Labradors dit kwartaal"
 - **Seizoenspatronen**: "December is meestal drukker, plan extra capaciteit"
 - **Anomalieën detecteren**: "Ongebruikelijk veel no-shows deze week"
 - **Winstgevendheid per dienst**: "Trimmen van grote honden is het meest winstgevend"
@@ -131,9 +131,9 @@ Deployment firebase
    - "Zal ik een email maken voor klanten?"
 
 ### 🔒 Privacy & Veiligheid
-- Data blijft in Firebase (niet naar externe AI)
-- Vertex AI in Europa (GDPR compliant)
-- Geen klantgegevens in prompts (alleen aggregated data)
+- Data blijft binnen Google Cloud ecosysteem (Firebase + Vertex AI)
+- Vertex AI in Europa (GDPR compliant, data residency in EU)
+- Geen persoonlijke klantgegevens in prompts (alleen aggregated data)
 - Opt-out mogelijkheid voor AI features
 
 ---
