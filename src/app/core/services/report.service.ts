@@ -2,14 +2,17 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, combineLatest, map } from 'rxjs';
 import {
   DashboardReport,
+  ExpenseReport,
   PopularPackage,
   PopularService,
+  ProfitLossReport,
   ReportPeriod,
   RevenueReport,
   TopClient,
   CalendarOccupancy,
 } from '../models/report.model';
 import { AppointmentService } from './appointment.service';
+import { ExpenseService } from './expense.service';
 import { InvoiceService } from './invoice.service';
 import { PaymentStatus } from '../models/invoice.model';
 
@@ -19,6 +22,7 @@ import { PaymentStatus } from '../models/invoice.model';
 export class ReportService {
   private appointmentService = inject(AppointmentService);
   private invoiceService = inject(InvoiceService);
+  private expenseService = inject(ExpenseService);
 
   /**
    * Generate revenue report for a given period
@@ -46,6 +50,65 @@ export class ReportService {
           totalRevenue,
           appointmentCount,
           averageRevenuePerAppointment,
+        };
+      }),
+    );
+  }
+
+  /**
+   * Generate expense report for a given period
+   */
+  getExpenseReport(period: ReportPeriod): Observable<ExpenseReport> {
+    return this.expenseService.getData$().pipe(
+      map((expenses) => {
+        const filteredExpenses = expenses.filter(
+          (expense) =>
+            !expense.deletedAt &&
+            expense.date >= period.startDate &&
+            expense.date <= period.endDate,
+        );
+
+        const totalExpenses = filteredExpenses.reduce(
+          (sum, expense) => sum + expense.amount,
+          0,
+        );
+        const expenseCount = filteredExpenses.length;
+        const averageExpense =
+          expenseCount > 0 ? totalExpenses / expenseCount : 0;
+
+        return {
+          period,
+          totalExpenses,
+          expenseCount,
+          averageExpense,
+        };
+      }),
+    );
+  }
+
+  /**
+   * Generate profit/loss report for a given period
+   */
+  getProfitLossReport(period: ReportPeriod): Observable<ProfitLossReport> {
+    return combineLatest([
+      this.getRevenueReport(period),
+      this.getExpenseReport(period),
+    ]).pipe(
+      map(([revenueReport, expenseReport]) => {
+        const totalRevenue = revenueReport.totalRevenue;
+        const totalExpenses = expenseReport.totalExpenses;
+        const netProfit = totalRevenue - totalExpenses;
+        const profitMargin =
+          totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+        const breakEven = netProfit >= 0;
+
+        return {
+          period,
+          totalRevenue,
+          totalExpenses,
+          netProfit,
+          profitMargin,
+          breakEven,
         };
       }),
     );
@@ -253,6 +316,8 @@ export class ReportService {
   getDashboardReport(period: ReportPeriod): Observable<DashboardReport> {
     return combineLatest([
       this.getRevenueReport(period),
+      this.getExpenseReport(period),
+      this.getProfitLossReport(period),
       this.getTopClients(period, 5),
       this.getPopularServices(period, 5),
       this.getPopularPackages(period, 5),
@@ -261,12 +326,16 @@ export class ReportService {
       map(
         ([
           revenueReport,
+          expenseReport,
+          profitLossReport,
           topClients,
           popularServices,
           popularPackages,
           occupancy,
         ]) => ({
           revenueReport,
+          expenseReport,
+          profitLossReport,
           topClients,
           popularServices,
           popularPackages,

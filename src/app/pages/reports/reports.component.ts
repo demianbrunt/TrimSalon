@@ -8,6 +8,8 @@ import { TableModule } from 'primeng/table';
 import { Observable } from 'rxjs';
 import {
   DashboardReport,
+  ExpenseReport,
+  ProfitLossReport,
   ReportPeriod,
   RevenueReport,
   TopClient,
@@ -43,6 +45,8 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
 
   dashboardReport$?: Observable<DashboardReport>;
   revenueReport?: RevenueReport;
+  expenseReport?: ExpenseReport;
+  profitLossReport?: ProfitLossReport;
   topClients?: TopClient[];
   popularServices?: PopularService[];
   popularPackages?: PopularPackage[];
@@ -67,6 +71,8 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
     this.subscriptions.add(
       this.dashboardReport$.subscribe((report) => {
         this.revenueReport = report.revenueReport;
+        this.expenseReport = report.expenseReport;
+        this.profitLossReport = report.profitLossReport;
         this.topClients = report.topClients;
         this.popularServices = report.popularServices;
         this.popularPackages = report.popularPackages;
