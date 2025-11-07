@@ -320,7 +320,13 @@ export class AppointmentFormComponent
   }
 
   save(): void {
+    console.log('[AppointmentForm] 💾 Save initiated');
+    console.log('[AppointmentForm] 📋 Form valid:', this.form.valid);
+    console.log('[AppointmentForm] 📋 Form value:', this.form.value);
+
     if (this.form.invalid) {
+      console.warn('[AppointmentForm] ⚠️ Form is invalid, cannot save');
+      console.log('[AppointmentForm] ❌ Form errors:', this.getFormErrors());
       this.toastrService.error('Fout', 'Vul alle verplichte velden in');
       return;
     }
@@ -328,6 +334,9 @@ export class AppointmentFormComponent
     const formValue = this.form.value;
     const appointmentDate = formValue.appointmentDate;
     const startTime = formValue.startTime;
+
+    console.log('[AppointmentForm] 📅 Appointment date:', appointmentDate);
+    console.log('[AppointmentForm] ⏰ Start time:', startTime);
 
     // Combine date and time into startTime
     let combinedStartTime: Date | null = null;
@@ -339,6 +348,10 @@ export class AppointmentFormComponent
         timeDate.getMinutes(),
         0,
         0,
+      );
+      console.log(
+        '[AppointmentForm] 🕐 Combined start time:',
+        combinedStartTime,
       );
     }
 
@@ -353,12 +366,23 @@ export class AppointmentFormComponent
       notes: formValue.notes || undefined,
     };
 
+    console.log(
+      '[AppointmentForm] 📦 Appointment data to save:',
+      JSON.stringify(appointmentData, null, 2),
+    );
+    console.log(
+      '[AppointmentForm] 🔀 Operation mode:',
+      this.isEditMode ? 'UPDATE' : 'CREATE',
+    );
+
     const operation = this.isEditMode
       ? this.appointmentService.update(appointmentData)
       : this.appointmentService.add(appointmentData);
 
     operation.subscribe({
-      next: () => {
+      next: (result) => {
+        console.log('[AppointmentForm] ✅ Save successful');
+        console.log('[AppointmentForm] 📤 Result:', result);
         this.toastrService.success(
           'Succes',
           `Afspraak ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
@@ -366,9 +390,24 @@ export class AppointmentFormComponent
         this.router.navigate(['/appointments']);
       },
       error: (err) => {
+        console.error('[AppointmentForm] ❌ Save failed');
+        console.error('[AppointmentForm] 💥 Error:', err);
+        console.error('[AppointmentForm] 💥 Error message:', err.message);
+        console.error('[AppointmentForm] 💥 Error stack:', err.stack);
         this.toastrService.error('Fout', err.message);
       },
     });
+  }
+
+  private getFormErrors(): Record<string, unknown> {
+    const errors: Record<string, unknown> = {};
+    Object.keys(this.form.controls).forEach((key) => {
+      const control = this.form.get(key);
+      if (control && control.errors) {
+        errors[key] = control.errors;
+      }
+    });
+    return errors;
   }
 
   override cancel() {
