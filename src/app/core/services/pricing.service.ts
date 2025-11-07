@@ -5,40 +5,93 @@ import { Price } from '../models/price.model';
 import { Service } from '../models/service.model';
 import { getSizeValue } from '../models/size-pricing.model';
 
+/**
+ * Interface voor prijs berekening resultaat
+ */
 export interface PriceCalculation {
   totalPrice: number;
-  breakdown: PriceBreakdownItem[];
+  breakdown: PriceBreakdownItem[]; // Gedetailleerde breakdown per service/package
 }
 
+/**
+ * Interface voor prijs breakdown item
+ */
 export interface PriceBreakdownItem {
   name: string;
   price: number;
   type: 'service' | 'package';
 }
 
+/**
+ * Interface voor uurtarief berekening
+ */
 export interface HourlyRateCalculation {
-  effectiveHourlyRate: number;
+  effectiveHourlyRate: number; // Berekend uurtarief
   totalPrice: number;
   totalMinutes: number;
-  targetRate: number;
-  rateComparison: number; // Percentage of target rate achieved
+  targetRate: number; // Doel uurtarief (€60)
+  rateComparison: number; // Percentage van doel (100% = doel bereikt)
 }
 
+/**
+ * PricingService
+ *
+ * Berekent prijzen voor services en packages op basis van hondenras/grootte.
+ *
+ * TWEE PRICING MODELLEN:
+ * 1. Size-based pricing (NIEUW, AANBEVOLEN)
+ *    - Prijs per hondgrootte (small/medium/large)
+ *    - Breed-specific overrides voor moeilijke rassen
+ *    - Wordt gebruikt in sizePricing property
+ *
+ * 2. Legacy pricing (DEPRECATED)
+ *    - Fixed price of time-based
+ *    - Gebruik dit NIET voor nieuwe services!
+ *
+ * PRICING STRATEGIE:
+ * - Doel uurtarief: €60/uur
+ * - Bereken totale prijs en tijd om uurtarief te checken
+ * - Pas prijzen aan als uurtarief te laag is
+ *
+ * @example
+ * // Bereken totale prijs
+ * const calc = pricingService.calculateTotalPrice(
+ *   [bathService, trimService],
+ *   [fullGroomPackage],
+ *   labradorBreed
+ * );
+ * console.log(calc.totalPrice); // 75
+ * console.log(calc.breakdown);  // [{name: 'Bath', price: 25}, ...]
+ *
+ * // Check uurtarief
+ * const rate = pricingService.calculateHourlyRate(75, 60);
+ * console.log(rate.effectiveHourlyRate); // 75
+ * console.log(rate.rateComparison);      // 125% (boven target!)
+ */
 @Injectable({
   providedIn: 'root',
 })
 export class PricingService {
-  private readonly TARGET_HOURLY_RATE = 60; // €60 per hour target
+  // BELANGRIJKE CONSTANTEN
+  private readonly TARGET_HOURLY_RATE = 60; // €60 per uur is het doel
   private readonly BASE_TIMES = {
-    small: 30,
-    medium: 45,
-    large: 60,
+    small: 30, // 30 min voor kleine honden
+    medium: 45, // 45 min voor middelgrote honden
+    large: 60, // 60 min voor grote honden
   };
   private readonly MINUTES_PER_PACKAGE_SERVICE = 15;
   private readonly MINUTES_PER_EXTRA_SERVICE = 15;
 
   /**
-   * Calculate total price for selected services and packages
+   * Bereken totale prijs voor geselecteerde services en packages
+   *
+   * BELANGRIJK: Deze functie gebruikt het NIEUWE size-based pricing model.
+   * Als een service/package geen sizePricing heeft, valt het terug op legacy pricing.
+   *
+   * @param services - Array van geselecteerde services
+   * @param packages - Array van geselecteerde packages
+   * @param breed - Het hondenras (voor grootte en breed-specific prijzen)
+   * @returns PriceCalculation met totalPrice en breakdown
    */
   calculateTotalPrice(
     services: Service[],

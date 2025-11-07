@@ -7,27 +7,72 @@ import { ToastrService } from '../../services/toastr.service';
 import { BaseComponent } from '../base/base.component';
 import { CanDeactivateComponent } from '../can-deactivate/can-deactivate.component';
 
+/**
+ * FormBaseComponent
+ *
+ * Basis component voor ALLE formulieren in de applicatie.
+ * Extend deze class voor client-form, service-form, etc.
+ *
+ * FEATURES:
+ * - Automatisch detecteert create vs edit mode (via route parameter 'id')
+ * - Unsaved changes warning (canDeactivate guard)
+ * - Form validation helper
+ * - Standaard submit/cancel flow
+ *
+ * GEBRUIK:
+ * 1. Extend deze class
+ * 2. Implementeer abstract properties/methods
+ * 3. Override methods indien nodig
+ *
+ * @example
+ * export class ClientFormComponent extends FormBaseComponent {
+ *   form = this.formBuilder.group({
+ *     name: ['', Validators.required],
+ *     email: ['', [Validators.required, Validators.email]]
+ *   });
+ *
+ *   protected getFormMode(): FormMode {
+ *     return this.routeIdParam ? FormMode.Edit : FormMode.Create;
+ *   }
+ *
+ *   protected async afterValidityEnsured() {
+ *     const client = this.form.value;
+ *     // Save logic here
+ *   }
+ * }
+ */
 @Directive()
 export abstract class FormBaseComponent
   extends BaseComponent
   implements CanDeactivateComponent
 {
-  routeIdParam: unknown;
-  isSaving = false;
-  isCanceling = false;
+  routeIdParam: unknown; // ID uit route (bijv. /clients/123 → '123')
+  isSaving = false; // Toon loading spinner tijdens save
+  isCanceling = false; // Flag om canDeactivate te bypassen bij cancel
 
-  private formMode: FormMode;
+  private formMode: FormMode; // Create of Edit mode
 
+  // Injected dependencies
   protected readonly formBuilder: FormBuilder = inject(FormBuilder);
   protected readonly toastr: ToastrService = inject(ToastrService);
   protected readonly confirmationService = inject(ConfirmationDialogService);
 
+  /**
+   * Het Angular FormGroup of FormArray
+   * MOET geïmplementeerd worden in subclass
+   */
   abstract form: FormGroup | FormArray;
 
+  /**
+   * Checkt of we in create mode zijn (geen ID in route)
+   */
   get isCreateMode() {
     return this.formMode === FormMode.Create;
   }
 
+  /**
+   * Checkt of we in edit mode zijn (ID in route)
+   */
   get isEditMode() {
     return this.formMode === FormMode.Edit;
   }
@@ -35,13 +80,21 @@ export abstract class FormBaseComponent
   constructor() {
     super();
 
+    // Check of er een 'id' parameter in de route zit
     if (this.activatedRoute.snapshot.paramMap.has('id')) {
       this.routeIdParam = this.activatedRoute.snapshot.paramMap.get('id');
     }
 
+    // Bepaal form mode (subclass kan getFormMode() overriden)
     this.formMode = this.getFormMode() ?? FormMode.Create;
   }
 
+  /**
+   * Submit handler
+   * 1. Valideer form
+   * 2. Roep afterValidityEnsured() aan (geïmplementeerd in subclass)
+   * 3. Toon error bij validation failure
+   */
   submit() {
     if (!this.isInitialized || this.isLoading) return;
 
@@ -49,18 +102,29 @@ export abstract class FormBaseComponent
       this.isSaving = true;
     }
 
+    // Valideer form
     if (!this.ensureValidity()) {
       this.toastr.error('Oeps!', 'Heb je alles correct ingevoerd?');
       return;
     }
 
+    // Save logic (geïmplementeerd in subclass)
     this.afterValidityEnsured()?.then(
       () => (this.isSaving = false),
       () => (this.isSaving = false),
     );
   }
 
+  /**
+   * CanDeactivate guard implementatie
+   * Waarschuwt gebruiker bij unsaved changes
+   *
+   * GEBRUIKT DOOR: Angular Router CanDeactivate guard
+   *
+   * @returns Promise<boolean> - true als navigatie mag doorgaan
+   */
   canDeactivate(): Promise<boolean> {
+    // Als form dirty/touched is EN we cancelen niet
     if ((this?.form?.dirty || this?.form?.touched) && !this.isCanceling) {
       return this.confirmationService.open(
         'Openstaande wijzigingen',
@@ -70,6 +134,10 @@ export abstract class FormBaseComponent
     return new Promise((resolve) => resolve(true));
   }
 
+  /**
+   * Browser beforeunload handler
+   * Waarschuwt ook bij browser refresh/close
+   */
   @HostListener('window:beforeunload', ['$event'])
   protected unloadNotification($event: BeforeUnloadEvent) {
     if (!this.canDeactivate()) {
@@ -77,6 +145,10 @@ export abstract class FormBaseComponent
     }
   }
 
+  /**
+   * Cancel handler
+   * Navigeert terug zonder confirmation dialog
+   */
   cancel() {
     this.isCanceling = true;
     if (this.form.pristine) {
