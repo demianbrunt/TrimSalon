@@ -5,6 +5,7 @@ export interface AppConfig {
     clientId: string;
     scope: string;
   };
+  devMode?: boolean; // Development mode flag to bypass authentication
 }
 
 export const APP_CONFIG = new InjectionToken<AppConfig>('app.config');

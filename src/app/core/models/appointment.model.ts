@@ -12,4 +12,11 @@ export interface Appointment {
   startTime?: Date;
   endTime?: Date;
   notes?: string;
+  // Estimated values (set when creating appointment)
+  estimatedDuration?: number; // in minutes
+  estimatedPrice?: number;
+  // Actual values (set after appointment completion)
+  actualServices?: Service[]; // Services actually performed
+  actualPackages?: Package[]; // Packages actually performed
+  actualEndTime?: Date; // Actual end time (can differ from estimated endTime)
 }

@@ -116,6 +116,92 @@
           </div>
         </p-card>
       </div>
+
+      <!-- Profit/Loss Summary Cards -->
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Totale Uitgaven</div>
+            <div class="text-3xl font-bold text-red-500">
+              {{ formatCurrency(expenseReport?.totalExpenses || 0) }}
+            </div>
+            <small class="text-500">{{ expenseReport?.expenseCount || 0 }} uitgaven</small>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Netto Winst</div>
+            <div 
+              class="text-3xl font-bold"
+              [class.text-green-600]="(profitLossReport?.netProfit || 0) >= 0"
+              [class.text-red-500]="(profitLossReport?.netProfit || 0) < 0"
+            >
+              {{ formatCurrency(profitLossReport?.netProfit || 0) }}
+            </div>
+            <small 
+              [class.text-green-600]="profitLossReport?.breakEven"
+              [class.text-red-500]="!profitLossReport?.breakEven"
+            >
+              @if (profitLossReport?.breakEven) {
+                <i class="pi pi-check-circle"></i> Break-even bereikt
+              } @else {
+                <i class="pi pi-times-circle"></i> In de min
+              }
+            </small>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Winstmarge</div>
+            <div 
+              class="text-3xl font-bold"
+              [class.text-green-600]="(profitLossReport?.profitMargin || 0) >= 0"
+              [class.text-red-500]="(profitLossReport?.profitMargin || 0) < 0"
+            >
+              {{ formatPercentage(profitLossReport?.profitMargin || 0) }}
+            </div>
+            <small class="text-500">
+              @if ((profitLossReport?.profitMargin || 0) >= 30) {
+                Uitstekend
+              } @else if ((profitLossReport?.profitMargin || 0) >= 15) {
+                Goed
+              } @else if ((profitLossReport?.profitMargin || 0) >= 0) {
+                Matig
+              } @else {
+                Verliesgevend
+              }
+            </small>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Break-Even Punt</div>
+            <div class="text-3xl font-bold text-primary">
+              {{ formatCurrency(expenseReport?.totalExpenses || 0) }}
+            </div>
+            <small class="text-500">
+              @if (profitLossReport?.breakEven) {
+                Minimaal benodigde omzet bereikt
+              } @else {
+                @if ((profitLossReport?.totalRevenue || 0) > 0) {
+                  Nog {{ formatCurrency((expenseReport?.totalExpenses || 0) - (profitLossReport?.totalRevenue || 0)) }} nodig
+                } @else {
+                  Nog geen omzet
+                }
+              }
+            </small>
+          </div>
+        </p-card>
+      </div>
     </div>
 
     <!-- Charts and Tables Row -->

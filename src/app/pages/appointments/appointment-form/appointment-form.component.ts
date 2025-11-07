@@ -33,6 +33,11 @@ import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { ClientService } from '../../../core/services/client.service';
 import { MobileService } from '../../../core/services/mobile.service';
 import { PackageService } from '../../../core/services/package.service';
+import {
+  HourlyRateCalculation,
+  PriceCalculation,
+  PricingService,
+} from '../../../core/services/pricing.service';
 import { ServiceService } from '../../../core/services/service.service';
 import { ToastrService } from '../../../core/services/toastr.service';
 
@@ -74,6 +79,9 @@ export class AppointmentFormComponent
     endTime: FormControl<Date | null>;
     estimatedDuration: FormControl<number | null>;
     notes: FormControl<string | null>;
+    actualServices: FormControl<Service[] | null>;
+    actualPackages: FormControl<Package[] | null>;
+    actualEndTime: FormControl<Date | null>;
   }>;
 
   clients: Client[] = [];
@@ -84,6 +92,12 @@ export class AppointmentFormComponent
   // Tijd berekening
   estimatedDurationMinutes = 0;
   calculatedEndTime: Date | null = null;
+
+  // Pricing calculations
+  priceCalculation: PriceCalculation | null = null;
+  hourlyRateCalculation: HourlyRateCalculation | null = null;
+  actualPriceCalculation: PriceCalculation | null = null;
+  actualHourlyRateCalculation: HourlyRateCalculation | null = null;
 
   get client() {
     return this.form.controls.client;
@@ -115,6 +129,7 @@ export class AppointmentFormComponent
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
+  private readonly pricingService = inject(PricingService);
 
   constructor() {
     super();
@@ -137,6 +152,9 @@ export class AppointmentFormComponent
         endTime: new FormControl<Date | null>(null),
         estimatedDuration: new FormControl<number | null>(null),
         notes: new FormControl(null),
+        actualServices: new FormControl<Service[] | null>([]),
+        actualPackages: new FormControl<Package[] | null>([]),
+        actualEndTime: new FormControl<Date | null>(null),
       });
       resolve();
     });
@@ -177,14 +195,17 @@ export class AppointmentFormComponent
     // Recalculate duration when dog, packages, or services change
     this.form.get('dog')?.valueChanges.subscribe(() => {
       this.calculateEstimatedDuration();
+      this.calculatePricing();
     });
 
     this.form.get('packages')?.valueChanges.subscribe(() => {
       this.calculateEstimatedDuration();
+      this.calculatePricing();
     });
 
     this.form.get('services')?.valueChanges.subscribe(() => {
       this.calculateEstimatedDuration();
+      this.calculatePricing();
     });
 
     // Update end time when start time or duration changes
@@ -194,6 +215,19 @@ export class AppointmentFormComponent
 
     this.form.get('appointmentDate')?.valueChanges.subscribe(() => {
       this.updateCalculatedEndTime();
+    });
+
+    // Calculate actual pricing when actual values change
+    this.form.get('actualServices')?.valueChanges.subscribe(() => {
+      this.calculateActualPricing();
+    });
+
+    this.form.get('actualPackages')?.valueChanges.subscribe(() => {
+      this.calculateActualPricing();
+    });
+
+    this.form.get('actualEndTime')?.valueChanges.subscribe(() => {
+      this.calculateActualPricing();
     });
   }
 
@@ -276,6 +310,88 @@ export class AppointmentFormComponent
     }
   }
 
+  formatDurationDifference(actualMinutes: number, estimatedMinutes: number): string {
+    const difference = actualMinutes - estimatedMinutes;
+    const absDifference = Math.abs(difference);
+    const prefix = difference > 0 ? '+' : '';
+    return prefix + this.formatDuration(absDifference);
+  }
+
+  calculatePricing(): void {
+    const dog = this.form.get('dog')?.value;
+    const packages = this.form.get('packages')?.value || [];
+    const services = this.form.get('services')?.value || [];
+
+    if (!dog) {
+      this.priceCalculation = null;
+      this.hourlyRateCalculation = null;
+      return;
+    }
+
+    // Calculate total price
+    this.priceCalculation = this.pricingService.calculateTotalPrice(
+      services,
+      packages,
+      dog.breed,
+    );
+
+    // Calculate hourly rate based on estimated duration
+    if (this.estimatedDurationMinutes > 0) {
+      this.hourlyRateCalculation = this.pricingService.calculateHourlyRate(
+        this.priceCalculation.totalPrice,
+        this.estimatedDurationMinutes,
+      );
+    } else {
+      this.hourlyRateCalculation = null;
+    }
+  }
+
+  calculateActualPricing(): void {
+    const dog = this.form.get('dog')?.value;
+    const actualPackages = this.form.get('actualPackages')?.value || [];
+    const actualServices = this.form.get('actualServices')?.value || [];
+    const startTime = this.form.get('startTime')?.value;
+    const appointmentDate = this.form.get('appointmentDate')?.value;
+    const actualEndTime = this.form.get('actualEndTime')?.value;
+
+    if (!dog || !this.isEditMode) {
+      this.actualPriceCalculation = null;
+      this.actualHourlyRateCalculation = null;
+      return;
+    }
+
+    // Calculate actual total price
+    this.actualPriceCalculation = this.pricingService.calculateTotalPrice(
+      actualServices,
+      actualPackages,
+      dog.breed,
+    );
+
+    // Calculate actual duration in minutes
+    if (startTime && appointmentDate && actualEndTime) {
+      const startDateTime = new Date(appointmentDate);
+      const timeDate = new Date(startTime);
+      startDateTime.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+
+      const endDateTime = new Date(actualEndTime);
+      const actualMinutes = Math.round(
+        (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60),
+      );
+
+      if (actualMinutes > 0) {
+        this.actualHourlyRateCalculation =
+          this.pricingService.calculateHourlyRate(
+            this.actualPriceCalculation.totalPrice,
+            actualMinutes,
+          );
+      } else {
+        this.actualHourlyRateCalculation = null;
+      }
+    } else {
+      this.actualHourlyRateCalculation = null;
+    }
+  }
+
   loadClients(): void {
     this.clientService.getData$().subscribe((clients) => {
       this.clients = clients;
@@ -308,6 +424,22 @@ export class AppointmentFormComponent
         } else {
           this.form.patchValue(appointment);
         }
+
+        // Initialize actual values with estimated if not set
+        if (!appointment.actualServices || appointment.actualServices.length === 0) {
+          this.form.patchValue({
+            actualServices: appointment.services || [],
+          });
+        }
+        if (!appointment.actualPackages || appointment.actualPackages.length === 0) {
+          this.form.patchValue({
+            actualPackages: appointment.packages || [],
+          });
+        }
+
+        // Trigger pricing calculations
+        this.calculatePricing();
+        this.calculateActualPricing();
 
         this.breadcrumbService.setItems([
           { label: 'Afspraken', routerLink: '/appointments' },
@@ -364,6 +496,11 @@ export class AppointmentFormComponent
       startTime: combinedStartTime || undefined,
       endTime: this.calculatedEndTime || formValue.endTime || undefined,
       notes: formValue.notes || undefined,
+      estimatedDuration: this.estimatedDurationMinutes || undefined,
+      estimatedPrice: this.priceCalculation?.totalPrice || undefined,
+      actualServices: formValue.actualServices || undefined,
+      actualPackages: formValue.actualPackages || undefined,
+      actualEndTime: formValue.actualEndTime || undefined,
     };
 
     console.log(
