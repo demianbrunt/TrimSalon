@@ -93,7 +93,7 @@ export class InvoiceFormComponent implements OnInit, CanDeactivateComponent {
       client: [null, Validators.required],
       subtotal: [0, [Validators.required, Validators.min(0)]],
       vatRate: [
-        21,
+        0,
         [Validators.required, Validators.min(0), Validators.max(100)],
       ],
       vatAmount: [{ value: 0, disabled: true }],

@@ -22,7 +22,7 @@ export interface Invoice {
   appointment?: Appointment;
   items: InvoiceItem[];
   subtotal: number;
-  vatRate: number; // BTW percentage (e.g., 21 for 21%)
+  vatRate: number; // BTW percentage (0 for KOR - Kleine Onderneming Regeling)
   vatAmount: number;
   totalAmount: number;
   paymentStatus: PaymentStatus;
