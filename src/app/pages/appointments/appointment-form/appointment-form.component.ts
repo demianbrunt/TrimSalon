@@ -310,7 +310,10 @@ export class AppointmentFormComponent
     }
   }
 
-  formatDurationDifference(actualMinutes: number, estimatedMinutes: number): string {
+  formatDurationDifference(
+    actualMinutes: number,
+    estimatedMinutes: number,
+  ): string {
     const difference = actualMinutes - estimatedMinutes;
     const absDifference = Math.abs(difference);
     const prefix = difference > 0 ? '+' : '';
@@ -426,12 +429,18 @@ export class AppointmentFormComponent
         }
 
         // Initialize actual values with estimated if not set
-        if (!appointment.actualServices || appointment.actualServices.length === 0) {
+        if (
+          !appointment.actualServices ||
+          appointment.actualServices.length === 0
+        ) {
           this.form.patchValue({
             actualServices: appointment.services || [],
           });
         }
-        if (!appointment.actualPackages || appointment.actualPackages.length === 0) {
+        if (
+          !appointment.actualPackages ||
+          appointment.actualPackages.length === 0
+        ) {
           this.form.patchValue({
             actualPackages: appointment.packages || [],
           });
@@ -520,6 +529,11 @@ export class AppointmentFormComponent
       next: (result) => {
         console.log('[AppointmentForm] ✅ Save successful');
         console.log('[AppointmentForm] 📤 Result:', result);
+
+        // Mark form as pristine to prevent CanDeactivate warning
+        this.form.markAsPristine();
+        console.log('[AppointmentForm] ✨ Form marked as pristine');
+
         this.toastrService.success(
           'Succes',
           `Afspraak ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,

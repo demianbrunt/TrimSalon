@@ -92,7 +92,10 @@ export class ExpenseFormComponent extends FormBaseComponent implements OnInit {
           Validators.min(0),
         ]),
         date: new FormControl<Date | null>(new Date(), Validators.required),
-        type: new FormControl<ExpenseType | null>('COURSE', Validators.required),
+        type: new FormControl<ExpenseType | null>(
+          'COURSE',
+          Validators.required,
+        ),
         notes: new FormControl(null),
       });
       resolve();
@@ -151,6 +154,10 @@ export class ExpenseFormComponent extends FormBaseComponent implements OnInit {
 
     operation.subscribe({
       next: () => {
+        // Mark form as pristine to prevent CanDeactivate warning
+        this.form.markAsPristine();
+        console.log('[AppointmentForm] ✨ Form marked as pristine');
+
         this.toastrService.success(
           'Succes',
           `Uitgave ${this.isEditMode ? 'bijgewerkt' : 'toegevoegd'}`,

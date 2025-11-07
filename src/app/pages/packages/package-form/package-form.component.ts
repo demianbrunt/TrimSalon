@@ -159,6 +159,10 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
       return;
     }
 
+    // Mark form as pristine to prevent CanDeactivate warning
+    this.form.markAsPristine();
+    console.log('[AppointmentForm] ✨ Form marked as pristine');
+
     const packageData: Package = this.form.value as Package;
 
     const operation = this.isEditMode

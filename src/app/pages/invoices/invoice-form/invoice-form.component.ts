@@ -14,8 +14,8 @@ import { DatePicker } from 'primeng/datepicker';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
-import { Textarea } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
+import { Textarea } from 'primeng/textarea';
 import { CanDeactivateComponent } from '../../../core/components/can-deactivate/can-deactivate.component';
 import { Client } from '../../../core/models/client.model';
 import { Invoice, PaymentStatus } from '../../../core/models/invoice.model';
@@ -153,6 +153,10 @@ export class InvoiceFormComponent implements OnInit, CanDeactivateComponent {
 
       saveObservable.subscribe({
         next: () => {
+          // Mark form as pristine to prevent CanDeactivate warning
+          this.form.markAsPristine();
+          console.log('[AppointmentForm] ✨ Form marked as pristine');
+
           this.toastrService.success(
             'Succes',
             `Factuur ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
