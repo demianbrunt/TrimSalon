@@ -111,7 +111,7 @@ export class AppointmentsComponent implements OnInit {
           completed: result.completed,
         };
 
-        this.appointmentService.update(appointment.id!, updatedAppointment).subscribe({
+        this.appointmentService.update(updatedAppointment).subscribe({
           next: () => {
             this.toastrService.success('Succes', 'Afspraak afgerond');
             this.loadAppointments();

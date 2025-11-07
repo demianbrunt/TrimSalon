@@ -1,12 +1,17 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { CalendarModule } from 'primeng/calendar';
+import { DatePicker } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
-import { InputTextareaModule } from 'primeng/inputtextarea';
+import { Textarea } from 'primeng/textarea';
 import { Appointment } from '../../../core/models/appointment.model';
 
 @Component({
@@ -17,8 +22,8 @@ import { Appointment } from '../../../core/models/appointment.model';
     ReactiveFormsModule,
     DialogModule,
     ButtonModule,
-    CalendarModule,
-    InputTextareaModule,
+    DatePicker,
+    Textarea,
   ],
   template: `
     <div class="p-fluid">
@@ -27,16 +32,15 @@ import { Appointment } from '../../../core/models/appointment.model';
           <label for="actualEndTime" class="block mb-2 font-medium">
             Eindtijd <span class="text-red-500">*</span>
           </label>
-          <p-calendar
+          <p-datepicker
             id="actualEndTime"
             [formControl]="actualEndTime"
             [timeOnly]="true"
-            [hourFormat]="24"
+            hourFormat="24"
             [showTime]="true"
             [showSeconds]="false"
             placeholder="Selecteer eindtijd"
             dateFormat="dd-mm-yy"
-            appendTo="body"
           />
           <small class="text-color-secondary mt-1 block">
             Wanneer is de afspraak afgerond?
@@ -46,8 +50,8 @@ import { Appointment } from '../../../core/models/appointment.model';
         <div class="field mb-4">
           <label for="notes" class="block mb-2 font-medium">Notities</label>
           <textarea
-            pInputTextarea
             id="notes"
+            pTextarea
             [formControl]="notes"
             rows="4"
             placeholder="Bijzonderheden, gedrag, gebruikte producten..."
