@@ -1,17 +1,41 @@
-.field {
-  margin-bottom: 1.5rem;
+/* Better mobile styling for service forms */
+@media (max-width: 768px) {
+  ::ng-deep .mobile-card {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  
+  ::ng-deep .p-card-body {
+    padding: 1rem !important;
+  }
+  
+  /* Stack pricing buttons vertically on mobile */
+  ::ng-deep .p-selectbutton {
+    flex-direction: column;
+  }
+  
+  ::ng-deep .p-selectbutton .p-button {
+    width: 100%;
+    margin: 0.25rem 0;
+  }
 }
 
-:host ::ng-deep .mobile-card {
-  box-shadow: none;
-  border-radius: 0;
-  background: transparent;
+/* Desktop styling */
+@media (min-width: 769px) {
+  ::ng-deep .p-card {
+    box-shadow: 0 2px 8px rgba(74, 144, 112, 0.08);
+  }
 }
 
-:host ::ng-deep .mobile-card .p-card-body {
-  padding: 0;
+/* Enhanced input styling with cactus green */
+::ng-deep .p-inputtext:focus,
+::ng-deep .p-inputtextarea:focus {
+  border-color: var(--cactus-green-500);
+  box-shadow: 0 0 0 0.2rem rgba(74, 144, 112, 0.25);
 }
 
-:host ::ng-deep .mobile-card .p-card-content {
-  padding: 0;
+/* Price input styling */
+::ng-deep .p-inputnumber-input:focus {
+  border-color: var(--cactus-green-500);
+  box-shadow: 0 0 0 0.2rem rgba(74, 144, 112, 0.25);
 }

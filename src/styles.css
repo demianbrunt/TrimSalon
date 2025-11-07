@@ -1,6 +1,33 @@
 /* You can add global styles to this file, and also import other style files */
 @import "primeicons/primeicons.css";
 
+/* Cactus Green Branding Theme */
+:root {
+  /* Primary cactus green colors */
+  --cactus-green-50: #f0f7f4;
+  --cactus-green-100: #dceee5;
+  --cactus-green-200: #b9ddcb;
+  --cactus-green-300: #8bc7ad;
+  --cactus-green-400: #5caa88;
+  --cactus-green-500: #4a9070;
+  --cactus-green-600: #3d7359;
+  --cactus-green-700: #335d49;
+  --cactus-green-800: #2c4a3c;
+  --cactus-green-900: #263d32;
+
+  /* Override PrimeNG primary color with cactus green */
+  --p-primary-50: var(--cactus-green-50);
+  --p-primary-100: var(--cactus-green-100);
+  --p-primary-200: var(--cactus-green-200);
+  --p-primary-300: var(--cactus-green-300);
+  --p-primary-400: var(--cactus-green-400);
+  --p-primary-500: var(--cactus-green-500);
+  --p-primary-600: var(--cactus-green-600);
+  --p-primary-700: var(--cactus-green-700);
+  --p-primary-800: var(--cactus-green-800);
+  --p-primary-900: var(--cactus-green-900);
+}
+
 body {
   margin: 0;
 }
@@ -44,6 +71,7 @@ body {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: var(--p-surface-50);
 }
 .content-outlet {
   flex-grow: 1;
@@ -65,4 +93,45 @@ body {
   .main-container {
     padding-bottom: 70px;
   }
+}
+
+/* Improved responsive utilities */
+@media (max-width: 576px) {
+  .p-card {
+    border-radius: 0;
+    box-shadow: none;
+  }
+  
+  .p-card .p-card-body {
+    padding: 1rem;
+  }
+  
+  .p-dialog {
+    width: 95vw !important;
+    max-width: 95vw !important;
+  }
+}
+
+/* Better spacing for mobile forms */
+@media (max-width: 768px) {
+  .p-field {
+    margin-bottom: 1.5rem;
+  }
+  
+  .p-button {
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* Enhance branding colors */
+.text-primary {
+  color: var(--cactus-green-600) !important;
+}
+
+.bg-primary {
+  background-color: var(--cactus-green-500) !important;
+}
+
+.border-primary {
+  border-color: var(--cactus-green-500) !important;
 }
