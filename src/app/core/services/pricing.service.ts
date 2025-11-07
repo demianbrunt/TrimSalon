@@ -28,6 +28,13 @@ export interface HourlyRateCalculation {
 })
 export class PricingService {
   private readonly TARGET_HOURLY_RATE = 60; // €60 per hour target
+  private readonly BASE_TIMES = {
+    small: 30,
+    medium: 45,
+    large: 60,
+  };
+  private readonly MINUTES_PER_PACKAGE_SERVICE = 15;
+  private readonly MINUTES_PER_EXTRA_SERVICE = 15;
 
   /**
    * Calculate total price for selected services and packages
@@ -251,19 +258,14 @@ export class PricingService {
     // Base time based on dog size
     if (breed) {
       const dogSize = breed.size || 'medium';
-      const baseTimes = {
-        small: 30,
-        medium: 45,
-        large: 60,
-      };
-      totalMinutes += baseTimes[dogSize] || 45;
+      totalMinutes += this.BASE_TIMES[dogSize] || this.BASE_TIMES.medium;
     }
 
     // Add time for packages and calculate package prices
     if (packages) {
       packages.forEach((pkg) => {
         const pkgServices = pkg.services || [];
-        totalMinutes += pkgServices.length * 15; // Estimate 15 minutes per service in package
+        totalMinutes += pkgServices.length * this.MINUTES_PER_PACKAGE_SERVICE;
         totalPrice += this.getPackagePrice(pkg);
       });
     }
@@ -272,11 +274,11 @@ export class PricingService {
     if (services) {
       services.forEach((service) => {
         if (service.pricingType === 'FIXED') {
-          totalMinutes += 15; // Estimate 15 minutes per extra service
+          totalMinutes += this.MINUTES_PER_EXTRA_SERVICE;
           totalPrice += this.getFixedServicePrice(service, breed);
         } else if (service.pricingType === 'TIME_BASED') {
           // For time-based, estimate and calculate price
-          const estimatedMinutes = 15;
+          const estimatedMinutes = this.MINUTES_PER_EXTRA_SERVICE;
           totalMinutes += estimatedMinutes;
           totalPrice += this.getTimeBasedServicePrice(
             service,

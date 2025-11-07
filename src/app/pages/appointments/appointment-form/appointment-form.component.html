@@ -387,7 +387,7 @@
                       <div class="col-12 md:col-4">
                         <small class="text-color-secondary">Tijd verschil:</small>
                         <div class="font-semibold" [class.text-green-600]="actualHourlyRateCalculation.totalMinutes <= estimatedDurationMinutes" [class.text-orange-500]="actualHourlyRateCalculation.totalMinutes > estimatedDurationMinutes">
-                          {{ (actualHourlyRateCalculation.totalMinutes - estimatedDurationMinutes) > 0 ? '+' : '' }}{{ formatDuration(Math.abs(actualHourlyRateCalculation.totalMinutes - estimatedDurationMinutes)) }}
+                          {{ formatDurationDifference(actualHourlyRateCalculation.totalMinutes, estimatedDurationMinutes) }}
                         </div>
                       </div>
                       <div class="col-12 md:col-4">

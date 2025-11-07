@@ -119,9 +119,6 @@ export class AppointmentFormComponent
     return this.mobileService.isMobile;
   }
 
-  // Expose Math for template
-  Math = Math;
-
   private readonly appointmentService = inject(AppointmentService);
   private readonly clientService = inject(ClientService);
   private readonly serviceService = inject(ServiceService);
@@ -311,6 +308,13 @@ export class AppointmentFormComponent
     } else {
       return `${mins}min`;
     }
+  }
+
+  formatDurationDifference(actualMinutes: number, estimatedMinutes: number): string {
+    const difference = actualMinutes - estimatedMinutes;
+    const absDifference = Math.abs(difference);
+    const prefix = difference > 0 ? '+' : '';
+    return prefix + this.formatDuration(absDifference);
   }
 
   calculatePricing(): void {
