@@ -7,8 +7,15 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "test:ci": "ng test --no-watch --code-coverage --browsers=ChromeHeadless",
+    "test:coverage": "ng test --no-watch --code-coverage --browsers=ChromeHeadless",
     "lint": "ng lint --fix",
-    "prepare": "husky install"
+    "lint:check": "ng lint",
+    "format": "prettier --write \"src/**/*.{ts,html,css,scss,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,html,css,scss,json}\"",
+    "prepare": "husky install",
+    "pre-commit": "npm run lint:check && npm run format:check",
+    "quality:full": "npm run lint:check && npm run format:check && npm run test:ci && npm run build"
   },
   "prettier": {
     "overrides": [

@@ -32,6 +32,7 @@ describe('PricingService', () => {
           name: 'Bath',
           sizePricing: {
             pricing: { small: 20, medium: 30, large: 40 },
+            duration: { small: 20, medium: 30, large: 40 },
           },
         },
       ];
@@ -52,6 +53,7 @@ describe('PricingService', () => {
           name: 'Full Groom',
           sizePricing: {
             pricing: { small: 50, medium: 75, large: 100 },
+            duration: { small: 30, medium: 45, large: 60 },
           },
         },
       ];
@@ -72,6 +74,7 @@ describe('PricingService', () => {
           name: 'Bath',
           sizePricing: {
             pricing: { small: 20, medium: 30, large: 40 },
+            duration: { small: 20, medium: 30, large: 40 },
           },
         },
         {
@@ -79,6 +82,7 @@ describe('PricingService', () => {
           name: 'Nail Trim',
           sizePricing: {
             pricing: { small: 10, medium: 15, large: 20 },
+            duration: { small: 10, medium: 15, large: 20 },
           },
         },
       ];
@@ -88,6 +92,7 @@ describe('PricingService', () => {
           name: 'Basic Package',
           sizePricing: {
             pricing: { small: 50, medium: 75, large: 100 },
+            duration: { small: 30, medium: 45, large: 60 },
           },
         },
       ];
@@ -99,15 +104,24 @@ describe('PricingService', () => {
     });
 
     it('should apply breed-specific price overrides', () => {
-      const breed = TestDataFactory.createBreed({ id: 'breed-1', size: 'medium' as const });
+      const breed = TestDataFactory.createBreed({
+        id: 'breed-1',
+        size: 'medium' as const,
+      });
       const services = [
         {
           ...TestDataFactory.createService(),
           name: 'Bath',
           sizePricing: {
             pricing: { small: 20, medium: 30, large: 40 },
+            duration: { small: 20, medium: 30, large: 40 },
             breedOverrides: [
-              { breedId: 'breed-1', priceAdjustment: 10 },
+              {
+                breedId: 'breed-1',
+                breedName: 'Test Breed',
+                priceAdjustment: 10,
+                durationAdjustment: 5,
+              },
             ],
           },
         },
@@ -154,12 +168,12 @@ describe('PricingService', () => {
 
   describe('getTimeBasedServicePrice', () => {
     it('should return 0 for non-time-based services', () => {
-      const service = {
+      const testService = {
         ...TestDataFactory.createService(),
-        pricingType: 'FIXED',
+        pricingType: 'FIXED' as any,
       };
 
-      const result = (this.service as any).getTimeBasedServicePrice(service, 60);
+      const result = service.getTimeBasedServicePrice(testService, 60);
 
       expect(result).toBe(0);
     });
@@ -167,7 +181,7 @@ describe('PricingService', () => {
     it('should calculate time-based price', () => {
       const testService = {
         ...TestDataFactory.createService(),
-        pricingType: 'TIME_BASED',
+        pricingType: 'TIME_BASED' as any,
         timeRates: [
           {
             breed: null,

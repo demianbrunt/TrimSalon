@@ -22,7 +22,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationDialogService } from 'src/app/core/services/confirmation-dialog.service';
+import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Package } from '../../core/models/package.model';
 import { Price } from '../../core/models/price.model';

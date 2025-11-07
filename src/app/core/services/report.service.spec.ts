@@ -14,7 +14,9 @@ describe('ReportService', () => {
   let mockExpenseService: jasmine.SpyObj<ExpenseService>;
 
   beforeEach(() => {
-    mockAppointmentService = jasmine.createSpyObj('AppointmentService', ['getData$']);
+    mockAppointmentService = jasmine.createSpyObj('AppointmentService', [
+      'getData$',
+    ]);
     mockInvoiceService = jasmine.createSpyObj('InvoiceService', ['getData$']);
     mockExpenseService = jasmine.createSpyObj('ExpenseService', ['getData$']);
 
@@ -89,7 +91,7 @@ describe('ReportService', () => {
           ...TestDataFactory.createInvoice(),
           issueDate: new Date('2024-01-20'),
           totalAmount: 150,
-          paymentStatus: PaymentStatus.UNPAID,
+          paymentStatus: PaymentStatus.PENDING,
         },
       ];
 

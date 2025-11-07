@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Button } from 'primeng/button';
-import { BaseComponent } from 'src/app/core/components/base/base.component';
+import { BaseComponent } from '../../core/components/base/base.component';
 import { AuthenticationService } from '../../core/services/authentication.service';
 
 @Component({
