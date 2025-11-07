@@ -1,0 +1,4 @@
+/* Invoice form component styles */
+:host {
+  display: block;
+}
