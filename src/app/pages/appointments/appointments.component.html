@@ -34,7 +34,12 @@
                 {{ appointment.endTime | date: "shortTime" }}
               </div>
               <div class="mt-2">
-                <p-tag [value]="appointment.service.name"></p-tag>
+                @for (service of appointment.services; track service.id) {
+                  <p-tag [value]="service.name" class="mr-1"></p-tag>
+                }
+                @for (pkg of appointment.packages; track pkg.id) {
+                  <p-tag [value]="pkg.name" severity="info" class="mr-1"></p-tag>
+                }
               </div>
             </div>
             <div class="shrink-0 mt-3">

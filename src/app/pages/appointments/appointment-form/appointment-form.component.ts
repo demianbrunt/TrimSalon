@@ -12,6 +12,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DatePickerModule } from 'primeng/datepicker';
+import { DividerModule } from 'primeng/divider';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -53,6 +54,7 @@ import { ToastrService } from '../../../core/services/toastr.service';
     ToastModule,
     CardModule,
     MultiSelectModule,
+    DividerModule,
   ],
   templateUrl: './appointment-form.component.html',
   styleUrls: ['./appointment-form.component.css'],
@@ -67,8 +69,10 @@ export class AppointmentFormComponent
     dog: FormControl<Dog | null>;
     services: FormControl<Service[] | null>;
     packages: FormControl<Package[] | null>;
+    appointmentDate: FormControl<Date | null>;
     startTime: FormControl<Date | null>;
     endTime: FormControl<Date | null>;
+    estimatedDuration: FormControl<number | null>;
     notes: FormControl<string | null>;
   }>;
 
@@ -76,6 +80,10 @@ export class AppointmentFormComponent
   dogs: Dog[] = [];
   services: Service[] = [];
   packages: Package[] = [];
+
+  // Tijd berekening
+  estimatedDurationMinutes = 0;
+  calculatedEndTime: Date | null = null;
 
   get client() {
     return this.form.controls.client;
@@ -124,8 +132,10 @@ export class AppointmentFormComponent
         dog: new FormControl(null, Validators.required),
         services: new FormControl<Service[] | null>([]),
         packages: new FormControl<Package[] | null>([]),
+        appointmentDate: new FormControl<Date | null>(null),
         startTime: new FormControl<Date | null>(null),
         endTime: new FormControl<Date | null>(null),
+        estimatedDuration: new FormControl<number | null>(null),
         notes: new FormControl(null),
       });
       resolve();
@@ -142,6 +152,7 @@ export class AppointmentFormComponent
       const appointmentId = this.route.snapshot.paramMap.get('id');
       this.form.controls.id.patchValue(appointmentId);
       this.loadAppointmentData(appointmentId);
+      this.form.controls.appointmentDate.setValidators(Validators.required);
       this.form.controls.startTime.setValidators(Validators.required);
       this.form.controls.endTime.setValidators(Validators.required);
     } else {
@@ -149,12 +160,120 @@ export class AppointmentFormComponent
         { label: 'Afspraken', routerLink: '/appointments' },
         { label: 'Nieuwe Afspraak' },
       ]);
+      this.form.controls.appointmentDate.setValidators(Validators.required);
+      this.form.controls.startTime.setValidators(Validators.required);
     }
 
-    this.form.get('client').valueChanges.subscribe((client) => {
+    // Subscribe to changes for duration calculation
+    this.setupDurationCalculation();
+
+    this.form.get('client')?.valueChanges.subscribe((client) => {
       this.dogs = client ? client.dogs : [];
-      this.form.get('dog').setValue(null);
+      this.form.get('dog')?.setValue(null);
     });
+  }
+
+  setupDurationCalculation(): void {
+    // Recalculate duration when dog, packages, or services change
+    this.form.get('dog')?.valueChanges.subscribe(() => {
+      this.calculateEstimatedDuration();
+    });
+
+    this.form.get('packages')?.valueChanges.subscribe(() => {
+      this.calculateEstimatedDuration();
+    });
+
+    this.form.get('services')?.valueChanges.subscribe(() => {
+      this.calculateEstimatedDuration();
+    });
+
+    // Update end time when start time or duration changes
+    this.form.get('startTime')?.valueChanges.subscribe(() => {
+      this.updateCalculatedEndTime();
+    });
+
+    this.form.get('appointmentDate')?.valueChanges.subscribe(() => {
+      this.updateCalculatedEndTime();
+    });
+  }
+
+  calculateEstimatedDuration(): void {
+    const dog = this.form.get('dog')?.value;
+    const packages = this.form.get('packages')?.value || [];
+    const services = this.form.get('services')?.value || [];
+
+    if (!dog) {
+      this.estimatedDurationMinutes = 0;
+      this.form.get('estimatedDuration')?.setValue(null);
+      return;
+    }
+
+    let totalMinutes = 0;
+
+    // Base time based on dog size
+    const dogSize = dog.breed?.size || 'medium';
+    const baseTimes = {
+      small: 30,
+      medium: 45,
+      large: 60,
+    };
+    totalMinutes += baseTimes[dogSize] || 45;
+
+    // Add time for packages
+    packages.forEach((pkg: Package) => {
+      // Estimate 15 minutes per service in package
+      const pkgServices = pkg.services || [];
+      totalMinutes += pkgServices.length * 15;
+    });
+
+    // Add time for extra services
+    services.forEach(() => {
+      totalMinutes += 15; // Estimate 15 minutes per extra service
+    });
+
+    this.estimatedDurationMinutes = totalMinutes;
+    this.form.get('estimatedDuration')?.setValue(totalMinutes);
+    this.updateCalculatedEndTime();
+  }
+
+  updateCalculatedEndTime(): void {
+    const appointmentDate = this.form.get('appointmentDate')?.value;
+    const startTime = this.form.get('startTime')?.value;
+
+    if (!appointmentDate || !startTime || this.estimatedDurationMinutes === 0) {
+      this.calculatedEndTime = null;
+      return;
+    }
+
+    // Combine date and time
+    const startDateTime = new Date(appointmentDate);
+    const timeDate = new Date(startTime);
+    startDateTime.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+
+    // Add estimated duration
+    const endDateTime = new Date(startDateTime);
+    endDateTime.setMinutes(
+      endDateTime.getMinutes() + this.estimatedDurationMinutes,
+    );
+
+    this.calculatedEndTime = endDateTime;
+
+    // In edit mode, update the endTime form control
+    if (this.isEditMode) {
+      this.form.get('endTime')?.setValue(endDateTime, { emitEvent: false });
+    }
+  }
+
+  formatDuration(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0 && mins > 0) {
+      return `${hours}u ${mins}min`;
+    } else if (hours > 0) {
+      return `${hours}u`;
+    } else {
+      return `${mins}min`;
+    }
   }
 
   loadClients(): void {
@@ -178,7 +297,18 @@ export class AppointmentFormComponent
   loadAppointmentData(id: string): void {
     this.appointmentService.getById(id).subscribe((appointment) => {
       if (appointment) {
-        this.form.patchValue(appointment);
+        // Split startTime into date and time
+        if (appointment.startTime) {
+          const startDate = new Date(appointment.startTime);
+          this.form.patchValue({
+            ...appointment,
+            appointmentDate: startDate,
+            startTime: startDate,
+          });
+        } else {
+          this.form.patchValue(appointment);
+        }
+
         this.breadcrumbService.setItems([
           { label: 'Afspraken', routerLink: '/appointments' },
           { label: `Afspraak van ${appointment.client.name}` },
@@ -191,10 +321,37 @@ export class AppointmentFormComponent
 
   save(): void {
     if (this.form.invalid) {
+      this.toastrService.error('Fout', 'Vul alle verplichte velden in');
       return;
     }
 
-    const appointmentData: Appointment = this.form.value as Appointment;
+    const formValue = this.form.value;
+    const appointmentDate = formValue.appointmentDate;
+    const startTime = formValue.startTime;
+
+    // Combine date and time into startTime
+    let combinedStartTime: Date | null = null;
+    if (appointmentDate && startTime) {
+      combinedStartTime = new Date(appointmentDate);
+      const timeDate = new Date(startTime);
+      combinedStartTime.setHours(
+        timeDate.getHours(),
+        timeDate.getMinutes(),
+        0,
+        0,
+      );
+    }
+
+    const appointmentData: Appointment = {
+      id: formValue.id || undefined,
+      client: formValue.client!,
+      dog: formValue.dog!,
+      services: formValue.services || [],
+      packages: formValue.packages || [],
+      startTime: combinedStartTime || undefined,
+      endTime: this.calculatedEndTime || formValue.endTime || undefined,
+      notes: formValue.notes || undefined,
+    };
 
     const operation = this.isEditMode
       ? this.appointmentService.update(appointmentData)

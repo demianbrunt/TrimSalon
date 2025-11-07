@@ -21,17 +21,13 @@ export const authGuard: CanActivateFn = (
     filter((isAllowed) => isAllowed !== undefined),
     take(1),
     map((isAllowed) => {
-      if (isAllowed) {
-        return true;
-      }
-
+      if (isAllowed) return true;
       if (authService.user() === null) {
         return router.createUrlTree(['/signin'], {
           queryParams: { returnUrl: state.url },
         });
-      } else {
-        return router.createUrlTree(['/forbidden']);
       }
+      return router.createUrlTree(['/forbidden']);
     }),
   );
 };

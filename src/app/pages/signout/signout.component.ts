@@ -29,6 +29,6 @@ export class SignoutComponent implements OnInit {
   protected readonly router = inject(Router);
 
   ngOnInit(): void {
-    this.authService.signOut();
+    void this.authService.signOut();
   }
 }

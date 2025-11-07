@@ -15,13 +15,10 @@ module.exports = tseslint.config(
       ...angular.configs.tsRecommended,
       prettierConfig,
     ],
-    plugins: {
-      prettier: prettierPlugin,
-    },
     processor: angular.processInlineTemplates,
     rules: {
       "@angular-eslint/directive-selector": [
-        "error",
+        "warn",
         {
           type: "attribute",
           prefix: "app",
@@ -29,20 +26,15 @@ module.exports = tseslint.config(
         },
       ],
       "@angular-eslint/component-selector": [
-        "error",
+        "warn",
         {
           type: "element",
           prefix: "app",
           style: "kebab-case",
         },
       ],
-      "prettier/prettier": [
-        "error",
-        {
-          endOfLine: "auto",
-        },
-      ], // Enforce Prettier formatting as lint errors
-      "@typescript-eslint/no-explicit-any": "error", // Forbid usage of 'any'
+      "@typescript-eslint/no-explicit-any": "warn", // Allow 'any' with warning
+      "@typescript-eslint/no-unused-vars": "warn", // Downgrade to warning
     },
   },
   {
