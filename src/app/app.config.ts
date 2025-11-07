@@ -45,11 +45,8 @@ const appSettings: AppConfig = {
       '495690826928-k7jfduihumi360hkiitfupla794qpe99.apps.googleusercontent.com',
     scope: 'https://www.googleapis.com/auth/calendar',
   },
-  // DEV MODE: Set to true to bypass authentication for testing
-  // WARNING: Only use in development/testing environment
-  devMode: typeof window !== 'undefined' && 
-    (window.location.hostname === 'localhost' || 
-     window.location.hostname === '127.0.0.1'),
+  // DEV MODE: Disabled - always require proper authentication
+  devMode: false,
 };
 
 registerLocaleData(localeNl);

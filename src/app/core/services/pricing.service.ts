@@ -3,6 +3,7 @@ import { Breed } from '../models/breed.model';
 import { Package } from '../models/package.model';
 import { Price } from '../models/price.model';
 import { Service } from '../models/service.model';
+import { getSizeValue } from '../models/size-pricing.model';
 
 export interface PriceCalculation {
   totalPrice: number;
@@ -50,7 +51,7 @@ export class PricingService {
     // Calculate package prices
     if (packages) {
       packages.forEach((pkg) => {
-        const price = this.getPackagePrice(pkg);
+        const price = this.getPackagePrice(pkg, breed);
         if (price > 0) {
           breakdown.push({
             name: pkg.name,
@@ -102,7 +103,8 @@ export class PricingService {
 
     const totalHours = totalMinutes / 60;
     const effectiveHourlyRate = totalPrice / totalHours;
-    const rateComparison = (effectiveHourlyRate / this.TARGET_HOURLY_RATE) * 100;
+    const rateComparison =
+      (effectiveHourlyRate / this.TARGET_HOURLY_RATE) * 100;
 
     return {
       effectiveHourlyRate,
@@ -116,12 +118,29 @@ export class PricingService {
   /**
    * Get current price for a package
    */
-  private getPackagePrice(pkg: Package): number {
+  private getPackagePrice(pkg: Package, breed?: Breed): number {
+    // New simplified pricing model
+    if (pkg.sizePricing && breed?.size) {
+      let price = getSizeValue(pkg.sizePricing.pricing, breed.size);
+
+      // Apply breed-specific override if exists
+      if (breed.id && pkg.sizePricing.breedOverrides) {
+        const override = pkg.sizePricing.breedOverrides.find(
+          (o) => o.breedId === breed.id,
+        );
+        if (override && override.priceAdjustment !== undefined) {
+          price += override.priceAdjustment;
+        }
+      }
+
+      return price;
+    }
+
+    // Legacy pricing model (deprecated)
     if (!pkg.prices || pkg.prices.length === 0) {
       return 0;
     }
 
-    // Get current price (most recent active price)
     const currentPrice = this.getCurrentPrice(pkg.prices);
     return currentPrice?.amount || 0;
   }
@@ -130,11 +149,27 @@ export class PricingService {
    * Get current price for a service based on breed
    */
   private getServicePrice(service: Service, breed?: Breed): number {
+    // New simplified pricing model
+    if (service.sizePricing && breed?.size) {
+      let price = getSizeValue(service.sizePricing.pricing, breed.size);
+
+      // Apply breed-specific override if exists
+      if (breed.id && service.sizePricing.breedOverrides) {
+        const override = service.sizePricing.breedOverrides.find(
+          (o) => o.breedId === breed.id,
+        );
+        if (override && override.priceAdjustment !== undefined) {
+          price += override.priceAdjustment;
+        }
+      }
+
+      return price;
+    }
+
+    // Legacy pricing model (deprecated)
     if (service.pricingType === 'FIXED') {
       return this.getFixedServicePrice(service, breed);
     } else if (service.pricingType === 'TIME_BASED') {
-      // For time-based services, we need duration which we don't have here
-      // This would typically be calculated during appointment with actual time
       return 0;
     }
     return 0;
@@ -264,27 +299,64 @@ export class PricingService {
     // Add time for packages and calculate package prices
     if (packages) {
       packages.forEach((pkg) => {
-        const pkgServices = pkg.services || [];
-        totalMinutes += pkgServices.length * this.MINUTES_PER_PACKAGE_SERVICE;
-        totalPrice += this.getPackagePrice(pkg);
+        // New simplified pricing model
+        if (pkg.sizePricing && breed?.size) {
+          let duration = getSizeValue(pkg.sizePricing.duration, breed.size);
+
+          // Apply breed-specific duration override
+          if (breed.id && pkg.sizePricing.breedOverrides) {
+            const override = pkg.sizePricing.breedOverrides.find(
+              (o) => o.breedId === breed.id,
+            );
+            if (override && override.durationAdjustment !== undefined) {
+              duration += override.durationAdjustment;
+            }
+          }
+
+          totalMinutes += duration;
+        } else {
+          // Legacy: estimate time based on services
+          const pkgServices = pkg.services || [];
+          totalMinutes += pkgServices.length * this.MINUTES_PER_PACKAGE_SERVICE;
+        }
+
+        totalPrice += this.getPackagePrice(pkg, breed);
       });
     }
 
     // Add time for services and calculate service prices
     if (services) {
       services.forEach((service) => {
-        if (service.pricingType === 'FIXED') {
-          totalMinutes += this.MINUTES_PER_EXTRA_SERVICE;
-          totalPrice += this.getFixedServicePrice(service, breed);
-        } else if (service.pricingType === 'TIME_BASED') {
-          // For time-based, estimate and calculate price
-          const estimatedMinutes = this.MINUTES_PER_EXTRA_SERVICE;
-          totalMinutes += estimatedMinutes;
-          totalPrice += this.getTimeBasedServicePrice(
-            service,
-            estimatedMinutes,
-            breed,
-          );
+        // New simplified pricing model
+        if (service.sizePricing && breed?.size) {
+          let duration = getSizeValue(service.sizePricing.duration, breed.size);
+
+          // Apply breed-specific duration override
+          if (breed.id && service.sizePricing.breedOverrides) {
+            const override = service.sizePricing.breedOverrides.find(
+              (o) => o.breedId === breed.id,
+            );
+            if (override && override.durationAdjustment !== undefined) {
+              duration += override.durationAdjustment;
+            }
+          }
+
+          totalMinutes += duration;
+          totalPrice += this.getServicePrice(service, breed);
+        } else {
+          // Legacy pricing model
+          if (service.pricingType === 'FIXED') {
+            totalMinutes += this.MINUTES_PER_EXTRA_SERVICE;
+            totalPrice += this.getFixedServicePrice(service, breed);
+          } else if (service.pricingType === 'TIME_BASED') {
+            const estimatedMinutes = this.MINUTES_PER_EXTRA_SERVICE;
+            totalMinutes += estimatedMinutes;
+            totalPrice += this.getTimeBasedServicePrice(
+              service,
+              estimatedMinutes,
+              breed,
+            );
+          }
         }
       });
     }

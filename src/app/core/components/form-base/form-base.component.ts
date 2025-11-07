@@ -133,4 +133,10 @@ export abstract class FormBaseComponent
   protected getRouteParam$() {
     return this.activatedRoute.paramMap;
   }
+
+  // Call this after a successful save to avoid CanDeactivate prompt
+  protected finalizeSaveSuccess(): void {
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
+  }
 }
