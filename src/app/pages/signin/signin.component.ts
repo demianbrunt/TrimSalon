@@ -17,9 +17,18 @@ import { AuthenticationService } from '../../core/services/authentication.servic
       >
       <h1 class="text-4xl font-bold mb-2">Inloggen</h1>
       <p class="text-lg mb-4">
-        Een momentje, we snuffelen rond om je account te vinden!
+        @if (authService.isSigningIn()) {
+          Je wordt doorgestuurd naar Google...
+        } @else {
+          Klik hieronder om in te loggen met je Google account
+        }
       </p>
-      <p-button label="Inloggen" icon="pi pi-home" (onClick)="signIn()">
+      <p-button
+        label="Inloggen met Google"
+        icon="pi pi-google"
+        (onClick)="signIn()"
+        [disabled]="authService.isSigningIn()"
+      >
       </p-button>
     </div>
   `,
@@ -29,31 +38,24 @@ export class SignInComponent extends BaseComponent implements OnInit {
   private readonly router = inject(Router);
 
   ngOnInit(): void {
-    const returnUrl = this.getFromQueryString('returnUrl') ?? '/calendar';
+    // Check if already authenticated
     if (this.authService.isAuthenticated()) {
+      const returnUrl = this.getFromQueryString('returnUrl') ?? '/appointments';
       this.router.navigate([returnUrl]);
       return;
     }
 
-    if (this.authService.isSigningIn()) {
-      return;
-    }
-
-    this.signIn(returnUrl);
+    // Note: redirect result is handled in AuthenticationService constructor
+    // No need to call signIn() automatically - let user click the button
   }
 
-  signIn(returnUrl = '/calendar') {
-    this.authService
-      .signIn()
-      .then(() => {
-        this.router.navigate([returnUrl]);
-      })
-      .catch(() => {
-        this.router.navigate(['/forbidden']);
-      });
-  }
+  signIn(): void {
+    // Store returnUrl in sessionStorage so we can use it after redirect
+    const returnUrl = this.getFromQueryString('returnUrl') ?? '/appointments';
+    sessionStorage.setItem('auth_return_url', returnUrl);
 
-  private navigateToCalendar() {
-    this.router.navigate(['/calendar']);
+    // Trigger redirect-based sign in
+    void this.authService.signIn();
+    // Browser will redirect to Google, then back to this app
   }
 }
