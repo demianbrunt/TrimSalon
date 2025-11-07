@@ -531,8 +531,8 @@ export class AppointmentFormComponent
         console.log('[AppointmentForm] 📤 Result:', result);
 
         // Mark form as pristine to prevent CanDeactivate warning
-        this.form.markAsPristine();
-        console.log('[AppointmentForm] ✨ Form marked as pristine');
+        this.finalizeSaveSuccess();
+        console.log('[AppointmentForm] ✨ Form finalized after save');
 
         this.toastrService.success(
           'Succes',

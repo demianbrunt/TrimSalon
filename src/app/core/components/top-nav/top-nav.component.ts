@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { AuthenticationService } from '../../services/authentication.service';
 
@@ -10,11 +9,22 @@ import { AuthenticationService } from '../../services/authentication.service';
   imports: [CommonModule, ButtonModule],
   template: `
     <div
-      class="flex justify-content-between align-items-center px-3 py-2 shadow-2 bg-white"
+      class="flex justify-content-between align-items-center px-4 py-3 shadow-3"
+      style="background: linear-gradient(135deg, #86A789 0%, #739072 100%);"
     >
-      <div class="flex align-items-center gap-2">
-        <span class="text-3xl">🐾</span>
-        <span class="font-bold text-2xl text-primary">TrimSalon</span>
+      <div class="flex align-items-center gap-3">
+        <span class="text-5xl">🐾</span>
+        <div>
+          <div
+            class="font-bold text-3xl text-white"
+            style="letter-spacing: 0.5px;"
+          >
+            TrimSalon
+          </div>
+          <div class="text-sm text-white opacity-90">
+            Professionele Hondentrimsalon
+          </div>
+        </div>
       </div>
 
       <div class="flex align-items-center">
@@ -22,8 +32,10 @@ import { AuthenticationService } from '../../services/authentication.service';
           <p-button
             (click)="signOut()"
             icon="pi pi-sign-out"
-            [text]="true"
+            label="Uitloggen"
+            [outlined]="true"
             severity="secondary"
+            styleClass="text-white border-white hover:bg-white hover:text-primary"
             pTooltip="Uitloggen"
           />
         }
@@ -33,10 +45,8 @@ import { AuthenticationService } from '../../services/authentication.service';
 })
 export class TopNavComponent {
   readonly authService = inject(AuthenticationService);
-  private readonly router = inject(Router);
 
-  signOut(): void {
-    this.authService.signOut();
-    this.router.navigate(['/signedout']);
+  async signOut(): Promise<void> {
+    await this.authService.signOut();
   }
 }

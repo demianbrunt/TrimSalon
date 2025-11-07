@@ -19,4 +19,5 @@ export interface Appointment {
   actualServices?: Service[]; // Services actually performed
   actualPackages?: Package[]; // Packages actually performed
   actualEndTime?: Date; // Actual end time (can differ from estimated endTime)
+  completed?: boolean; // Whether appointment has been completed
 }

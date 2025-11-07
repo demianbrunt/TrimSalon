@@ -24,6 +24,8 @@ export interface ProfitLossReport {
   netProfit: number;
   profitMargin: number; // percentage
   breakEven: boolean;
+  totalMinutesWorked?: number;
+  effectiveHourlyRate?: number; // €/hour
 }
 
 export interface TopClient {

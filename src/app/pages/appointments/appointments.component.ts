@@ -6,7 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -14,7 +14,6 @@ import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
-import { TooltipModule } from 'primeng/tooltip';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Appointment } from '../../core/models/appointment.model';
 import { AppointmentService } from '../../core/services/appointment.service';
@@ -40,7 +39,6 @@ import { CompleteAppointmentDialogComponent } from './complete-appointment-dialo
     DataViewModule,
     ConfirmDialogModule,
     CardModule,
-    TooltipModule,
   ],
   providers: [ConfirmationService, DialogService],
   templateUrl: './appointments.component.html',
@@ -59,6 +57,7 @@ export class AppointmentsComponent implements OnInit {
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
   private readonly dialogService = inject(DialogService);
+  private dialogRef: DynamicDialogRef | undefined;
 
   get isMobile() {
     return this.mobileService.isMobile;
@@ -93,37 +92,6 @@ export class AppointmentsComponent implements OnInit {
     }
   }
 
-  completeAppointment(appointment: Appointment): void {
-    const ref = this.dialogService.open(CompleteAppointmentDialogComponent, {
-      header: 'Afspraak Afronden',
-      width: this.isMobile ? '95vw' : '600px',
-      data: {
-        appointment: appointment,
-      },
-    });
-
-    ref.onClose.subscribe((result) => {
-      if (result) {
-        const updatedAppointment: Appointment = {
-          ...appointment,
-          actualEndTime: result.actualEndTime,
-          notes: result.notes,
-          completed: result.completed,
-        };
-
-        this.appointmentService.update(updatedAppointment).subscribe({
-          next: () => {
-            this.toastrService.success('Succes', 'Afspraak afgerond');
-            this.loadAppointments();
-          },
-          error: (err) => {
-            this.toastrService.error('Fout', err.message);
-          },
-        });
-      }
-    });
-  }
-
   deleteAppointment(appointment: Appointment): void {
     this.confirmationService
       .open(
@@ -145,5 +113,38 @@ export class AppointmentsComponent implements OnInit {
           });
         }
       });
+  }
+
+  completeAppointment(appointment: Appointment): void {
+    this.dialogRef = this.dialogService.open(
+      CompleteAppointmentDialogComponent,
+      {
+        header: 'Afspraak afronden',
+        width: '500px',
+        data: { appointment },
+      },
+    );
+
+    this.dialogRef.onClose.subscribe((result) => {
+      if (result && result.completed) {
+        const updatedAppointment: Appointment = {
+          ...appointment,
+          actualEndTime: result.actualEndTime,
+          actualServices: result.actualServices,
+          actualPackages: result.actualPackages,
+          completed: true,
+        };
+
+        this.appointmentService.update(updatedAppointment).subscribe({
+          next: () => {
+            this.toastrService.success('Succes', 'Afspraak afgerond');
+            this.loadAppointments();
+          },
+          error: (err) => {
+            this.toastrService.error('Fout', err.message);
+          },
+        });
+      }
+    });
   }
 }

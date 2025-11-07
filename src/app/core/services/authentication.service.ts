@@ -50,7 +50,7 @@ export class AuthenticationService {
         this.startSessionManagement();
         return of(true);
       }
-      
+
       if (!user?.email) {
         this.clearSessionTimers();
         return of(false);
@@ -288,6 +288,8 @@ export class AuthenticationService {
       localStorage.removeItem('google_oauth_token');
       await signOut(this.auth);
       this.toastr.info('Je bent uitgelogd', 'Tot ziens!');
+      // Navigate to signout page after successful logout
+      await this.router.navigate(['/signedout']);
     } catch (err) {
       console.error('Sign-out error', err);
       this.toastr.error('Fout bij uitloggen', 'Authenticatie');

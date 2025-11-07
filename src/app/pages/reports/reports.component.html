@@ -184,6 +184,31 @@
       <div class="col-12 md:col-6 lg:col-3">
         <p-card>
           <div class="text-center">
+            <div class="text-500 font-semibold mb-2">Effectief Uurloon</div>
+            <div 
+              class="text-3xl font-bold"
+              [class.text-green-600]="(profitLossReport?.effectiveHourlyRate || 0) >= 60"
+              [class.text-orange-600]="(profitLossReport?.effectiveHourlyRate || 0) < 60 && (profitLossReport?.effectiveHourlyRate || 0) > 0"
+              [class.text-red-500]="(profitLossReport?.effectiveHourlyRate || 0) <= 0"
+            >
+              {{ formatCurrency(profitLossReport?.effectiveHourlyRate || 0) }}/uur
+            </div>
+            <small class="text-500">
+              @if ((profitLossReport?.effectiveHourlyRate || 0) >= 60) {
+                <i class="pi pi-check-circle"></i> Target bereikt (€60)
+              } @else if ((profitLossReport?.effectiveHourlyRate || 0) > 0) {
+                {{ ((profitLossReport?.effectiveHourlyRate || 0) / 60 * 100).toFixed(0) }}% van target (€60)
+              } @else {
+                Geen data
+              }
+            </small>
+          </div>
+        </p-card>
+      </div>
+
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-card>
+          <div class="text-center">
             <div class="text-500 font-semibold mb-2">Break-Even Punt</div>
             <div class="text-3xl font-bold text-primary">
               {{ formatCurrency(expenseReport?.totalExpenses || 0) }}
