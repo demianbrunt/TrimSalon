@@ -8,6 +8,8 @@ import { AppointmentFormComponent } from './pages/appointments/appointment-form/
 import { ClientFormComponent } from './pages/clients/client-form/client-form.component';
 import { ClientsComponent } from './pages/clients/clients.component';
 import { ForbiddenComponent } from './pages/forbidden/forbidden.component';
+import { InvoiceFormComponent } from './pages/invoices/invoice-form/invoice-form.component';
+import { InvoicesComponent } from './pages/invoices/invoices.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
 import { PackageFormComponent } from './pages/packages/package-form/package-form.component';
 import { PackagesComponent } from './pages/packages/packages.component';
@@ -107,6 +109,26 @@ export const routes: Routes = [
     component: ReportsComponent,
     canActivate: [authGuard],
     data: { breadcrumb: 'Rapportages' },
+  },
+  {
+    path: 'invoices',
+    component: InvoicesComponent,
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Facturen' },
+  },
+  {
+    path: 'invoices/new',
+    component: InvoiceFormComponent,
+    canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
+    data: { breadcrumb: 'Nieuwe Factuur' },
+  },
+  {
+    path: 'invoices/:id',
+    component: InvoiceFormComponent,
+    canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
+    data: { breadcrumb: 'Factuur Bewerken', formMode: FormMode.Edit },
   },
   {
     path: 'signedout',
