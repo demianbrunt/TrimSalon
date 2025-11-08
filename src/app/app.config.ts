@@ -5,6 +5,7 @@ import {
   ApplicationConfig,
   LOCALE_ID,
   provideZoneChangeDetection,
+  isDevMode,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ConfirmationDialogService } from './core/services/confirmation-dialog.service';
@@ -12,13 +13,13 @@ import { ConfirmationDialogService } from './core/services/confirmation-dialog.s
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
+import { getFunctions, provideFunctions } from '@angular/fire/functions';
+import { getMessaging, provideMessaging } from '@angular/fire/messaging';
 import {
   getRemoteConfig,
   provideRemoteConfig,
 } from '@angular/fire/remote-config';
 import { provideAnimations } from '@angular/platform-browser/animations';
-
-import { getFunctions, provideFunctions } from '@angular/fire/functions';
 
 import Aura from '@primeuix/themes/aura';
 
@@ -28,6 +29,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { APP_CONFIG, AppConfig } from './app.config.model';
 import { routes } from './app.routes';
 import { GoogleAuthService } from './core/services/google-auth.service';
+import { provideServiceWorker } from '@angular/service-worker';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyApnb2vrrWaiewHEMzn73LbyPoBaPt4FUQ',
@@ -71,6 +73,7 @@ export const commonProviders = [
   provideRemoteConfig(() => getRemoteConfig()),
   provideFirestore(() => getFirestore()),
   provideFunctions(() => getFunctions()),
+  provideMessaging(() => getMessaging()),
   provideHttpClient(withFetch()),
   provideAnimations(),
   { provide: APP_CONFIG, useValue: appSettings },
@@ -86,5 +89,12 @@ export const browserProviders = [
 ];
 
 export const appConfig: ApplicationConfig = {
-  providers: [...commonProviders, ...browserProviders],
+  providers: [
+    ...commonProviders,
+    ...browserProviders,
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
+  ],
 };

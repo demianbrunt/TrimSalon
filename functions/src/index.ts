@@ -5,7 +5,9 @@ import {
   beforeUserCreated,
   HttpsError,
 } from 'firebase-functions/v2/identity';
-import * as calendar from './calendar';
+// Calendar functions temporarily disabled
+// import * as calendar from './calendar';
+import * as email from './email';
 
 admin.initializeApp();
 
@@ -50,6 +52,8 @@ export const beforeusercreate = beforeUserCreated(
   },
 );
 
+// Calendar functions temporarily disabled - can be re-enabled later
+/*
 export const exchangeAuthCode = onCall(async (request) => {
   const { code, userId } = request.data;
 
@@ -233,6 +237,33 @@ export const createCalendar = onCall(
     } catch (error) {
       console.error('Error creating calendar:', error);
       throw new HttpsError('internal', 'Failed to create calendar.');
+    }
+  },
+);
+*/
+
+// Email functions
+export const sendAppointmentReminderEmail = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    const { to, appointment } = request.data;
+
+    if (!to || !appointment) {
+      throw new HttpsError(
+        'invalid-argument',
+        'The function must be called with arguments "to" and "appointment".',
+      );
+    }
+
+    try {
+      await email.sendAppointmentReminder(to, appointment);
+      return { success: true };
+    } catch (error) {
+      console.error('Error sending appointment reminder:', error);
+      throw new HttpsError(
+        'internal',
+        'Failed to send appointment reminder email.',
+      );
     }
   },
 );

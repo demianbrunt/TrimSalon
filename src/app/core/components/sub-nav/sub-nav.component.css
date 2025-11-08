@@ -19,7 +19,7 @@
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
     background-color: var(--p-surface-0);
   }
-  
+
   .sub-nav-container p-button {
     flex: 1;
   }
@@ -38,16 +38,11 @@
     padding: 1rem 0;
   }
 
-  p-button {
-    margin: 0.5rem 0;
-    width: 100%;
-  }
-
   .active-nav-button {
     background: var(--p-highlight-bg) !important;
     color: var(--p-highlight-text-color) !important;
   }
-  
+
   .active-nav-button:hover {
     background: var(--p-surface-100) !important;
   }
