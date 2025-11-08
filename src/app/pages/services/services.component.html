@@ -18,39 +18,58 @@
     <ng-template #emptymessage></ng-template>
     <ng-template #list let-services: Service[]>
       @for (service of services; track service.id) {
-        <div class="col-12 md:col-6 lg:col-4 p-2">
-          <div
-            class="p-4 border surface-border surface-card border-round h-full flex flex-column"
-          >
-            <div class="grow">
-              <div class="flex justify-content-between">
-                <div class="font-bold text-lg">{{ service.name }}</div>
+        <app-mobile-card>
+          <div header class="font-bold text-xl">{{ service.name }}</div>
+
+          <div content>
+            @if (service.description) {
+              <p class="text-secondary mt-0 mb-3 line-height-3">
+                {{ service.description }}
+              </p>
+            }
+
+            @if (service.sizePricing) {
+              <div class="mb-0">
                 <p-tag
-                  [value]="
-                    service.pricingType === 'FIXED' ? 'Vaste Prijs' : 'Per Tijd'
-                  "
+                  value="Klein: €{{
+                    service.sizePricing.pricing.small.toFixed(2)
+                  }} ({{ service.sizePricing.duration.small }}min)"
+                  severity="success"
+                  styleClass="mr-2 mb-2"
+                ></p-tag>
+                <p-tag
+                  value="Middel: €{{
+                    service.sizePricing.pricing.medium.toFixed(2)
+                  }} ({{ service.sizePricing.duration.medium }}min)"
+                  severity="info"
+                  styleClass="mr-2 mb-2"
+                ></p-tag>
+                <p-tag
+                  value="Groot: €{{
+                    service.sizePricing.pricing.large.toFixed(2)
+                  }} ({{ service.sizePricing.duration.large }}min)"
+                  severity="warn"
+                  styleClass="mr-2 mb-2"
                 ></p-tag>
               </div>
-              <p class="mt-2 mb-0">{{ service.description }}</p>
-            </div>
-            <div class="shrink-0 mt-3">
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-pencil"
-                  styleClass="p-button-text p-button-rounded"
-                  (click)="showServiceForm(service)"
-                  pTooltip="Bewerken"
-                ></p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  styleClass="p-button-text p-button-rounded p-button-danger"
-                  (click)="deleteService(service)"
-                  pTooltip="Verwijderen"
-                ></p-button>
-              </div>
-            </div>
+            }
           </div>
-        </div>
+
+          <div actions>
+            <p-button
+              icon="pi pi-pencil"
+              styleClass="p-button-text p-button-rounded"
+              (click)="showServiceForm(service)"
+              pTooltip="Bewerken"
+            ></p-button>
+            <p-button
+              icon="pi pi-trash"
+              styleClass="p-button-text p-button-rounded p-button-danger"
+              (click)="deleteService(service)"
+              pTooltip="Verwijderen"
+            ></p-button>
+          </div>
+        </app-mobile-card>
       } @empty {
         <div class="text-center p-4">Geen werkzaamheden gevonden.</div>
       }
@@ -87,9 +106,7 @@
             <th pSortableColumn="description">
               Omschrijving <p-sortIcon field="description"></p-sortIcon>
             </th>
-            <th pSortableColumn="pricingType">
-              Prijsmodel <p-sortIcon field="pricingType"></p-sortIcon>
-            </th>
+            <th>Prijzen & Duur</th>
             <th style="width: 10rem"></th>
           </tr>
         </ng-template>
@@ -98,11 +115,28 @@
             <td>{{ service.name }}</td>
             <td>{{ service.description }}</td>
             <td>
-              <p-tag
-                [value]="
-                  service.pricingType === 'FIXED' ? 'Vaste Prijs' : 'Per Tijd'
-                "
-              ></p-tag>
+              @if (service.sizePricing) {
+                <p-tag
+                  value="Klein: €{{
+                    service.sizePricing.pricing.small.toFixed(2)
+                  }} ({{ service.sizePricing.duration.small }}min)"
+                  severity="success"
+                  styleClass="mr-2"
+                ></p-tag>
+                <p-tag
+                  value="Middel: €{{
+                    service.sizePricing.pricing.medium.toFixed(2)
+                  }} ({{ service.sizePricing.duration.medium }}min)"
+                  severity="info"
+                  styleClass="mr-2"
+                ></p-tag>
+                <p-tag
+                  value="Groot: €{{
+                    service.sizePricing.pricing.large.toFixed(2)
+                  }} ({{ service.sizePricing.duration.large }}min)"
+                  severity="warn"
+                ></p-tag>
+              }
             </td>
             <td>
               <div class="flex justify-content-end gap-2">

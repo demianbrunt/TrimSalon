@@ -7,6 +7,7 @@ import { DataViewModule } from 'primeng/dataview';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { MobileCardComponent } from '../../core/components/mobile-card/mobile-card.component';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Invoice, PaymentStatus } from '../../core/models/invoice.model';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
@@ -24,6 +25,7 @@ import { ToastrService } from '../../core/services/toastr.service';
     TagModule,
     TooltipModule,
     TableHeaderComponent,
+    MobileCardComponent,
     DataViewModule,
     CardModule,
   ],

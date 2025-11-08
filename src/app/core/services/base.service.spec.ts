@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Firestore } from '@angular/fire/firestore';
-import { BaseService } from './base.service';
 import { createMockFirestore } from '../../../test-helpers/firebase-mocks';
+import { BaseService } from './base.service';
 
 // Test implementation of BaseService
 class TestService extends BaseService<{ id?: string; name: string }> {

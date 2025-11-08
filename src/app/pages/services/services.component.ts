@@ -14,10 +14,11 @@ import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
-import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
+import { MobileCardComponent } from '../../core/components/mobile-card/mobile-card.component';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Service } from '../../core/models/service.model';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ServiceService } from '../../core/services/service.service';
 import { ToastrService } from '../../core/services/toastr.service';
@@ -37,6 +38,7 @@ import { ToastrService } from '../../core/services/toastr.service';
     IconFieldModule,
     InputIconModule,
     TableHeaderComponent,
+    MobileCardComponent,
     DataViewModule,
     CardModule,
   ],

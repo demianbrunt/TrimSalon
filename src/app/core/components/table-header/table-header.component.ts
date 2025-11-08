@@ -20,12 +20,16 @@ import { MobileService } from '../../services/mobile.service';
   ],
   styleUrls: ['./table-header.component.css'],
   template: `
-    <div class="grid grid-nogutter justify-content-between align-items-center">
+    <div
+      class="grid grid-nogutter justify-content-between align-items-center w-full"
+    >
       @if (title) {
         <h2 class="col-12 md:col-6 m-0">{{ title }}</h2>
       }
-      <div class="col-12 md:col-6 flex justify-content-end gap-2">
-        <p-iconfield>
+      <div
+        class="col-12 md:col-6 flex flex-row md:flex-row justify-content-between align-items-center gap-2 w-full"
+      >
+        <p-iconfield class="grow md:flex-grow-0 md:w-auto">
           <p-inputicon class="pi pi-search" />
           <input
             pInputText
@@ -45,6 +49,7 @@ import { MobileService } from '../../services/mobile.service';
           icon="pi pi-plus"
           [size]="isMobile ? 'small' : 'large'"
           (click)="addClick.emit()"
+          class="shrink-0"
         ></p-button>
       </div>
     </div>

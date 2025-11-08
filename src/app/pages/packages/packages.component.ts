@@ -22,12 +22,13 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
+import { MobileCardComponent } from '../../core/components/mobile-card/mobile-card.component';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Package } from '../../core/models/package.model';
 import { Price } from '../../core/models/price.model';
 import { Service } from '../../core/models/service.model';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { PackageService } from '../../core/services/package.service';
 import { ServiceService } from '../../core/services/service.service';
@@ -48,6 +49,7 @@ import { ToastrService } from '../../core/services/toastr.service';
     TagModule,
     ConfirmDialogModule,
     TableHeaderComponent,
+    MobileCardComponent,
     IconFieldModule,
     InputIconModule,
     TooltipModule,
