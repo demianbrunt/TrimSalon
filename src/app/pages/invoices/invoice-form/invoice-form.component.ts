@@ -112,6 +112,13 @@ export class InvoiceFormComponent implements OnInit, CanDeactivateComponent {
     this.form.get('vatRate')?.valueChanges.subscribe(() => {
       this.calculateTotals();
     });
+
+    // Auto-set paid date to today when status changes to PAID
+    this.form.get('paymentStatus')?.valueChanges.subscribe((status) => {
+      if (status === PaymentStatus.PAID && !this.form.get('paidDate')?.value) {
+        this.form.patchValue({ paidDate: new Date() }, { emitEvent: false });
+      }
+    });
   }
 
   loadData(): void {

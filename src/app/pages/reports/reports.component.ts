@@ -6,6 +6,8 @@ import { DatePicker } from 'primeng/datepicker';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { Observable } from 'rxjs';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   DashboardReport,
   ExpenseReport,
@@ -155,8 +157,234 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
   }
 
   exportToPDF(): void {
-    // TODO: Implement PDF export functionality
-    console.log('Export to PDF - To be implemented');
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+
+    // Title
+    doc.setFontSize(18);
+    doc.text('TrimSalon - Rapportage', pageWidth / 2, 15, { align: 'center' });
+
+    // Period
+    doc.setFontSize(12);
+    const periodText = `Periode: ${this.startDate.toLocaleDateString('nl-NL')} - ${this.endDate.toLocaleDateString('nl-NL')}`;
+    doc.text(periodText, pageWidth / 2, 25, { align: 'center' });
+
+    let yPosition = 35;
+
+    // Revenue Report
+    if (this.revenueReport) {
+      doc.setFontSize(14);
+      doc.text('Omzet Overzicht', 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Categorie', 'Bedrag']],
+        body: [
+          [
+            'Totale Omzet',
+            this.formatCurrency(this.revenueReport.totalRevenue),
+          ],
+          ['Aantal Afspraken', this.revenueReport.appointmentCount.toString()],
+          [
+            'Gemiddelde Omzet per Afspraak',
+            this.formatCurrency(
+              this.revenueReport.averageRevenuePerAppointment,
+            ),
+          ],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Expense Report
+    if (this.expenseReport) {
+      doc.setFontSize(14);
+      doc.text('Uitgaven Overzicht', 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Categorie', 'Bedrag']],
+        body: [
+          [
+            'Totale Uitgaven',
+            this.formatCurrency(this.expenseReport.totalExpenses),
+          ],
+          ['Aantal Uitgaven', this.expenseReport.expenseCount.toString()],
+          [
+            'Gemiddelde Uitgave',
+            this.formatCurrency(this.expenseReport.averageExpense),
+          ],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Profit/Loss Report
+    if (this.profitLossReport) {
+      doc.setFontSize(14);
+      doc.text('Winst/Verlies Overzicht', 14, yPosition);
+      yPosition += 5;
+
+      const profitLossBody: any[][] = [
+        [
+          'Totale Omzet',
+          this.formatCurrency(this.profitLossReport.totalRevenue),
+        ],
+        [
+          'Totale Uitgaven',
+          this.formatCurrency(this.profitLossReport.totalExpenses),
+        ],
+        [
+          'Netto Winst/Verlies',
+          this.formatCurrency(this.profitLossReport.netProfit),
+        ],
+        [
+          'Winstmarge',
+          this.formatPercentage(this.profitLossReport.profitMargin),
+        ],
+      ];
+
+      if (this.profitLossReport.effectiveHourlyRate) {
+        profitLossBody.push([
+          'Effectief Uurtarief',
+          this.formatCurrency(this.profitLossReport.effectiveHourlyRate),
+        ]);
+      }
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Categorie', 'Bedrag']],
+        body: profitLossBody,
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Top Clients
+    if (this.topClients && this.topClients.length > 0) {
+      // Add new page if needed
+      if (yPosition > 200) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text('Top Klanten', 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Klant', 'Aantal Afspraken', 'Totale Omzet']],
+        body: this.topClients.map((client) => [
+          client.clientName,
+          client.appointmentCount.toString(),
+          this.formatCurrency(client.totalRevenue),
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Popular Services
+    if (this.popularServices && this.popularServices.length > 0) {
+      // Add new page if needed
+      if (yPosition > 200) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text('Populaire Diensten', 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Dienst', 'Aantal Keer Gebruikt', 'Totale Omzet']],
+        body: this.popularServices.map((service) => [
+          service.serviceName,
+          service.usageCount.toString(),
+          this.formatCurrency(service.totalRevenue),
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Popular Packages
+    if (this.popularPackages && this.popularPackages.length > 0) {
+      // Add new page if needed
+      if (yPosition > 200) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text('Populaire Pakketten', 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Pakket', 'Aantal Keer Gebruikt', 'Totale Omzet']],
+        body: this.popularPackages.map((pkg) => [
+          pkg.packageName,
+          pkg.usageCount.toString(),
+          this.formatCurrency(pkg.totalRevenue),
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 10;
+    }
+
+    // Occupancy
+    if (this.occupancy) {
+      // Add new page if needed
+      if (yPosition > 200) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text('Agenda Bezetting', 14, yPosition);
+      yPosition += 5;
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['Categorie', 'Waarde']],
+        body: [
+          [
+            'Totaal Beschikbare Uren',
+            this.occupancy.totalAvailableHours.toFixed(1),
+          ],
+          ['Totaal Geboekte Uren', this.occupancy.totalBookedHours.toFixed(1)],
+          [
+            'Bezettingsgraad',
+            this.formatPercentage(this.occupancy.occupancyRate),
+          ],
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+      });
+    }
+
+    // Save the PDF
+    const fileName = `TrimSalon_Rapport_${this.startDate.toLocaleDateString('nl-NL').replace(/\//g, '-')}_${this.endDate.toLocaleDateString('nl-NL').replace(/\//g, '-')}.pdf`;
+    doc.save(fileName);
   }
 
   exportToExcel(): void {
