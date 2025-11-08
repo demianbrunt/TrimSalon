@@ -55,7 +55,7 @@
     "@types/google-one-tap": "^1.2.6",
     "@types/google.accounts": "^0.0.14",
     "@types/jasmine": "~5.1.0",
-    "@types/node": "^20.17.19",
+    "@types/node": "^24.10.0",
     "angular-eslint": "20.1.1",
     "eslint": "^9.29.0",
     "eslint-config-prettier": "^10.1.8",
