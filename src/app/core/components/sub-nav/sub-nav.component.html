@@ -2,12 +2,11 @@
   @for (item of navItems; track item.link) {
     <p-button
       [routerLink]="item.link"
-      pButton
       size="large"
       routerLinkActive="active-nav-button"
       [text]="true"
       [icon]="item.icon"
-      link
+      [link]="true"
       appLongPress
       (longPress)="item.longPressAction?.()"
     ></p-button>
