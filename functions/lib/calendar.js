@@ -49,7 +49,13 @@ async function loadTokensFromFirestore(userId) {
   const firestore = admin.firestore();
   const userRef = firestore.collection("users").doc(userId);
   const doc = await userRef.get();
-  return doc.exists ? doc.data()?.tokens : null;
+  if (doc.exists) {
+    console.log(`Tokens found for user ${userId}`);
+    return doc.data()?.tokens;
+  } else {
+    console.log(`No tokens found for user ${userId}`);
+    return null;
+  }
 }
 /**
  * Get a Google Calendar API client with the user's credentials.
@@ -59,6 +65,9 @@ async function loadTokensFromFirestore(userId) {
 async function getCalendarClient(userId) {
   const tokens = await loadTokensFromFirestore(userId);
   if (!tokens) {
+    console.log(
+      `No tokens available for user ${userId}. Cannot get calendar client.`,
+    );
     return null;
   }
   const oAuth2Client = new googleapis_1.google.auth.OAuth2(
@@ -70,7 +79,9 @@ async function getCalendarClient(userId) {
   oAuth2Client.on("tokens", (newTokens) => {
     const updatedTokens = { ...tokens, ...newTokens };
     saveUserTokens(userId, updatedTokens);
+    console.log(`Tokens refreshed and saved for user ${userId}`);
   });
+  console.log(`Calendar client created for user ${userId}`);
   return googleapis_1.google.calendar({ version: "v3", auth: oAuth2Client });
 }
 /**
@@ -81,7 +92,7 @@ async function getCalendarClient(userId) {
  * @param {string} [options.timeMax] End of the time range.
  * @return {Promise<calendar_v3.Schema$Event[] | null>} A promise that resolves with the calendar events.
  */
-async function getCalendarEvents(userId, options = {}) {
+async function getCalendarEvents(userId, calendarId, options = {}) {
   const calendarClient = await getCalendarClient(userId);
   if (!calendarClient) {
     return null;
@@ -90,7 +101,7 @@ async function getCalendarEvents(userId, options = {}) {
   const now = new Date();
   const dateStr = now.toISOString().split("T")[0];
   const res = await calendarClient.events.list({
-    calendarId: "primary",
+    calendarId: calendarId,
     timeMin: timeMin || dateStr + "T00:00:00Z",
     timeMax: timeMax || dateStr + "T23:59:59Z",
     maxResults: 20,
@@ -114,13 +125,13 @@ async function hasCalendarAccess(userId) {
  * @param {calendar_v3.Schema$Event} event The event to create.
  * @return {Promise<calendar_v3.Schema$Event | null>} A promise that resolves with the created event.
  */
-async function createCalendarEvent(userId, event) {
+async function createCalendarEvent(userId, calendarId, event) {
   const calendarClient = await getCalendarClient(userId);
   if (!calendarClient) {
     return null;
   }
   const res = await calendarClient.events.insert({
-    calendarId: "primary",
+    calendarId: calendarId,
     requestBody: event,
   });
   return res.data;
@@ -132,13 +143,13 @@ async function createCalendarEvent(userId, event) {
  * @param {calendar_v3.Schema$Event} event The updated event data.
  * @return {Promise<calendar_v3.Schema$Event | null>} A promise that resolves with the updated event.
  */
-async function updateCalendarEvent(userId, eventId, event) {
+async function updateCalendarEvent(userId, calendarId, eventId, event) {
   const calendarClient = await getCalendarClient(userId);
   if (!calendarClient) {
     return null;
   }
   const res = await calendarClient.events.update({
-    calendarId: "primary",
+    calendarId: calendarId,
     eventId,
     requestBody: event,
   });
@@ -150,13 +161,13 @@ async function updateCalendarEvent(userId, eventId, event) {
  * @param {string} eventId The ID of the event to delete.
  * @return {Promise<void>} A promise that resolves when the event is deleted.
  */
-async function deleteCalendarEvent(userId, eventId) {
+async function deleteCalendarEvent(userId, calendarId, eventId) {
   const calendarClient = await getCalendarClient(userId);
   if (!calendarClient) {
     return;
   }
   await calendarClient.events.delete({
-    calendarId: "primary",
+    calendarId: calendarId,
     eventId,
   });
 }

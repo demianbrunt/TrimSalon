@@ -5,7 +5,8 @@ import {
   beforeUserCreated,
   HttpsError,
 } from 'firebase-functions/v2/identity';
-import * as calendar from './calendar';
+// Calendar functions temporarily disabled
+// import * as calendar from './calendar';
 import * as email from './email';
 
 admin.initializeApp();
@@ -51,6 +52,8 @@ export const beforeusercreate = beforeUserCreated(
   },
 );
 
+// Calendar functions temporarily disabled - can be re-enabled later
+/*
 export const exchangeAuthCode = onCall(async (request) => {
   const { code, userId } = request.data;
 
@@ -237,6 +240,7 @@ export const createCalendar = onCall(
     }
   },
 );
+*/
 
 // Email functions
 export const sendAppointmentReminderEmail = onCall(
