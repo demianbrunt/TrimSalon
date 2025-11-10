@@ -158,14 +158,14 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
 
   searchBreeds(event: AutoCompleteCompleteEvent) {
     const query = event.query;
-    this.filteredBreeds = this.allBreeds.filter((breed) =>
-      breed.name.toLowerCase().includes(query.toLowerCase()),
-    );
+    this.filteredBreeds = this.allBreeds
+      .filter((breed) => breed.name.toLowerCase().includes(query.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   loadBreeds(): void {
     this.breedService.getData$().subscribe((data) => {
-      this.allBreeds = data;
+      this.allBreeds = data.sort((a, b) => a.name.localeCompare(b.name));
       this.filteredBreeds = this.allBreeds;
     });
   }
