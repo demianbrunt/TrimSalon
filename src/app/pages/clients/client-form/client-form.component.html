@@ -56,45 +56,110 @@
         ></p-button>
       </div>
       @for (dogGroup of dogsArray.controls; track $index) {
-        <div
-          [formGroup]="$any(dogGroup)"
-          class="formgrid grid p-2 align-items-center"
-        >
-          <div class="field col-12 md:col-5">
-            <p-floatlabel>
-              <input
-                pInputText
-                id="naamHond"
-                class="w-full"
-                [formControl]="dogGroup.controls.name"
-                autocomplete="off"
-              />
-              <label for="email">Naam</label>
-            </p-floatlabel>
-          </div>
-          <div class="field col-12 md:col-5">
-            <p-floatlabel class="w-full">
-              <p-autocomplete
-                class="w-full"
-                [formControl]="dogGroup.controls.breed"
-                [dropdown]="true"
-                [suggestions]="filteredBreeds"
-                (completeMethod)="searchBreeds($event)"
-                optionLabel="name"
-                appendTo="body"
-              />
-              <label for="ras">Ras</label>
-            </p-floatlabel>
-          </div>
-          @if (canDeleteDog) {
-            <div class="field col-12 md:col-2">
-              <p-button
-                icon="pi pi-trash"
-                styleClass="p-button-danger w-full"
-                (click)="removeDog($index)"
-                type="button"
-              ></p-button>
+        <div [formGroup]="$any(dogGroup)" class="p-2">
+          @if (dogGroup.controls.isAggressive.value) {
+            <div class="mb-3 p-3 bg-red-100 border-round">
+              <div class="flex align-items-center gap-2">
+                <i class="pi pi-exclamation-triangle text-red-600"></i>
+                <span class="text-red-600 font-semibold"
+                  >Let op: Dit dier is gemarkeerd als agressief</span
+                >
+              </div>
             </div>
+          }
+          <div class="formgrid grid align-items-center">
+            <div class="field col-12 md:col-6">
+              <p-floatlabel>
+                <input
+                  pInputText
+                  id="naamHond"
+                  class="w-full"
+                  [formControl]="dogGroup.controls.name"
+                  autocomplete="off"
+                />
+                <label for="naamHond">Naam</label>
+              </p-floatlabel>
+            </div>
+            <div class="field col-12 md:col-6">
+              <p-floatlabel class="w-full">
+                <p-autocomplete
+                  class="w-full"
+                  [formControl]="dogGroup.controls.breed"
+                  [dropdown]="true"
+                  [suggestions]="filteredBreeds"
+                  (completeMethod)="searchBreeds($event)"
+                  optionLabel="name"
+                  appendTo="body"
+                />
+                <label for="ras">Ras</label>
+              </p-floatlabel>
+            </div>
+            <div class="field col-12 md:col-4">
+              <p-floatlabel>
+                <p-inputnumber
+                  inputId="leeftijd"
+                  class="w-full"
+                  [formControl]="dogGroup.controls.age"
+                  [min]="0"
+                  [max]="30"
+                  suffix=" jaar"
+                />
+                <label for="leeftijd">Leeftijd</label>
+              </p-floatlabel>
+            </div>
+            <div class="field col-12 md:col-4">
+              <p-floatlabel>
+                <p-select
+                  inputId="geslacht"
+                  [formControl]="dogGroup.controls.gender"
+                  [options]="[
+                    { label: 'Mannetje', value: 'male' },
+                    { label: 'Vrouwtje', value: 'female' },
+                  ]"
+                  optionLabel="label"
+                  optionValue="value"
+                  class="w-full"
+                />
+                <label for="geslacht">Geslacht</label>
+              </p-floatlabel>
+            </div>
+            <div class="field col-12 md:col-4">
+              <div class="flex align-items-center gap-2">
+                <p-checkbox
+                  inputId="gekastreerd-{{ $index }}"
+                  [formControl]="dogGroup.controls.isNeutered"
+                  [binary]="true"
+                />
+                <label for="gekastreerd-{{ $index }}"
+                  >Gekastreerd/Gesteriliseerd</label
+                >
+              </div>
+            </div>
+            <div class="field col-12 md:col-10">
+              <div class="flex align-items-center gap-2">
+                <p-checkbox
+                  inputId="agressief-{{ $index }}"
+                  [formControl]="dogGroup.controls.isAggressive"
+                  [binary]="true"
+                />
+                <label for="agressief-{{ $index }}"
+                  >Agressief (Let op: wordt getoond bovenaan)</label
+                >
+              </div>
+            </div>
+            @if (canDeleteDog) {
+              <div class="field col-12 md:col-2">
+                <p-button
+                  icon="pi pi-trash"
+                  styleClass="p-button-danger w-full"
+                  (click)="removeDog($index)"
+                  type="button"
+                ></p-button>
+              </div>
+            }
+          </div>
+          @if ($index < dogsArray.controls.length - 1) {
+            <p-divider />
           }
         </div>
       }

@@ -16,8 +16,10 @@ import {
 } from 'primeng/autocomplete';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DividerModule } from 'primeng/divider';
 import { FloatLabelModule } from 'primeng/floatlabel';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
@@ -40,6 +42,8 @@ import { ToastrService } from '../../../core/services/toastr.service';
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
+    InputNumberModule,
+    CheckboxModule,
     SelectModule,
     FloatLabelModule,
     DividerModule,
@@ -60,6 +64,10 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
       FormGroup<{
         name: FormControl<string | null>;
         breed: FormControl<Breed | null>;
+        age: FormControl<number | null>;
+        gender: FormControl<'male' | 'female' | null>;
+        isNeutered: FormControl<boolean | null>;
+        isAggressive: FormControl<boolean | null>;
       }>
     >;
   }>;
@@ -115,6 +123,10 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
           FormGroup<{
             name: FormControl<string | null>;
             breed: FormControl<Breed | null>;
+            age: FormControl<number | null>;
+            gender: FormControl<'male' | 'female' | null>;
+            isNeutered: FormControl<boolean | null>;
+            isAggressive: FormControl<boolean | null>;
           }>
         >([]),
       });
@@ -181,6 +193,10 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
     return this.fb.group({
       name: [dog?.name || '', Validators.required],
       breed: [dog?.breed, Validators.required],
+      age: [dog?.age || null],
+      gender: [dog?.gender || null],
+      isNeutered: [dog?.isNeutered || false],
+      isAggressive: [dog?.isAggressive || false],
     });
   }
 
@@ -205,6 +221,10 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
       dogs: this.form.value.dogs.map((dog) => ({
         name: dog.name,
         breed: dog.breed,
+        age: dog.age,
+        gender: dog.gender,
+        isNeutered: dog.isNeutered,
+        isAggressive: dog.isAggressive,
       })),
     };
 
