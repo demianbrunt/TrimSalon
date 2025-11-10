@@ -21,6 +21,7 @@ import { DividerModule } from 'primeng/divider';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { FormBaseComponent } from '../../../core/components/form-base/form-base.component';
@@ -32,7 +33,6 @@ import { BreedService } from '../../../core/services/breed.service';
 import { ClientService } from '../../../core/services/client.service';
 import { MobileService } from '../../../core/services/mobile.service';
 import { ToastrService } from '../../../core/services/toastr.service';
-
 @Component({
   selector: 'app-client-form',
   standalone: true,
@@ -50,6 +50,7 @@ import { ToastrService } from '../../../core/services/toastr.service';
     ToastModule,
     AutoCompleteModule,
     CardModule,
+    MessageModule,
   ],
   templateUrl: './client-form.component.html',
   styleUrls: ['./client-form.component.css'],

@@ -8,10 +8,10 @@
         {{ isEditMode ? "Uitgave Bewerken" : "Nieuwe Uitgave" }}
       </h2>
     </ng-template>
-    
+
     <form [formGroup]="form" class="p-fluid">
       <div class="field">
-        <p-floatlabel>
+        <p-floatlabel variant="on">
           <input
             pInputText
             id="description"
@@ -25,7 +25,7 @@
 
       <div class="formgrid grid">
         <div class="field col-12 md:col-6">
-          <p-floatlabel>
+          <p-floatlabel variant="on">
             <p-inputNumber
               id="amount"
               formControlName="amount"
@@ -38,7 +38,7 @@
         </div>
 
         <div class="field col-12 md:col-6">
-          <p-floatlabel>
+          <p-floatlabel variant="on">
             <p-datepicker
               id="date"
               formControlName="date"
@@ -52,7 +52,7 @@
       </div>
 
       <div class="field">
-        <p-floatlabel>
+        <p-floatlabel variant="on">
           <p-select
             id="type"
             formControlName="type"
@@ -66,7 +66,7 @@
       </div>
 
       <div class="field">
-        <p-floatlabel>
+        <p-floatlabel variant="on">
           <textarea
             pInputTextarea
             id="notes"

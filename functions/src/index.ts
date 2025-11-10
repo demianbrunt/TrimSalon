@@ -1,15 +1,19 @@
 import * as admin from 'firebase-admin';
 import { onCall } from 'firebase-functions/v2/https';
-import {
-  AuthBlockingEvent,
-  beforeUserCreated,
-  HttpsError,
-} from 'firebase-functions/v2/identity';
+import { HttpsError } from 'firebase-functions/v2/identity';
 // Calendar functions temporarily disabled
 // import * as calendar from './calendar';
 import * as email from './email';
 
 admin.initializeApp();
+
+// Auth blocking function temporarily disabled - requires special Firebase configuration
+// See: https://firebase.google.com/docs/auth/extend-with-blocking-functions
+/*
+import {
+  AuthBlockingEvent,
+  beforeUserCreated,
+} from 'firebase-functions/v2/identity';
 
 export const beforeusercreate = beforeUserCreated(
   {
@@ -51,6 +55,7 @@ export const beforeusercreate = beforeUserCreated(
     console.log(`User ${email} is allowed.`);
   },
 );
+*/
 
 // Calendar functions temporarily disabled - can be re-enabled later
 /*

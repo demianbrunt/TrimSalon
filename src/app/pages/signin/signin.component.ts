@@ -13,9 +13,12 @@ import { AuthenticationService } from '../../core/services/authentication.servic
       class="flex flex-column align-items-center justify-content-center p-4 h-full text-center"
     >
       <div class="max-w-30rem w-full">
-        <span class="text-8xl mb-4" [class.pi-spin]="authService.isSigningIn()"
-          >🐶</span
-        >
+        <img
+          [class.pi-spin]="authService.isSigningIn()"
+          src="icons/icon-512x512.png"
+          alt="TrimSalon Logo"
+          class="mb-4 w-8rem"
+        />
         <h1 class="text-5xl font-bold mb-3">Inloggen</h1>
         <p class="text-xl mb-5 text-600">
           @if (authService.isSigningIn()) {

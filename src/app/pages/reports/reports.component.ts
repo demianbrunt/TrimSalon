@@ -1,26 +1,26 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { DatePicker } from 'primeng/datepicker';
-import { CardModule } from 'primeng/card';
-import { TableModule } from 'primeng/table';
-import { Observable } from 'rxjs';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { DatePicker } from 'primeng/datepicker';
+import { TableModule } from 'primeng/table';
+import { Observable } from 'rxjs';
+import { SubscriptionHolder } from '../../core/components/subscription-holder.component';
 import {
+  CalendarOccupancy,
   DashboardReport,
   ExpenseReport,
+  PopularPackage,
+  PopularService,
   ProfitLossReport,
   ReportPeriod,
   RevenueReport,
   TopClient,
-  PopularService,
-  PopularPackage,
-  CalendarOccupancy,
 } from '../../core/models/report.model';
 import { ReportService } from '../../core/services/report.service';
-import { SubscriptionHolder } from '../../core/components/subscription-holder.component';
 
 @Component({
   standalone: true,
@@ -88,7 +88,7 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
     this.loadReports();
   }
 
-  setQuickPeriod(period: 'week' | 'month' | 'quarter' | 'year'): void {
+  setQuickPeriod(period: 'week' | 'month' | 'quarter' | 'year' | 'all'): void {
     this.endDate = new Date();
 
     switch (period) {
@@ -107,6 +107,10 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
       case 'year':
         this.startDate = new Date();
         this.startDate.setFullYear(this.startDate.getFullYear() - 1);
+        break;
+      case 'all':
+        // Set to a very early date to get all data
+        this.startDate = new Date(2000, 0, 1);
         break;
     }
 

@@ -7,7 +7,7 @@
     </ng-template>
     <form [formGroup]="form" class="p-fluid">
       <div class="field">
-        <p-floatlabel>
+        <p-floatlabel variant="on">
           <input
             pInputText
             id="naam"
@@ -19,7 +19,7 @@
         </p-floatlabel>
       </div>
       <div class="field">
-        <p-floatlabel>
+        <p-floatlabel variant="on">
           <input
             pInputText
             id="email"
@@ -31,7 +31,7 @@
         </p-floatlabel>
       </div>
       <div class="field">
-        <p-floatlabel>
+        <p-floatlabel variant="on">
           <input
             pInputText
             id="telefoon"
@@ -44,7 +44,7 @@
         </p-floatlabel>
       </div>
       <p-divider />
-      <div class="flex justify-content-between align-items-center mb-2 w-full">
+      <div class="flex justify-content-between align-items-center w-full">
         <h4 class="m-0">Honden</h4>
         <p-button
           styleClass=""
@@ -58,18 +58,16 @@
       @for (dogGroup of dogsArray.controls; track $index) {
         <div [formGroup]="$any(dogGroup)" class="p-2">
           @if (dogGroup.controls.isAggressive.value) {
-            <div class="mb-3 p-3 bg-red-100 border-round">
-              <div class="flex align-items-center gap-2">
-                <i class="pi pi-exclamation-triangle text-red-600"></i>
-                <span class="text-red-600 font-semibold"
-                  >Let op: Dit dier is gemarkeerd als agressief</span
-                >
-              </div>
-            </div>
+            <p-message
+              severity="warn"
+              icon="pi pi-exclamation-triangle"
+              text="Let op: Dit dier is gemarkeerd als agressief"
+              >Let op: Dit dier is gemarkeerd als agressief</p-message
+            >
           }
           <div class="formgrid grid align-items-center">
             <div class="field col-12 md:col-6">
-              <p-floatlabel>
+              <p-floatlabel variant="on">
                 <input
                   pInputText
                   id="naamHond"
@@ -81,7 +79,7 @@
               </p-floatlabel>
             </div>
             <div class="field col-12 md:col-6">
-              <p-floatlabel class="w-full">
+              <p-floatlabel variant="on" class="w-full">
                 <p-autocomplete
                   class="w-full"
                   [formControl]="dogGroup.controls.breed"
@@ -94,8 +92,8 @@
                 <label for="ras">Ras</label>
               </p-floatlabel>
             </div>
-            <div class="field col-12 md:col-4">
-              <p-floatlabel>
+            <div class="field mt-2 col-12 md:col-4">
+              <p-floatlabel variant="on">
                 <p-inputnumber
                   inputId="leeftijd"
                   class="w-full"
@@ -108,7 +106,7 @@
               </p-floatlabel>
             </div>
             <div class="field col-12 md:col-4">
-              <p-floatlabel>
+              <p-floatlabel variant="on">
                 <p-select
                   inputId="geslacht"
                   [formControl]="dogGroup.controls.gender"
@@ -126,11 +124,11 @@
             <div class="field col-12 md:col-4">
               <div class="flex align-items-center gap-2">
                 <p-checkbox
-                  inputId="gekastreerd-{{ $index }}"
+                  [inputId]="'gekastreerd-' + $index"
                   [formControl]="dogGroup.controls.isNeutered"
                   [binary]="true"
                 />
-                <label for="gekastreerd-{{ $index }}"
+                <label [for]="'gekastreerd-' + $index"
                   >Gekastreerd/Gesteriliseerd</label
                 >
               </div>
@@ -138,11 +136,11 @@
             <div class="field col-12 md:col-10">
               <div class="flex align-items-center gap-2">
                 <p-checkbox
-                  inputId="agressief-{{ $index }}"
+                  [inputId]="'agressief-' + $index"
                   [formControl]="dogGroup.controls.isAggressive"
                   [binary]="true"
                 />
-                <label for="agressief-{{ $index }}"
+                <label [for]="'agressief-' + $index"
                   >Agressief (Let op: wordt getoond bovenaan)</label
                 >
               </div>
