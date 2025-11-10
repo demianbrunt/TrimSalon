@@ -34,8 +34,13 @@
                       (dog.breed?.name || 'Onbekend ras') +
                       ')'
                     "
+                    [severity]="dog.isAggressive ? 'danger' : undefined"
                     class="mr-2 mb-2"
-                  ></p-tag>
+                  >
+                    @if (dog.isAggressive) {
+                      <i class="pi pi-exclamation-triangle mr-1"></i>
+                    }
+                  </p-tag>
                 }
               </div>
             </div>
@@ -107,8 +112,13 @@
                   [value]="
                     dog.name + ' (' + (dog.breed?.name || 'Onbekend ras') + ')'
                   "
+                  [severity]="dog.isAggressive ? 'danger' : undefined"
                   class="mr-2"
-                ></p-tag>
+                >
+                  @if (dog.isAggressive) {
+                    <i class="pi pi-exclamation-triangle mr-1"></i>
+                  }
+                </p-tag>
               }
             </td>
             <td>

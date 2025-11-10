@@ -27,9 +27,19 @@
               <div class="flex justify-content-between align-items-start mb-2">
                 <div class="font-bold text-lg">
                   {{ appointment.client.name }} - {{ appointment.dog.name }}
+                  @if (appointment.dog.isAggressive) {
+                    <i
+                      class="pi pi-exclamation-triangle text-red-600 ml-2"
+                      pTooltip="Agressief dier"
+                    ></i>
+                  }
                 </div>
                 @if (appointment.completed) {
-                  <p-tag value="Afgerond" severity="success" [rounded]="true"></p-tag>
+                  <p-tag
+                    value="Afgerond"
+                    severity="success"
+                    [rounded]="true"
+                  ></p-tag>
                 }
               </div>
               <div class="text-secondary">
@@ -41,7 +51,8 @@
               </div>
               @if (appointment.completed && appointment.actualEndTime) {
                 <div class="text-sm text-primary mt-1">
-                  Afgerond om {{ appointment.actualEndTime | date: "shortTime" }}
+                  Afgerond om
+                  {{ appointment.actualEndTime | date: "shortTime" }}
                 </div>
               }
               <div class="mt-2">
@@ -49,7 +60,11 @@
                   <p-tag [value]="service.name" class="mr-1 mb-1"></p-tag>
                 }
                 @for (pkg of appointment.packages; track pkg.id) {
-                  <p-tag [value]="pkg.name" severity="success" class="mr-1 mb-1"></p-tag>
+                  <p-tag
+                    [value]="pkg.name"
+                    severity="success"
+                    class="mr-1 mb-1"
+                  ></p-tag>
                 }
               </div>
             </div>
@@ -116,9 +131,7 @@
             <th pSortableColumn="dog.name">
               Hond <p-sortIcon field="dog.name"></p-sortIcon>
             </th>
-            <th>
-              Werkzaamheden & Pakketten
-            </th>
+            <th>Werkzaamheden & Pakketten</th>
             <th pSortableColumn="startTime">
               Starttijd <p-sortIcon field="startTime"></p-sortIcon>
             </th>
@@ -131,13 +144,25 @@
         <ng-template pTemplate="body" let-appointment>
           <tr>
             <td>{{ appointment.client.name }}</td>
-            <td>{{ appointment.dog.name }}</td>
+            <td>
+              {{ appointment.dog.name }}
+              @if (appointment.dog.isAggressive) {
+                <i
+                  class="pi pi-exclamation-triangle text-red-600 ml-2"
+                  pTooltip="Agressief dier"
+                ></i>
+              }
+            </td>
             <td>
               @for (service of appointment.services; track service.id) {
                 <p-tag [value]="service.name" class="mr-1"></p-tag>
               }
               @for (pkg of appointment.packages; track pkg.id) {
-                <p-tag [value]="pkg.name" severity="success" class="mr-1"></p-tag>
+                <p-tag
+                  [value]="pkg.name"
+                  severity="success"
+                  class="mr-1"
+                ></p-tag>
               }
             </td>
             <td>{{ appointment.startTime | date: "dd-MM-yyyy HH:mm" }}</td>
