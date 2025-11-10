@@ -11,7 +11,11 @@ import { AuthenticationService } from '../../core/services/authentication.servic
   template: ` <div
     class="flex flex-column align-items-center justify-content-center p-4 h-full text-center"
   >
-    <span class="text-8xl mb-4 dog-animation">🐶</span>
+    <img
+      src="icons/icon-512x512.png"
+      alt="TrimSalon Logo"
+      class="mb-4 w-8rem dog-animation"
+    />
     <h1 class="text-5xl font-bold mb-3">U bent uitgelogd</h1>
     <p class="text-xl mb-5 text-600">
       Woef! Ik heb overal gesnuffeld, maar kon geen koekje vinden!

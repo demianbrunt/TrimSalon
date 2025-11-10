@@ -28,6 +28,11 @@
               (onClick)="setQuickPeriod('year')"
               styleClass="p-button-sm"
             ></p-button>
+            <p-button
+              label="Alles"
+              (onClick)="setQuickPeriod('all')"
+              styleClass="p-button-sm"
+            ></p-button>
           </div>
 
           <!-- Custom Date Range -->
@@ -125,7 +130,9 @@
             <div class="text-3xl font-bold text-red-500">
               {{ formatCurrency(expenseReport?.totalExpenses || 0) }}
             </div>
-            <small class="text-500">{{ expenseReport?.expenseCount || 0 }} uitgaven</small>
+            <small class="text-500"
+              >{{ expenseReport?.expenseCount || 0 }} uitgaven</small
+            >
           </div>
         </p-card>
       </div>
@@ -134,14 +141,14 @@
         <p-card>
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Netto Winst</div>
-            <div 
+            <div
               class="text-3xl font-bold"
               [class.text-green-600]="(profitLossReport?.netProfit || 0) >= 0"
               [class.text-red-500]="(profitLossReport?.netProfit || 0) < 0"
             >
               {{ formatCurrency(profitLossReport?.netProfit || 0) }}
             </div>
-            <small 
+            <small
               [class.text-green-600]="profitLossReport?.breakEven"
               [class.text-red-500]="!profitLossReport?.breakEven"
             >
@@ -159,9 +166,11 @@
         <p-card>
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Winstmarge</div>
-            <div 
+            <div
               class="text-3xl font-bold"
-              [class.text-green-600]="(profitLossReport?.profitMargin || 0) >= 0"
+              [class.text-green-600]="
+                (profitLossReport?.profitMargin || 0) >= 0
+              "
               [class.text-red-500]="(profitLossReport?.profitMargin || 0) < 0"
             >
               {{ formatPercentage(profitLossReport?.profitMargin || 0) }}
@@ -185,19 +194,33 @@
         <p-card>
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Effectief Uurloon</div>
-            <div 
+            <div
               class="text-3xl font-bold"
-              [class.text-green-600]="(profitLossReport?.effectiveHourlyRate || 0) >= 60"
-              [class.text-orange-600]="(profitLossReport?.effectiveHourlyRate || 0) < 60 && (profitLossReport?.effectiveHourlyRate || 0) > 0"
-              [class.text-red-500]="(profitLossReport?.effectiveHourlyRate || 0) <= 0"
+              [class.text-green-600]="
+                (profitLossReport?.effectiveHourlyRate || 0) >= 60
+              "
+              [class.text-orange-600]="
+                (profitLossReport?.effectiveHourlyRate || 0) < 60 &&
+                (profitLossReport?.effectiveHourlyRate || 0) > 0
+              "
+              [class.text-red-500]="
+                (profitLossReport?.effectiveHourlyRate || 0) <= 0
+              "
             >
-              {{ formatCurrency(profitLossReport?.effectiveHourlyRate || 0) }}/uur
+              {{
+                formatCurrency(profitLossReport?.effectiveHourlyRate || 0)
+              }}/uur
             </div>
             <small class="text-500">
               @if ((profitLossReport?.effectiveHourlyRate || 0) >= 60) {
                 <i class="pi pi-check-circle"></i> Target bereikt (€60)
               } @else if ((profitLossReport?.effectiveHourlyRate || 0) > 0) {
-                {{ ((profitLossReport?.effectiveHourlyRate || 0) / 60 * 100).toFixed(0) }}% van target (€60)
+                {{
+                  (
+                    ((profitLossReport?.effectiveHourlyRate || 0) / 60) *
+                    100
+                  ).toFixed(0)
+                }}% van target (€60)
               } @else {
                 Geen data
               }
@@ -218,7 +241,14 @@
                 Minimaal benodigde omzet bereikt
               } @else {
                 @if ((profitLossReport?.totalRevenue || 0) > 0) {
-                  Nog {{ formatCurrency((expenseReport?.totalExpenses || 0) - (profitLossReport?.totalRevenue || 0)) }} nodig
+                  Nog
+                  {{
+                    formatCurrency(
+                      (expenseReport?.totalExpenses || 0) -
+                        (profitLossReport?.totalRevenue || 0)
+                    )
+                  }}
+                  nodig
                 } @else {
                   Nog geen omzet
                 }

@@ -44,9 +44,7 @@
           ></p-select>
           <small
             class="text-red-500"
-            *ngIf="
-              form.get('client')?.invalid && form.get('client')?.touched
-            "
+            *ngIf="form.get('client')?.invalid && form.get('client')?.touched"
           >
             Klant is verplicht
           </small>
@@ -114,7 +112,6 @@
             mode="currency"
             currency="EUR"
             locale="nl-NL"
-            [disabled]="true"
             class="w-full"
             [minFractionDigits]="2"
           ></p-inputNumber>
@@ -129,7 +126,6 @@
             mode="currency"
             currency="EUR"
             locale="nl-NL"
-            [disabled]="true"
             class="w-full"
             [minFractionDigits]="2"
           ></p-inputNumber>

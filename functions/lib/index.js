@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAppointmentReminderEmail = exports.beforeusercreate = void 0;
+exports.sendAppointmentReminderEmail = void 0;
 const admin = require("firebase-admin");
 const https_1 = require("firebase-functions/v2/https");
 const identity_1 = require("firebase-functions/v2/identity");
@@ -8,41 +8,55 @@ const identity_1 = require("firebase-functions/v2/identity");
 // import * as calendar from './calendar';
 const email = require("./email");
 admin.initializeApp();
-exports.beforeusercreate = (0, identity_1.beforeUserCreated)(
+// Auth blocking function temporarily disabled - requires special Firebase configuration
+// See: https://firebase.google.com/docs/auth/extend-with-blocking-functions
+/*
+import {
+  AuthBlockingEvent,
+  beforeUserCreated,
+} from 'firebase-functions/v2/identity';
+
+export const beforeusercreate = beforeUserCreated(
   {
-    region: "europe-west1",
+    region: 'europe-west1',
   },
-  async (event) => {
+  async (event: AuthBlockingEvent) => {
     const user = event.data;
     const email = user?.email;
+
     if (!email) {
-      throw new identity_1.HttpsError("invalid-argument", "Email is required.");
+      throw new HttpsError('invalid-argument', 'Email is required.');
     }
+
     const firestore = admin.firestore();
-    const allowedUsersCollection = firestore.collection("allowed-users");
+    const allowedUsersCollection = firestore.collection('allowed-users');
+
     try {
       const snapshot = await allowedUsersCollection
-        .where("email", "==", email.toLowerCase())
+        .where('email', '==', email.toLowerCase())
         .get();
+
       if (snapshot.empty) {
         console.log(
           `User ${email} is not in the allowed list. Blocking creation.`,
         );
-        throw new identity_1.HttpsError(
-          "permission-denied",
-          "This email address is not authorized to create a user.",
+        throw new HttpsError(
+          'permission-denied',
+          'This email address is not authorized to create a user.',
         );
       }
     } catch (error) {
-      console.error("Error checking for allowed user:", error);
-      throw new identity_1.HttpsError(
-        "internal",
-        "An error occurred while validating the user.",
+      console.error('Error checking for allowed user:', error);
+      throw new HttpsError(
+        'internal',
+        'An error occurred while validating the user.',
       );
     }
+
     console.log(`User ${email} is allowed.`);
   },
 );
+*/
 // Calendar functions temporarily disabled - can be re-enabled later
 /*
 export const exchangeAuthCode = onCall(async (request) => {

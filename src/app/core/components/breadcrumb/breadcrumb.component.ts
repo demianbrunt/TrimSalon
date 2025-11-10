@@ -9,23 +9,15 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
   selector: 'app-breadcrumb',
   standalone: true,
   imports: [CommonModule, RouterModule, BreadcrumbModule],
-  template: `<p-breadcrumb 
-    [model]="items" 
+  template: `<p-breadcrumb
+    [model]="items"
     [home]="home"
     styleClass="breadcrumb-custom"
   ></p-breadcrumb>`,
   styles: [
     `
       ::ng-deep .breadcrumb-custom {
-        padding: 0.75rem 1rem !important;
-        background: var(--p-surface-0) !important;
-      }
-      
-      @media (max-width: 768px) {
-        ::ng-deep .breadcrumb-custom {
-          padding: 0.5rem 1rem !important;
-          font-size: 0.875rem;
-        }
+        padding: 0.5rem 1rem !important;
       }
     `,
   ],

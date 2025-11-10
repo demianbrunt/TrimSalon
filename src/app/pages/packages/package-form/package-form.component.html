@@ -11,7 +11,7 @@
     <form [formGroup]="form" class="p-fluid">
       <!-- Basic Info -->
       <div class="field">
-        <p-floatlabel>
+        <p-floatlabel variant="on">
           <input
             pInputText
             id="name"
@@ -23,7 +23,7 @@
         </p-floatlabel>
       </div>
       <div class="field">
-        <p-floatlabel>
+        <p-floatlabel variant="on">
           <p-multiSelect
             id="services"
             [options]="allServices"
@@ -57,13 +57,19 @@
               styleClass="w-full mt-2"
               placeholder="Duur (minuten)"
             ></p-inputNumber>
-            @if (form.get('pricingSmall')?.value && form.get('durationSmall')?.value) {
-              @let rate = calculateHourlyRateForSize('small');
+            @if (
+              form.get("pricingSmall")?.value &&
+              form.get("durationSmall")?.value
+            ) {
+              @let rate = calculateHourlyRateForSize("small");
               <small
-                [class]="rate.meetsTarget ? 'text-green-600' : 'text-orange-600'"
+                [class]="
+                  rate.meetsTarget ? 'text-green-600' : 'text-orange-600'
+                "
               >
-                {{rate.effectiveRate | currency: 'EUR'}}/uur
-                ({{rate.percentageOfTarget | number: '1.0-0'}}% van €{{targetHourlyRate}})
+                {{ rate.effectiveRate | currency: "EUR" }}/uur ({{
+                  rate.percentageOfTarget | number: "1.0-0"
+                }}% van €{{ targetHourlyRate }})
               </small>
             }
           </div>
@@ -85,13 +91,19 @@
               styleClass="w-full mt-2"
               placeholder="Duur (minuten)"
             ></p-inputNumber>
-            @if (form.get('pricingMedium')?.value && form.get('durationMedium')?.value) {
-              @let rate = calculateHourlyRateForSize('medium');
+            @if (
+              form.get("pricingMedium")?.value &&
+              form.get("durationMedium")?.value
+            ) {
+              @let rate = calculateHourlyRateForSize("medium");
               <small
-                [class]="rate.meetsTarget ? 'text-green-600' : 'text-orange-600'"
+                [class]="
+                  rate.meetsTarget ? 'text-green-600' : 'text-orange-600'
+                "
               >
-                {{rate.effectiveRate | currency: 'EUR'}}/uur
-                ({{rate.percentageOfTarget | number: '1.0-0'}}% van €{{targetHourlyRate}})
+                {{ rate.effectiveRate | currency: "EUR" }}/uur ({{
+                  rate.percentageOfTarget | number: "1.0-0"
+                }}% van €{{ targetHourlyRate }})
               </small>
             }
           </div>
@@ -113,13 +125,19 @@
               styleClass="w-full mt-2"
               placeholder="Duur (minuten)"
             ></p-inputNumber>
-            @if (form.get('pricingLarge')?.value && form.get('durationLarge')?.value) {
-              @let rate = calculateHourlyRateForSize('large');
+            @if (
+              form.get("pricingLarge")?.value &&
+              form.get("durationLarge")?.value
+            ) {
+              @let rate = calculateHourlyRateForSize("large");
               <small
-                [class]="rate.meetsTarget ? 'text-green-600' : 'text-orange-600'"
+                [class]="
+                  rate.meetsTarget ? 'text-green-600' : 'text-orange-600'
+                "
               >
-                {{rate.effectiveRate | currency: 'EUR'}}/uur
-                ({{rate.percentageOfTarget | number: '1.0-0'}}% van €{{targetHourlyRate}})
+                {{ rate.effectiveRate | currency: "EUR" }}/uur ({{
+                  rate.percentageOfTarget | number: "1.0-0"
+                }}% van €{{ targetHourlyRate }})
               </small>
             }
           </div>
@@ -202,7 +220,8 @@
           <ng-template pTemplate="emptymessage">
             <tr>
               <td colspan="5" class="text-center text-color-secondary">
-                Geen ras-specifieke aanpassingen. Klik op "Ras Toevoegen" voor moeilijke rassen zoals Poedels.
+                Geen ras-specifieke aanpassingen. Klik op "Ras Toevoegen" voor
+                moeilijke rassen zoals Poedels.
               </td>
             </tr>
           </ng-template>

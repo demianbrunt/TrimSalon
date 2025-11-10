@@ -20,33 +20,30 @@ import { MobileService } from '../../services/mobile.service';
   ],
   styleUrls: ['./table-header.component.css'],
   template: `
-    <div class="grid grid-nogutter justify-content-between align-items-center">
+    <div
+      class="grid grid-nogutter justify-content-between align-items-center gap-2"
+    >
       @if (title) {
         <h2 class="col-12 md:col-6 m-0">{{ title }}</h2>
       }
-      <div class="col-12 md:col-6 flex justify-content-end gap-2">
-        <p-iconfield>
-          <p-inputicon class="pi pi-search" />
-          <input
-            pInputText
-            type="text"
-            #searchInput
-            (input)="filter(searchInput.value)"
-            [placeholder]="placeholder"
-            class="w-full"
-            [ngClass]="{
-              'p-inputtext-lg': !isMobile,
-              'p-inputtext-sm': isMobile,
-            }"
-          />
-        </p-iconfield>
-        <p-button
-          [label]="addLabel"
-          icon="pi pi-plus"
+      <p-iconfield class="flex-1 md:max-w-20rem">
+        <p-inputicon class="pi pi-search" />
+        <input
+          pInputText
+          type="text"
+          #searchInput
+          (input)="filter(searchInput.value)"
+          [placeholder]="placeholder"
+          class="w-full"
           [size]="isMobile ? 'small' : 'large'"
-          (click)="addClick.emit()"
-        ></p-button>
-      </div>
+        />
+      </p-iconfield>
+      <p-button
+        [label]="addLabel"
+        icon="pi pi-plus"
+        [size]="isMobile ? 'small' : 'large'"
+        (click)="addClick.emit()"
+      ></p-button>
     </div>
   `,
 })
