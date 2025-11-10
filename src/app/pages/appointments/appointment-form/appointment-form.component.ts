@@ -22,6 +22,7 @@ import { TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
 import { ToastModule } from 'primeng/toast';
 
+import { MessageModule } from 'primeng/message';
 import { FormBaseComponent } from '../../../core/components/form-base/form-base.component';
 import { Appointment } from '../../../core/models/appointment.model';
 import { Client } from '../../../core/models/client.model';
@@ -60,6 +61,7 @@ import { ToastrService } from '../../../core/services/toastr.service';
     CardModule,
     MultiSelectModule,
     DividerModule,
+    MessageModule,
   ],
   templateUrl: './appointment-form.component.html',
   styleUrls: ['./appointment-form.component.css'],
@@ -144,7 +146,10 @@ export class AppointmentFormComponent
       this.form = this.fb.group({
         id: new FormControl(null),
         client: new FormControl(null, Validators.required),
-        dog: new FormControl(null, Validators.required),
+        dog: new FormControl(
+          { value: null, disabled: true },
+          Validators.required,
+        ),
         services: new FormControl<Service[] | null>([]),
         packages: new FormControl<Package[] | null>([]),
         appointmentDate: new FormControl<Date | null>(null),
@@ -188,6 +193,13 @@ export class AppointmentFormComponent
     this.form.get('client')?.valueChanges.subscribe((client) => {
       this.dogs = client ? client.dogs : [];
       this.form.get('dog')?.setValue(null);
+
+      // Enable/disable dog control based on client selection
+      if (client) {
+        this.form.get('dog')?.enable();
+      } else {
+        this.form.get('dog')?.disable();
+      }
     });
   }
 

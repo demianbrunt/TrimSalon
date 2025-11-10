@@ -59,9 +59,10 @@
         <div [formGroup]="$any(dogGroup)" class="p-2">
           @if (dogGroup.controls.isAggressive.value) {
             <p-message
-              severity="warn"
+              styleClass="mb-3"
+              severity="error"
               icon="pi pi-exclamation-triangle"
-              text="Let op: Dit dier is gemarkeerd als agressief"
+              message="Let op: Dit dier is gemarkeerd als agressief"
               >Let op: Dit dier is gemarkeerd als agressief</p-message
             >
           }
