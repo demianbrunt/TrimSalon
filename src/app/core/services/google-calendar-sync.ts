@@ -1,14 +1,6 @@
 import { inject, Injectable } from '@angular/core';
-import {
-  BehaviorSubject,
-  combineLatest,
-  interval,
-  Observable,
-  of,
-  Subscription,
-} from 'rxjs';
-import { catchError, map, switchMap, take } from 'rxjs/operators';
-import { Appointment } from '../models/appointment.model';
+import { BehaviorSubject, interval, Subscription } from 'rxjs';
+import { take } from 'rxjs/operators';
 import { AppointmentService } from './appointment.service';
 import { AuthenticationService } from './authentication.service';
 import { CalendarService } from './calendar.service';
