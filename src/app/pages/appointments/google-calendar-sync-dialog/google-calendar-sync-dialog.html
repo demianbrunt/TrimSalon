@@ -1,0 +1,142 @@
+<div class="sync-dialog">
+  <div class="mb-4">
+    <h3 class="mb-2">Google Agenda Synchronisatie</h3>
+    <p class="text-secondary text-sm">
+      Synchroniseer je afspraken automatisch met Google Agenda
+    </p>
+  </div>
+
+  <!-- Sync Status -->
+  <div class="mb-4 p-3 border border-round">
+    <div class="flex align-items-center gap-2 mb-2">
+      <i
+        class="pi"
+        [class.pi-check-circle]="syncStatus.enabled && !syncStatus.syncing"
+        [class.pi-spin]="syncStatus.syncing"
+        [class.pi-sync]="syncStatus.syncing"
+        [class.pi-times-circle]="!syncStatus.enabled && !syncStatus.syncing"
+        [class.text-green-500]="syncStatus.enabled && !syncStatus.syncing"
+        [class.text-red-500]="!syncStatus.enabled && !syncStatus.syncing"
+      ></i>
+      <span class="font-semibold">
+        @if (syncStatus.syncing) {
+          Bezig met synchroniseren...
+        } @else if (syncStatus.enabled) {
+          Automatische sync ingeschakeld
+        } @else {
+          Automatische sync uitgeschakeld
+        }
+      </span>
+    </div>
+
+    @if (syncStatus.lastSync) {
+      <p class="text-sm text-secondary m-0">
+        Laatste sync: {{ syncStatus.lastSync | date: "dd-MM-yyyy HH:mm" }}
+      </p>
+    }
+
+    @if (syncStatus.error) {
+      <p class="text-sm text-red-500 m-0 mt-2">Fout: {{ syncStatus.error }}</p>
+    }
+  </div>
+
+  <!-- Settings -->
+  <div class="mb-4">
+    <h4 class="mb-3">Instellingen</h4>
+
+    <div class="flex align-items-center mb-3">
+      <p-checkbox
+        [(ngModel)]="syncSettings.autoSync"
+        [binary]="true"
+        inputId="autoSync"
+      ></p-checkbox>
+      <label for="autoSync" class="ml-2">Automatisch synchroniseren</label>
+    </div>
+
+    @if (syncSettings.autoSync) {
+      <div class="mb-3 ml-4">
+        <label for="syncInterval" class="block mb-2"
+          >Sync interval (minuten)</label
+        >
+        <p-inputNumber
+          [(ngModel)]="syncSettings.syncInterval"
+          inputId="syncInterval"
+          [min]="5"
+          [max]="60"
+          [step]="5"
+          [showButtons]="true"
+          styleClass="w-full"
+        ></p-inputNumber>
+      </div>
+    }
+
+    <div class="flex align-items-center mb-3">
+      <p-checkbox
+        [(ngModel)]="syncSettings.syncWorkCalendar"
+        [binary]="true"
+        inputId="syncWork"
+      ></p-checkbox>
+      <label for="syncWork" class="ml-2">
+        <i class="pi pi-briefcase mr-2" style="color: #22c55e"></i>
+        Werk agenda (groen)
+      </label>
+    </div>
+
+    <div class="flex align-items-center mb-3">
+      <p-checkbox
+        [(ngModel)]="syncSettings.syncPrivateCalendar"
+        [binary]="true"
+        inputId="syncPrivate"
+      ></p-checkbox>
+      <label for="syncPrivate" class="ml-2">
+        <i class="pi pi-user mr-2" style="color: #22c55e"></i>
+        Privé agenda (groen)
+      </label>
+    </div>
+  </div>
+
+  <!-- Authorization -->
+  <div class="mb-4 p-3 bg-blue-50 border-round">
+    <p class="text-sm mb-2">
+      <i class="pi pi-info-circle mr-2"></i>
+      Authoriseer toegang tot je Google Agenda om synchronisatie mogelijk te
+      maken.
+    </p>
+    <p-button
+      label="Authoriseer Google Agenda"
+      icon="pi pi-google"
+      (onClick)="requestAuth()"
+      styleClass="p-button-sm"
+    ></p-button>
+  </div>
+
+  <!-- Actions -->
+  <div class="flex gap-2 mb-3">
+    <p-button
+      label="Nu synchroniseren"
+      icon="pi pi-refresh"
+      (onClick)="startSync()"
+      [disabled]="syncStatus.syncing"
+      styleClass="flex-1"
+    ></p-button>
+
+    <p-button
+      label="Agenda legen"
+      icon="pi pi-trash"
+      severity="danger"
+      (onClick)="clearCalendar()"
+      [disabled]="syncStatus.syncing"
+      styleClass="flex-1"
+    ></p-button>
+  </div>
+
+  <!-- Footer -->
+  <div class="flex justify-content-end gap-2 pt-3 border-top-1 surface-border">
+    <p-button
+      label="Annuleren"
+      severity="secondary"
+      (onClick)="close()"
+    ></p-button>
+    <p-button label="Opslaan" (onClick)="saveSettings()"></p-button>
+  </div>
+</div>

@@ -16,6 +16,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Appointment } from '../../core/models/appointment.model';
 import { AppointmentService } from '../../core/services/appointment.service';
@@ -25,6 +26,7 @@ import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
 import { CalendarView } from './calendar-view/calendar-view';
 import { CompleteAppointmentDialogComponent } from './complete-appointment-dialog/complete-appointment-dialog.component';
+import { GoogleCalendarSyncDialog } from './google-calendar-sync-dialog/google-calendar-sync-dialog';
 
 interface ViewModeOption {
   label: string;
@@ -43,6 +45,7 @@ interface ViewModeOption {
     RippleModule,
     TagModule,
     ToastModule,
+    TooltipModule,
     IconFieldModule,
     InputIconModule,
     TableHeaderComponent,
@@ -175,6 +178,14 @@ export class AppointmentsComponent implements OnInit {
     // Could pre-fill the form with this date
     this.router.navigate(['/appointments/new'], {
       queryParams: { startTime: date.toISOString() },
+    });
+  }
+
+  openSyncSettings(): void {
+    this.dialogRef = this.dialogService.open(GoogleCalendarSyncDialog, {
+      header: 'Google Agenda Synchronisatie',
+      width: '600px',
+      modal: true,
     });
   }
 }

@@ -1,4 +1,6 @@
-<div class="view-toggle-container mb-3 p-3">
+<div
+  class="view-toggle-container mb-3 p-3 flex justify-content-between align-items-center"
+>
   <p-selectButton
     [options]="viewModeOptions"
     [(ngModel)]="viewMode"
@@ -10,6 +12,17 @@
       <span>{{ item.label }}</span>
     </ng-template>
   </p-selectButton>
+
+  @if (viewMode === "calendar") {
+    <p-button
+      icon="pi pi-cog"
+      label="Sync instellingen"
+      severity="secondary"
+      (onClick)="openSyncSettings()"
+      [text]="true"
+      pTooltip="Google Agenda synchronisatie"
+    ></p-button>
+  }
 </div>
 
 @if (viewMode === "calendar") {
