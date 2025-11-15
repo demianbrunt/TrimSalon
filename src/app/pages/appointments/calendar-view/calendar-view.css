@@ -1,0 +1,47 @@
+.calendar-container {
+  padding: 1rem;
+}
+
+:host ::ng-deep .fc {
+  font-family: var(--font-family);
+}
+
+:host ::ng-deep .fc-toolbar-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+:host ::ng-deep .fc-event {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
+:host ::ng-deep .fc-event:hover {
+  opacity: 0.85;
+}
+
+:host ::ng-deep .fc-daygrid-event {
+  white-space: normal;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .calendar-container {
+    padding: 0.5rem;
+  }
+
+  :host ::ng-deep .fc-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  :host ::ng-deep .fc-toolbar-title {
+    font-size: 1.2rem;
+  }
+
+  :host ::ng-deep .fc-header-toolbar {
+    margin-bottom: 0.5rem;
+  }
+}

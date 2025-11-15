@@ -1,0 +1,15 @@
+<div class="calendar-container">
+  @if (isMobile) {
+    <div class="mb-3">
+      <p-selectButton
+        [options]="viewOptions"
+        [(ngModel)]="selectedView"
+        (onChange)="onViewChange($event.value)"
+        optionLabel="label"
+        optionValue="value"
+      ></p-selectButton>
+    </div>
+  }
+
+  <div #calendarEl></div>
+</div>

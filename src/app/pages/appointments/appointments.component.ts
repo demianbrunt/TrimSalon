@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -11,6 +12,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -21,12 +23,20 @@ import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
+import { CalendarView } from './calendar-view/calendar-view';
 import { CompleteAppointmentDialogComponent } from './complete-appointment-dialog/complete-appointment-dialog.component';
+
+interface ViewModeOption {
+  label: string;
+  value: 'list' | 'calendar';
+  icon: string;
+}
 
 @Component({
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TableModule,
     InputTextModule,
     ButtonModule,
@@ -39,6 +49,8 @@ import { CompleteAppointmentDialogComponent } from './complete-appointment-dialo
     DataViewModule,
     ConfirmDialogModule,
     CardModule,
+    SelectButtonModule,
+    CalendarView,
   ],
   providers: [ConfirmationService, DialogService],
   templateUrl: './appointments.component.html',
@@ -49,6 +61,13 @@ export class AppointmentsComponent implements OnInit {
   sortField = 'startTime';
   sortOrder = -1;
   isInitialized = false;
+
+  viewModeOptions: ViewModeOption[] = [
+    { label: 'Lijst', value: 'list', icon: 'pi pi-list' },
+    { label: 'Agenda', value: 'calendar', icon: 'pi pi-calendar' },
+  ];
+
+  viewMode: 'list' | 'calendar' = 'list';
 
   private readonly appointmentService = inject(AppointmentService);
   private readonly toastrService = inject(ToastrService);
@@ -145,6 +164,17 @@ export class AppointmentsComponent implements OnInit {
           },
         });
       }
+    });
+  }
+
+  onCalendarAppointmentClick(appointment: Appointment): void {
+    this.showAppointmentForm(appointment);
+  }
+
+  onCalendarDateClick(date: Date): void {
+    // Could pre-fill the form with this date
+    this.router.navigate(['/appointments/new'], {
+      queryParams: { startTime: date.toISOString() },
     });
   }
 }
