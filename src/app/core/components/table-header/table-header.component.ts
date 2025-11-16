@@ -35,7 +35,6 @@ import { MobileService } from '../../services/mobile.service';
           (input)="filter(searchInput.value)"
           [placeholder]="placeholder"
           class="w-full"
-          [size]="isMobile ? 'small' : 'large'"
         />
       </p-iconfield>
       <p-button

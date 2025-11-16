@@ -19,48 +19,56 @@
     <ng-template #list let-invoices>
       @for (invoice of invoices; track invoice.id) {
         <div class="col-12 md:col-6 lg:col-4 p-2">
-          <div
-            class="p-4 border surface-border surface-card border-round h-full flex flex-column"
-          >
-            <div class="grow">
-              <div class="font-bold text-lg">{{ invoice.invoiceNumber }}</div>
-              <div class="text-secondary">{{ invoice.client.name }}</div>
-              <div class="text-secondary">
-                {{ invoice.issueDate | date: "dd-MM-yyyy" }}
+          <p-card styleClass="h-full">
+            <ng-template pTemplate="header">
+              <div class="p-3">
+                <div class="font-bold text-lg">{{ invoice.invoiceNumber }}</div>
+                <div class="text-color-secondary">
+                  {{ invoice.client.name }}
+                </div>
+                <div class="text-color-secondary text-sm">
+                  {{ invoice.issueDate | date: "dd-MM-yyyy" }}
+                </div>
               </div>
-              <div class="mt-2">
-                <p-tag
-                  [value]="getStatusLabel(invoice.paymentStatus)"
-                  [severity]="getStatusSeverity(invoice.paymentStatus)"
-                ></p-tag>
-              </div>
-              <div class="mt-2 font-bold text-lg">
+            </ng-template>
+
+            <div class="flex justify-content-between align-items-center">
+              <p-tag
+                [value]="getStatusLabel(invoice.paymentStatus)"
+                [severity]="getStatusSeverity(invoice.paymentStatus)"
+              ></p-tag>
+              <div class="font-bold text-xl">
                 {{ formatCurrency(invoice.totalAmount) }}
               </div>
             </div>
-            <div class="shrink-0 mt-3">
+
+            <ng-template pTemplate="footer">
               <div class="flex justify-content-end gap-2">
                 <p-button
                   icon="pi pi-print"
-                  styleClass="p-button-text p-button-rounded"
+                  [text]="true"
+                  [rounded]="true"
                   (click)="printInvoice(invoice)"
                   pTooltip="Printen"
                 ></p-button>
                 <p-button
                   icon="pi pi-pencil"
-                  styleClass="p-button-text p-button-rounded"
+                  [text]="true"
+                  [rounded]="true"
                   (click)="showInvoiceForm(invoice)"
                   pTooltip="Bewerken"
                 ></p-button>
                 <p-button
                   icon="pi pi-trash"
-                  styleClass="p-button-text p-button-rounded p-button-danger"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
                   (click)="deleteInvoice(invoice)"
                   pTooltip="Verwijderen"
                 ></p-button>
               </div>
-            </div>
-          </div>
+            </ng-template>
+          </p-card>
         </div>
       } @empty {
         <div class="text-center p-4">Geen facturen gevonden.</div>

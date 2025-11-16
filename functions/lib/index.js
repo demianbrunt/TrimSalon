@@ -1,11 +1,19 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sendAppointmentReminderEmail = void 0;
+exports.sendAppointmentReminderEmail =
+  exports.createCalendar =
+  exports.listCalendars =
+  exports.deleteCalendarEvent =
+  exports.updateCalendarEvent =
+  exports.createCalendarEvent =
+  exports.hasCalendarAccess =
+  exports.getCalendarEvents =
+  exports.exchangeAuthCode =
+    void 0;
 const admin = require("firebase-admin");
 const https_1 = require("firebase-functions/v2/https");
 const identity_1 = require("firebase-functions/v2/identity");
-// Calendar functions temporarily disabled
-// import * as calendar from './calendar';
+const calendar = require("./calendar");
 const email = require("./email");
 admin.initializeApp();
 // Auth blocking function temporarily disabled - requires special Firebase configuration
@@ -57,181 +65,278 @@ export const beforeusercreate = beforeUserCreated(
   },
 );
 */
-// Calendar functions temporarily disabled - can be re-enabled later
-/*
-export const exchangeAuthCode = onCall(async (request) => {
-  const { code, userId } = request.data;
-
-  if (!code || !userId) {
-    console.error('exchangeAuthCode: Missing code or userId');
-    throw new HttpsError(
-      'invalid-argument',
-      'The function must be called with arguments "code" and "userId".',
-    );
-  }
-
-  try {
-    console.log(`Attempting to exchange code for tokens for user ${userId}`);
-    const tokens = await calendar.exchangeCodeForTokens(code);
-    console.log(`Tokens exchanged for user ${userId}. Saving tokens...`);
-    await calendar.saveUserTokens(userId, tokens);
-    console.log(`Tokens saved for user ${userId}.`);
-    return { success: true };
-  } catch (error) {
-    console.error('Error exchanging auth code or saving tokens:', error);
-    throw new HttpsError(
-      'internal',
-      'Failed to process calendar authorization.',
-    );
-  }
-});
-
-export const getCalendarEvents = onCall(async (request) => {
-  const { userId, calendarId, timeMin, timeMax } = request.data;
-
-  if (!userId || !calendarId) {
-    throw new HttpsError(
-      'invalid-argument',
-      'The function must be called with the arguments "userId" and "calendarId".',
-    );
-  }
-
-  try {
-    const events = await calendar.getCalendarEvents(userId, calendarId, {
-      timeMin,
-      timeMax,
-    });
-    return { events };
-  } catch (error) {
-    console.error('Error getting calendar events:', error);
-    throw new HttpsError('internal', 'Failed to retrieve calendar events.');
-  }
-});
-
-export const hasCalendarAccess = onCall(async (request) => {
-  const { userId } = request.data;
-
-  if (!userId) {
-    throw new HttpsError(
-      'invalid-argument',
-      'The function must be called with the argument "userId".',
-    );
-  }
-
-  try {
-    const hasAccess = await calendar.hasCalendarAccess(userId);
-    return { hasAccess };
-  } catch (error) {
-    console.error('Error checking for calendar access:', error);
-    throw new HttpsError('internal', 'Failed to check for calendar access.');
-  }
-});
-
-export const createCalendarEvent = onCall(async (request) => {
-  const { userId, calendarId, event } = request.data;
-
-  if (!userId || !calendarId || !event) {
-    throw new HttpsError(
-      'invalid-argument',
-      'The function must be called with arguments "userId", "calendarId", and "event".',
-    );
-  }
-
-  try {
-    const newEvent = await calendar.createCalendarEvent(
-      userId,
-      calendarId,
-      event,
-    );
-    return { event: newEvent };
-  } catch (error) {
-    console.error('Error creating calendar event:', error);
-    throw new HttpsError('internal', 'Failed to create calendar event.');
-  }
-});
-
-export const updateCalendarEvent = onCall(async (request) => {
-  const { userId, calendarId, eventId, event } = request.data;
-
-  if (!userId || !calendarId || !eventId || !event) {
-    throw new HttpsError(
-      'invalid-argument',
-      'The function must be called with arguments "userId", "calendarId", "eventId", and "event".',
-    );
-  }
-
-  try {
-    const updatedEvent = await calendar.updateCalendarEvent(
-      userId,
-      calendarId,
-      eventId,
-      event,
-    );
-    return { event: updatedEvent };
-  } catch (error) {
-    console.error('Error updating calendar event:', error);
-    throw new HttpsError('internal', 'Failed to update calendar event.');
-  }
-});
-
-export const deleteCalendarEvent = onCall(async (request) => {
-  const { userId, calendarId, eventId } = request.data;
-
-  if (!userId || !calendarId || !eventId) {
-    throw new HttpsError(
-      'invalid-argument',
-      'The function must be called with arguments "userId", "calendarId", and "eventId".',
-    );
-  }
-
-  try {
-    await calendar.deleteCalendarEvent(userId, calendarId, eventId);
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting calendar event:', error);
-    throw new HttpsError('internal', 'Failed to delete calendar event.');
-  }
-});
-
-export const listCalendars = onCall(async (request) => {
-  const { userId } = request.data;
-
-  if (!userId) {
-    throw new HttpsError(
-      'invalid-argument',
-      'The function must be called with the argument "userId".',
-    );
-  }
-
-  try {
-    const calendarClient = await calendar.getCalendarClient(userId);
-    if (!calendarClient) {
-      throw new HttpsError('unauthenticated', 'User is not authenticated.');
-    }
-    const calendars = await calendarClient.calendarList.list();
-    return { items: calendars.data.items };
-  } catch (error) {
-    console.error('Error listing calendars:', error);
-    throw new HttpsError('internal', 'Failed to list calendars.');
-  }
-});
-
-export const createCalendar = onCall(
-  { region: 'europe-west1' },
+// Calendar functions
+exports.exchangeAuthCode = (0, https_1.onCall)(
+  { region: "europe-west1" },
   async (request) => {
-    const { userId, summary } = request.data;
-
-    if (!userId || !summary) {
-      throw new HttpsError(
-        'invalid-argument',
-        'The function must be called with arguments "userId" and "summary".',
+    const { code, userId } = request.data;
+    if (!code || !userId) {
+      console.error("exchangeAuthCode: Missing code or userId");
+      throw new identity_1.HttpsError(
+        "invalid-argument",
+        'The function must be called with arguments "code" and "userId".',
       );
     }
-
+    try {
+      console.log(`Attempting to exchange code for tokens for user ${userId}`);
+      const tokens = await calendar.exchangeCodeForTokens(code);
+      console.log(`Tokens exchanged for user ${userId}. Saving tokens...`);
+      await calendar.saveUserTokens(userId, tokens);
+      console.log(`Tokens saved for user ${userId}.`);
+      return { success: true };
+    } catch (error) {
+      console.error("Error exchanging auth code or saving tokens:", error);
+      throw new identity_1.HttpsError(
+        "internal",
+        "Failed to process calendar authorization.",
+      );
+    }
+  },
+);
+exports.getCalendarEvents = (0, https_1.onCall)(
+  { region: "europe-west1" },
+  async (request) => {
+    const { userId, calendarId, timeMin, timeMax } = request.data;
+    if (!userId || !calendarId) {
+      throw new identity_1.HttpsError(
+        "invalid-argument",
+        'The function must be called with the arguments "userId" and "calendarId".',
+      );
+    }
+    try {
+      const events = await calendar.getCalendarEvents(userId, calendarId, {
+        timeMin,
+        timeMax,
+      });
+      return { events: events || [] };
+    } catch (error) {
+      console.error("Error getting calendar events:", error);
+      // Check if error is from Google OAuth (invalid/expired token)
+      const errorMessage = error?.message || "";
+      const errorCode = error?.code;
+      if (
+        errorMessage.includes("invalid_grant") ||
+        errorMessage.includes("Token has been expired or revoked") ||
+        errorCode === 401
+      ) {
+        // Remove invalid tokens so user can re-authorize
+        await calendar.removeUserTokens(userId);
+        throw new identity_1.HttpsError(
+          "unauthenticated",
+          "Calendar authorization has expired. Please re-authorize calendar access.",
+        );
+      }
+      throw new identity_1.HttpsError(
+        "internal",
+        "Failed to retrieve calendar events.",
+      );
+    }
+  },
+);
+exports.hasCalendarAccess = (0, https_1.onCall)(
+  { region: "europe-west1" },
+  async (request) => {
+    const { userId } = request.data;
+    if (!userId) {
+      throw new identity_1.HttpsError(
+        "invalid-argument",
+        'The function must be called with the argument "userId".',
+      );
+    }
+    try {
+      const hasAccess = await calendar.hasCalendarAccess(userId);
+      return { hasAccess };
+    } catch (error) {
+      console.error("Error checking for calendar access:", error);
+      throw new identity_1.HttpsError(
+        "internal",
+        "Failed to check for calendar access.",
+      );
+    }
+  },
+);
+exports.createCalendarEvent = (0, https_1.onCall)(
+  { region: "europe-west1" },
+  async (request) => {
+    const { userId, calendarId, event } = request.data;
+    if (!userId || !calendarId || !event) {
+      throw new identity_1.HttpsError(
+        "invalid-argument",
+        'The function must be called with arguments "userId", "calendarId", and "event".',
+      );
+    }
+    try {
+      // Transform the appointment to Google Calendar event format
+      const calendarEvent = calendar.appointmentToCalendarEvent(event);
+      const newEvent = await calendar.createCalendarEvent(
+        userId,
+        calendarId,
+        calendarEvent,
+      );
+      return { event: newEvent };
+    } catch (error) {
+      console.error("Error creating calendar event:", error);
+      // Check if error is from Google OAuth (invalid/expired token)
+      const errorMessage = error?.message || "";
+      const errorCode = error?.code;
+      if (
+        errorMessage.includes("invalid_grant") ||
+        errorMessage.includes("Token has been expired or revoked") ||
+        errorCode === 401
+      ) {
+        // Remove invalid tokens so user can re-authorize
+        await calendar.removeUserTokens(userId);
+        throw new identity_1.HttpsError(
+          "unauthenticated",
+          "Calendar authorization has expired. Please re-authorize calendar access.",
+        );
+      }
+      throw new identity_1.HttpsError(
+        "internal",
+        "Failed to create calendar event.",
+      );
+    }
+  },
+);
+exports.updateCalendarEvent = (0, https_1.onCall)(
+  { region: "europe-west1" },
+  async (request) => {
+    const { userId, calendarId, eventId, event } = request.data;
+    if (!userId || !calendarId || !eventId || !event) {
+      throw new identity_1.HttpsError(
+        "invalid-argument",
+        'The function must be called with arguments "userId", "calendarId", "eventId", and "event".',
+      );
+    }
+    try {
+      // Transform the appointment to Google Calendar event format (with ID for updates)
+      const calendarEvent = calendar.appointmentToCalendarEvent(event, true);
+      const updatedEvent = await calendar.updateCalendarEvent(
+        userId,
+        calendarId,
+        eventId,
+        calendarEvent,
+      );
+      return { event: updatedEvent };
+    } catch (error) {
+      console.error("Error updating calendar event:", error);
+      // Check if error is from Google OAuth (invalid/expired token)
+      const errorMessage = error?.message || "";
+      const errorCode = error?.code;
+      if (
+        errorMessage.includes("invalid_grant") ||
+        errorMessage.includes("Token has been expired or revoked") ||
+        errorCode === 401
+      ) {
+        // Remove invalid tokens so user can re-authorize
+        await calendar.removeUserTokens(userId);
+        throw new identity_1.HttpsError(
+          "unauthenticated",
+          "Calendar authorization has expired. Please re-authorize calendar access.",
+        );
+      }
+      throw new identity_1.HttpsError(
+        "internal",
+        "Failed to update calendar event.",
+      );
+    }
+  },
+);
+exports.deleteCalendarEvent = (0, https_1.onCall)(
+  { region: "europe-west1" },
+  async (request) => {
+    const { userId, calendarId, eventId } = request.data;
+    if (!userId || !calendarId || !eventId) {
+      throw new identity_1.HttpsError(
+        "invalid-argument",
+        'The function must be called with arguments "userId", "calendarId", and "eventId".',
+      );
+    }
+    try {
+      await calendar.deleteCalendarEvent(userId, calendarId, eventId);
+      return { success: true };
+    } catch (error) {
+      console.error("Error deleting calendar event:", error);
+      // Check if error is from Google OAuth (invalid/expired token)
+      const errorMessage = error?.message || "";
+      const errorCode = error?.code;
+      if (
+        errorMessage.includes("invalid_grant") ||
+        errorMessage.includes("Token has been expired or revoked") ||
+        errorCode === 401
+      ) {
+        // Remove invalid tokens so user can re-authorize
+        await calendar.removeUserTokens(userId);
+        throw new identity_1.HttpsError(
+          "unauthenticated",
+          "Calendar authorization has expired. Please re-authorize calendar access.",
+        );
+      }
+      throw new identity_1.HttpsError(
+        "internal",
+        "Failed to delete calendar event.",
+      );
+    }
+  },
+);
+exports.listCalendars = (0, https_1.onCall)(
+  { region: "europe-west1" },
+  async (request) => {
+    const { userId } = request.data;
+    if (!userId) {
+      throw new identity_1.HttpsError(
+        "invalid-argument",
+        'The function must be called with the argument "userId".',
+      );
+    }
     try {
       const calendarClient = await calendar.getCalendarClient(userId);
       if (!calendarClient) {
-        throw new HttpsError('unauthenticated', 'User is not authenticated.');
+        throw new identity_1.HttpsError(
+          "unauthenticated",
+          "User is not authenticated.",
+        );
+      }
+      const calendars = await calendarClient.calendarList.list();
+      return { items: calendars.data.items };
+    } catch (error) {
+      console.error("Error listing calendars:", error);
+      // Check if error is from Google OAuth (invalid/expired token)
+      const errorMessage = error?.message || "";
+      const errorCode = error?.code;
+      if (
+        errorMessage.includes("invalid_grant") ||
+        errorMessage.includes("Token has been expired or revoked") ||
+        errorCode === 401
+      ) {
+        // Remove invalid tokens so user can re-authorize
+        await calendar.removeUserTokens(userId);
+        throw new identity_1.HttpsError(
+          "unauthenticated",
+          "Calendar authorization has expired. Please re-authorize calendar access.",
+        );
+      }
+      throw new identity_1.HttpsError("internal", "Failed to list calendars.");
+    }
+  },
+);
+exports.createCalendar = (0, https_1.onCall)(
+  { region: "europe-west1" },
+  async (request) => {
+    const { userId, summary } = request.data;
+    if (!userId || !summary) {
+      throw new identity_1.HttpsError(
+        "invalid-argument",
+        'The function must be called with arguments "userId" and "summary".',
+      );
+    }
+    try {
+      const calendarClient = await calendar.getCalendarClient(userId);
+      if (!calendarClient) {
+        throw new identity_1.HttpsError(
+          "unauthenticated",
+          "User is not authenticated.",
+        );
       }
       const newCalendar = await calendarClient.calendars.insert({
         requestBody: {
@@ -240,12 +345,11 @@ export const createCalendar = onCall(
       });
       return newCalendar.data;
     } catch (error) {
-      console.error('Error creating calendar:', error);
-      throw new HttpsError('internal', 'Failed to create calendar.');
+      console.error("Error creating calendar:", error);
+      throw new identity_1.HttpsError("internal", "Failed to create calendar.");
     }
   },
 );
-*/
 // Email functions
 exports.sendAppointmentReminderEmail = (0, https_1.onCall)(
   { region: "europe-west1" },

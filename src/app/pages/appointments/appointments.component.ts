@@ -24,7 +24,7 @@ import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
-import { CalendarView } from './calendar-view/calendar-view';
+import { CustomCalendarComponent } from './calendar-view/custom-calendar.component';
 import { CompleteAppointmentDialogComponent } from './complete-appointment-dialog/complete-appointment-dialog.component';
 import { GoogleCalendarSyncDialog } from './google-calendar-sync-dialog/google-calendar-sync-dialog';
 
@@ -53,7 +53,7 @@ interface ViewModeOption {
     ConfirmDialogModule,
     CardModule,
     SelectButtonModule,
-    CalendarView,
+    CustomCalendarComponent,
   ],
   providers: [ConfirmationService, DialogService],
   templateUrl: './appointments.component.html',
@@ -174,16 +174,19 @@ export class AppointmentsComponent implements OnInit {
     this.showAppointmentForm(appointment);
   }
 
-  onCalendarDateClick(date: Date): void {
-    // Could pre-fill the form with this date
+  onCalendarDateClick(event: { date: Date; hour?: number }): void {
+    const startTime = new Date(event.date);
+    if (event.hour !== undefined) {
+      startTime.setHours(event.hour, 0, 0, 0);
+    }
+
     this.router.navigate(['/appointments/new'], {
-      queryParams: { startTime: date.toISOString() },
+      queryParams: { startTime: startTime.toISOString() },
     });
   }
 
   openSyncSettings(): void {
     this.dialogRef = this.dialogService.open(GoogleCalendarSyncDialog, {
-      header: 'Google Agenda Synchronisatie',
       width: '600px',
       modal: true,
     });

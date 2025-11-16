@@ -25,6 +25,9 @@ export class CalendarService {
 
   async ensureTrimSalonCalendar(): Promise<string> {
     const calendars = await this.listCalendars().toPromise();
+    if (!calendars?.items) {
+      throw new Error('Unable to retrieve calendar list');
+    }
     let calendar = calendars.items.find((cal) => cal.summary === 'TrimSalon');
     if (!calendar) {
       calendar = await this.createTrimSalonCalendar();
@@ -42,10 +45,18 @@ export class CalendarService {
 
   getAppointments(calendarId: string): Observable<Appointment[]> {
     const userId = this.authService.getCurrentUserId();
-    return this.call<Appointment[]>('getCalendarEvents', {
+    return this.call<{ events: Appointment[] }>('getCalendarEvents', {
       userId,
       calendarId,
-    });
+    }).pipe(map((result) => result.events || []));
+  }
+
+  getRawCalendarEvents(calendarId: string): Observable<any[]> {
+    const userId = this.authService.getCurrentUserId();
+    return this.call<{ events: any[] }>('getCalendarEvents', {
+      userId,
+      calendarId,
+    }).pipe(map((result) => result.events || []));
   }
 
   addAppointment(

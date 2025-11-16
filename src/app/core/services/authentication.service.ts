@@ -278,13 +278,8 @@ export class AuthenticationService {
       return false;
     }
 
-    // Optional Calendar authorization
-    try {
-      this.googleAuthService.getAuthCode(uid);
-    } catch (calendarErr) {
-      console.warn('Calendar auth code failed', calendarErr);
-      this.toastr.warning('Agenda toegang kon niet worden ingesteld', 'Agenda');
-    }
+    // Calendar authorization is now handled separately via sync dialog
+    // No automatic popup on login
 
     const credential = GoogleAuthProvider.credentialFromResult(result);
     if (credential?.accessToken) {

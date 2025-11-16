@@ -20,4 +20,7 @@ export interface Appointment {
   actualPackages?: Package[]; // Packages actually performed
   actualEndTime?: Date; // Actual end time (can differ from estimated endTime)
   completed?: boolean; // Whether appointment has been completed
+  // Google Calendar sync
+  googleCalendarEventId?: string; // Google Calendar event ID for two-way sync
+  lastModified?: Date; // Last modification timestamp for conflict resolution
 }

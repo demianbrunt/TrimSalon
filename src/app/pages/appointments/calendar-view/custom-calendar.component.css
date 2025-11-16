@@ -1,0 +1,165 @@
+/* Minimal Custom Styles - Use PrimeFlex for everything else */
+
+/* Table Layout */
+:host ::ng-deep .p-datatable .p-datatable-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+:host ::ng-deep .p-datatable .p-datatable-thead > tr > th,
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+  padding: 0.5rem;
+  border: 1px solid #dee2e6 !important;
+}
+
+/* Equal width columns for week view (7 days + 1 time column) */
+:host ::ng-deep .p-datatable .p-datatable-thead > tr > th:not(.time-col) {
+  width: calc((100% - 60px) / 7);
+  min-width: 0; /* Allow equal distribution */
+}
+
+:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td:not(.time-col) {
+  width: calc((100% - 60px) / 7);
+  min-width: 0; /* Allow equal distribution */
+}
+
+/* Time Column - Fixed Width */
+.time-col {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  background-color: var(--surface-50);
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+/* Day Cell - Scrollable */
+.day-cell {
+  height: 60px;
+  vertical-align: top;
+  cursor: pointer;
+  background-color: var(--surface-card);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.day-cell:hover {
+  background-color: var(--surface-hover);
+}
+
+/* Month Cell */
+.month-cell {
+  height: 120px;
+  min-height: 120px;
+  width: 14.28%; /* 100% / 7 days */
+  vertical-align: top;
+  cursor: pointer;
+  background-color: var(--surface-card);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.month-cell::-webkit-scrollbar {
+  width: 3px;
+}
+
+.month-cell::-webkit-scrollbar-thumb {
+  background-color: var(--surface-300);
+  border-radius: 3px;
+}
+
+.month-cell::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.month-cell:hover {
+  background-color: var(--surface-hover);
+}
+
+.month-cell.other-month {
+  opacity: 0.5;
+  background-color: var(--surface-100);
+}
+
+/* Today Highlighting */
+.is-today {
+  background-color: var(--highlight-bg) !important;
+}
+
+/* Current Time Row */
+.current-time .time-col {
+  background-color: var(--primary-50) !important;
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.current-time .day-cell {
+  background-color: var(--primary-50) !important;
+  position: relative;
+}
+
+.current-time .day-cell::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-50), var(--primary-50));
+  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.5);
+  z-index: 10;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  :host ::ng-deep .p-datatable .p-datatable-thead > tr > th,
+  :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+    padding: 0.25rem !important;
+  }
+
+  :host ::ng-deep .p-card .p-card-body {
+    padding: 0.25rem !important;
+  }
+
+  :host ::ng-deep .p-card .p-card-content {
+    padding: 0 !important;
+  }
+
+  .time-col {
+    width: 45px;
+    min-width: 45px;
+    max-width: 45px;
+    font-size: 0.65rem;
+    padding: 0.25rem !important;
+  }
+
+  .day-cell {
+    height: 50px;
+    padding: 0 !important;
+  }
+
+  .month-cell {
+    height: 100px;
+    min-height: 100px;
+    padding: 0.25rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .time-col {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    font-size: 0.6rem;
+  }
+
+  .day-cell {
+    height: 45px;
+  }
+
+  .month-cell {
+    height: 80px;
+    min-height: 80px;
+  }
+}

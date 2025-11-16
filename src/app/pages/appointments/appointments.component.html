@@ -26,11 +26,11 @@
 </div>
 
 @if (viewMode === "calendar") {
-  <app-calendar-view
+  <app-custom-calendar
     [appointments]="appointments"
     (appointmentClick)="onCalendarAppointmentClick($event)"
     (dateClick)="onCalendarDateClick($event)"
-  ></app-calendar-view>
+  ></app-custom-calendar>
 } @else {
   <ng-container *ngIf="isMobile; else desktopView">
     <p-dataView
@@ -53,87 +53,96 @@
       <ng-template #list let-appointments: Appointment[]>
         @for (appointment of appointments; track appointment.id) {
           <div class="col-12 md:col-6 lg:col-4 p-2">
-            <div
-              class="p-4 border surface-border surface-card border-round h-full flex flex-column"
-              [class.completed-appointment]="appointment.completed"
+            <p-card
+              [styleClass]="
+                appointment.completed
+                  ? 'completed-appointment h-full'
+                  : 'h-full'
+              "
             >
-              <div class="grow">
-                <div
-                  class="flex justify-content-between align-items-start mb-2"
-                >
-                  <div class="font-bold text-lg">
-                    {{ appointment.client.name }} - {{ appointment.dog.name }}
-                    @if (appointment.dog.isAggressive) {
-                      <i
-                        class="pi pi-exclamation-triangle text-red-600 ml-2"
-                        pTooltip="Agressief dier"
-                      ></i>
+              <ng-template pTemplate="header">
+                <div class="p-3">
+                  <div class="flex justify-content-between align-items-start">
+                    <div class="font-bold text-lg">
+                      {{ appointment.client.name }} - {{ appointment.dog.name }}
+                      @if (appointment.dog.isAggressive) {
+                        <i
+                          class="pi pi-exclamation-triangle text-red-600 ml-2"
+                          pTooltip="Agressief dier"
+                        ></i>
+                      }
+                    </div>
+                    @if (appointment.completed) {
+                      <p-tag
+                        value="Afgerond"
+                        severity="success"
+                        [rounded]="true"
+                      ></p-tag>
                     }
                   </div>
-                  @if (appointment.completed) {
-                    <p-tag
-                      value="Afgerond"
-                      severity="success"
-                      [rounded]="true"
-                    ></p-tag>
+                </div>
+              </ng-template>
+
+              <div class="text-color-secondary mb-2">
+                <i class="pi pi-calendar mr-2"></i>
+                {{ appointment.startTime | date: "EEEE d MMMM yyyy" }}
+              </div>
+              <div class="text-color-secondary mb-2">
+                <i class="pi pi-clock mr-2"></i>
+                {{ appointment.startTime | date: "HH:mm" }} -
+                {{ appointment.endTime | date: "HH:mm" }}
+              </div>
+              @if (appointment.completed && appointment.actualEndTime) {
+                <div class="text-sm text-primary mb-3">
+                  <i class="pi pi-check-circle mr-2"></i>
+                  Afgerond om
+                  {{ appointment.actualEndTime | date: "HH:mm" }}
+                </div>
+              }
+              <div>
+                <div class="text-xs text-color-secondary mb-2">
+                  Werkzaamheden & Pakketten:
+                </div>
+                <div class="flex flex-wrap gap-1">
+                  @for (service of appointment.services; track service.id) {
+                    <p-tag [value]="service.name" severity="info"></p-tag>
+                  }
+                  @for (pkg of appointment.packages; track pkg.id) {
+                    <p-tag [value]="pkg.name" severity="success"></p-tag>
                   }
                 </div>
-                <div class="text-secondary">
-                  <i class="pi pi-calendar mr-2"></i>
-                  {{ appointment.startTime | date: "EEEE d MMMM yyyy" }}
-                </div>
-                <div class="text-secondary mt-1">
-                  <i class="pi pi-clock mr-2"></i>
-                  {{ appointment.startTime | date: "HH:mm" }} -
-                  {{ appointment.endTime | date: "HH:mm" }}
-                </div>
-                @if (appointment.completed && appointment.actualEndTime) {
-                  <div class="text-sm text-primary mt-1">
-                    <i class="pi pi-check-circle mr-2"></i>
-                    Afgerond om
-                    {{ appointment.actualEndTime | date: "HH:mm" }}
-                  </div>
-                }
-                <div class="mt-3">
-                  <div class="text-xs text-secondary mb-1">
-                    Werkzaamheden & Pakketten:
-                  </div>
-                  <div class="flex flex-wrap gap-1">
-                    @for (service of appointment.services; track service.id) {
-                      <p-tag [value]="service.name" severity="info"></p-tag>
-                    }
-                    @for (pkg of appointment.packages; track pkg.id) {
-                      <p-tag [value]="pkg.name" severity="success"></p-tag>
-                    }
-                  </div>
-                </div>
               </div>
-              <div class="shrink-0 mt-3">
+
+              <ng-template pTemplate="footer">
                 <div class="flex justify-content-end gap-2">
                   @if (!appointment.completed) {
                     <p-button
                       icon="pi pi-check"
                       severity="success"
-                      styleClass="p-button-text p-button-rounded"
+                      [text]="true"
+                      [rounded]="true"
                       (click)="completeAppointment(appointment)"
                       pTooltip="Afronden"
                     ></p-button>
                   }
                   <p-button
                     icon="pi pi-pencil"
-                    styleClass="p-button-text p-button-rounded"
+                    [text]="true"
+                    [rounded]="true"
                     (click)="showAppointmentForm(appointment)"
                     pTooltip="Bewerken"
                   ></p-button>
                   <p-button
                     icon="pi pi-trash"
-                    styleClass="p-button-text p-button-rounded p-button-danger"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
                     (click)="deleteAppointment(appointment)"
                     pTooltip="Verwijderen"
                   ></p-button>
                 </div>
-              </div>
-            </div>
+              </ng-template>
+            </p-card>
           </div>
         } @empty {
           <div class="text-center p-4">Geen afspraken gevonden.</div>
