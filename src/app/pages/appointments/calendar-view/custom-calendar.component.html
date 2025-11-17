@@ -1,14 +1,13 @@
 <div
-  class="p-0 md:px-4"
+  class="calendar-wrapper p-0 md:px-4"
   appSwipe
   (swipeLeft)="nextPeriod()"
   (swipeRight)="previousPeriod()"
 >
   <p-card>
-    <!-- Header -->
-    <div
-      class="flex flex-column md:flex-row justify-content-between align-items-center gap-1 mb-4"
-    >
+    <!-- Header - Optimized for Mobile -->
+    <div class="calendar-header mb-2">
+      <!-- Desktop Navigation -->
       <div class="hidden md:flex gap-2 align-items-center">
         <p-button
           icon="pi pi-chevron-left"
@@ -32,19 +31,41 @@
         />
       </div>
 
-      <h2 class="m-0 text-xl md:text-2xl font-semibold">
-        {{ currentPeriodTitle() }}
-      </h2>
+      <!-- Mobile "Today" Button -->
+      <div class="md:hidden">
+        <p-button
+          icon="pi pi-stopwatch"
+          (onClick)="goToToday()"
+          [rounded]="true"
+          [text]="true"
+          size="small"
+          pTooltip="Ga naar vandaag"
+        />
+      </div>
 
+      <!-- Title - Enhanced Date Display -->
+      <div class="date-display">
+        <div class="date-main">
+          {{ currentPeriodMainTitle() }}
+          @if (viewMode() === "day" && isCurrentPeriodToday()) {
+            <p-badge value="Vandaag" severity="success" styleClass="ml-2" />
+          }
+        </div>
+        <div class="date-sub">{{ currentPeriodSubTitle() }}</div>
+      </div>
+
+      <!-- View Toggle - Icon Only on Mobile -->
       <p-selectButton
         [options]="viewModeOptions"
         [(ngModel)]="viewMode"
         optionLabel="label"
         optionValue="value"
-        size="small"
+        styleClass="view-toggle-compact"
+        [unselectable]="false"
       >
         <ng-template let-item>
           <i [class]="item.icon"></i>
+          <span class="hidden md:inline ml-2">{{ item.label }}</span>
         </ng-template>
       </p-selectButton>
     </div>
@@ -54,15 +75,16 @@
       <p-table
         [value]="timeSlots"
         [scrollable]="true"
-        scrollHeight="600px"
+        scrollHeight="flex"
         #calendarTable
       >
+        #calendarTable >
         <ng-template pTemplate="header">
           <tr>
             <th class="time-col">Tijd</th>
             @for (day of weekDays(); track day.date.getTime()) {
               <th [class.is-today]="day.isToday" class="text-center p-2">
-                <div class="text-xs md:text-sm text-color-secondary mb-1">
+                <div class="text-sm text-color-secondary mb-1">
                   {{ dayNames[$index] }}
                 </div>
                 <div
@@ -95,7 +117,7 @@
                   track apt.id
                 ) {
                   <div
-                    class="p-2 mb-1 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                    class="apt-card p-1 md:p-2 mb-1 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
                     [class.border-green-500]="apt.completed"
                     [class.surface-green-50]="apt.completed"
                     (click)="onAppointmentClick($event, apt)"
@@ -103,14 +125,14 @@
                     role="button"
                     [pTooltip]="apt.client.name + ' - ' + apt.dog.name"
                   >
-                    <div class="font-semibold text-sm">
+                    <div class="font-semibold text-xs md:text-sm">
                       {{ apt.client.name }}
                     </div>
                     <div class="text-xs flex align-items-center gap-1">
                       <span>{{ apt.dog.name }}</span>
                       @if (apt.dog.isAggressive) {
                         <i
-                          class="pi pi-exclamation-triangle text-orange-500"
+                          class="pi pi-exclamation-triangle text-orange-500 text-xs"
                         ></i>
                       }
                     </div>
@@ -132,19 +154,14 @@
       <p-table
         [value]="timeSlots"
         [scrollable]="true"
-        scrollHeight="600px"
+        scrollHeight="flex"
         #calendarTable
       >
         <ng-template pTemplate="header">
           <tr>
             <th class="time-col">Tijd</th>
             <th class="p-2">
-              <div class="flex align-items-center gap-2">
-                <span>{{ selectedDate() | date: "EEEE d MMMM" }}</span>
-                @if (isToday(selectedDate())) {
-                  <p-badge value="Vandaag" severity="success" />
-                }
-              </div>
+              <!-- Datum staat al in de header boven, niet meer nodig in tabel -->
             </th>
           </tr>
         </ng-template>
@@ -164,7 +181,7 @@
                   track apt.id
                 ) {
                   <div
-                    class="flex-1 p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                    class="flex-1 p-1 md:p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
                     [class.border-green-500]="apt.completed"
                     [class.surface-green-50]="apt.completed"
                     (click)="onAppointmentClick($event, apt)"
@@ -173,14 +190,14 @@
                   >
                     <div class="flex justify-content-between align-items-start">
                       <div class="flex-1">
-                        <div class="font-semibold text-sm">
+                        <div class="font-semibold text-xs md:text-sm">
                           {{ apt.client.name }}
                         </div>
                         <div class="text-xs flex align-items-center gap-1">
                           <span>{{ apt.dog.name }}</span>
                           @if (apt.dog.isAggressive) {
                             <i
-                              class="pi pi-exclamation-triangle text-orange-500"
+                              class="pi pi-exclamation-triangle text-orange-500 text-xs"
                             ></i>
                           }
                         </div>
@@ -265,7 +282,13 @@
                       tabindex="0"
                       role="button"
                     >
-                      {{ apt.startTime | date: "HH:mm" }} {{ apt.client.name }}
+                      <span class="hidden md:inline">{{
+                        apt.startTime | date: "HH:mm"
+                      }}</span>
+                      <span class="md:hidden">{{
+                        apt.startTime | date: "HH"
+                      }}</span>
+                      {{ apt.client.name }}
                     </div>
                   }
                 </div>

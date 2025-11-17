@@ -1,5 +1,96 @@
 /* Minimal Custom Styles - Use PrimeFlex for everything else */
 
+/* Calendar Wrapper - No scroll, contained */
+.calendar-wrapper {
+  height: auto;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
+.calendar-wrapper ::ng-deep .p-card {
+  position: relative;
+  z-index: 1;
+}
+
+/* Mobile-Optimized Header */
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+
+/* Enhanced Date Display */
+.date-display {
+  text-align: center;
+  padding: 0.5rem;
+  transition: all 0.3s ease;
+  flex: 1;
+}
+
+.date-main {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.date-sub {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-color-secondary);
+  line-height: 1.2;
+  transition: color 0.3s ease;
+}
+
+.date-display:hover .date-main {
+  transform: translateY(-2px);
+  color: var(--primary-color);
+  filter: brightness(1.1);
+}
+
+.date-display:hover .date-sub {
+  color: var(--text-color);
+}
+
+@media (max-width: 768px) {
+  .calendar-header {
+    gap: 0.25rem;
+    padding: 0.25rem 0;
+  }
+
+  .date-display {
+    padding: 0.25rem;
+  }
+
+  .date-main {
+    font-size: 0.8rem;
+    margin-bottom: 0.125rem;
+  }
+
+  .date-sub {
+    font-size: 0.75rem;
+  }
+
+  /* Compact view toggle on mobile */
+  :host ::ng-deep .view-toggle-compact .p-button {
+    padding: 0.375rem 0.5rem !important;
+    font-size: 0.875rem;
+  }
+
+  :host ::ng-deep .view-toggle-compact .p-button .p-button-icon {
+    font-size: 0.875rem;
+  }
+}
+
 /* Table Layout */
 :host ::ng-deep .p-datatable .p-datatable-table {
   table-layout: fixed;
@@ -31,7 +122,7 @@
   background-color: var(--surface-50);
   font-weight: 600;
   text-align: center;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 /* Day Cell - Scrollable */
@@ -42,6 +133,7 @@
   background-color: var(--surface-card);
   overflow-y: auto;
   overflow-x: hidden;
+  position: relative;
 }
 
 .day-cell:hover {
@@ -50,8 +142,8 @@
 
 /* Month Cell */
 .month-cell {
-  height: 120px;
-  min-height: 120px;
+  height: 140px;
+  min-height: 140px;
   width: 14.28%; /* 100% / 7 days */
   vertical-align: top;
   cursor: pointer;
@@ -105,21 +197,21 @@
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--primary-50), var(--primary-50));
-  box-shadow: 0 1px 4px rgba(239, 68, 68, 0.5);
-  z-index: 10;
+  height: 4px;
+  background: var(--p-primary-color);
+  z-index: 100;
+  opacity: 1;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
   :host ::ng-deep .p-datatable .p-datatable-thead > tr > th,
   :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
-    padding: 0.25rem !important;
+    padding: 0.125rem !important;
   }
 
   :host ::ng-deep .p-card .p-card-body {
-    padding: 0.25rem !important;
+    padding: 0.5rem !important;
   }
 
   :host ::ng-deep .p-card .p-card-content {
@@ -127,39 +219,84 @@
   }
 
   .time-col {
-    width: 45px;
-    min-width: 45px;
-    max-width: 45px;
-    font-size: 0.65rem;
-    padding: 0.25rem !important;
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    font-size: 0.8rem;
+    padding: 0.125rem !important;
   }
 
   .day-cell {
-    height: 50px;
+    height: 45px;
     padding: 0 !important;
   }
 
   .month-cell {
-    height: 100px;
-    min-height: 100px;
+    height: 90px;
+    min-height: 90px;
+    padding: 0.125rem !important;
+  }
+
+  /* Compact appointment cards on mobile */
+  :host ::ng-deep .apt-card {
     padding: 0.25rem !important;
+    margin-bottom: 0.25rem !important;
+    border-left-width: 2px !important;
+  }
+
+  :host ::ng-deep .apt-card .font-semibold {
+    font-size: 0.7rem !important;
+    line-height: 1.1;
+  }
+
+  :host ::ng-deep .apt-card .text-xs {
+    font-size: 0.65rem !important;
+  }
+
+  :host ::ng-deep .apt-card .pi-exclamation-triangle {
+    font-size: 0.65rem !important;
+  }
+
+  /* Reduce header sizes on mobile */
+  :host ::ng-deep .p-datatable-thead .text-xs {
+    font-size: 0.65rem !important;
+  }
+
+  :host ::ng-deep .p-datatable-thead .text-sm {
+    font-size: 0.7rem !important;
+  }
+
+  :host ::ng-deep .p-datatable-thead .border-circle {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    font-size: 0.75rem !important;
   }
 }
 
 @media (max-width: 480px) {
   .time-col {
-    width: 35px;
-    min-width: 35px;
-    max-width: 35px;
-    font-size: 0.6rem;
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+    font-size: 0.8rem;
   }
 
   .day-cell {
-    height: 45px;
+    height: 40px;
   }
 
   .month-cell {
-    height: 80px;
-    min-height: 80px;
+    height: 75px;
+    min-height: 75px;
+  }
+
+  :host ::ng-deep .apt-card {
+    padding: 0.2rem !important;
+  }
+
+  :host ::ng-deep .p-datatable-thead .border-circle {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    font-size: 0.7rem !important;
   }
 }

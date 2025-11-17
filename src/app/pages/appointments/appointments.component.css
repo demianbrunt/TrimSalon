@@ -13,12 +13,59 @@
   border-color: var(--p-green-200) !important;
 }
 
-.view-toggle-container {
+/* Main container - should scroll */
+.appointments-container {
+  height: auto;
+  max-height: calc(100vh - 140px);
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
-  justify-content: center;
-  background: var(--p-surface-card);
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .appointments-container {
+    max-height: calc(100vh - 120px);
+  }
+}
+
+.view-toggle-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0;
+  background-color: var(--p-surface-card);
   border-radius: 0.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: visible;
+  flex-shrink: 0;
+  z-index: 100;
+  position: relative;
+}
+
+/* Sync button styling */
+:host ::ng-deep .sync-btn {
+  font-size: 0.75rem !important;
+}
+
+:host ::ng-deep .sync-btn .p-button-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+:host ::ng-deep .sync-btn .p-button-icon {
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  :host ::ng-deep .sync-btn .p-button-label {
+    font-size: 0.7rem;
+  }
+
+  :host ::ng-deep .sync-btn .p-button-icon {
+    font-size: 0.8rem;
+  }
 }
 
 @media (max-width: 768px) {
@@ -35,8 +82,19 @@
     padding: 0.25rem 0.5rem;
   }
 
-  .view-toggle-container {
-    padding: 0.75rem !important;
+  .view-toggle-bar {
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Compact buttons on mobile */
+  :host ::ng-deep .view-mode-toggle .p-button {
+    padding: 0.4rem 0.7rem !important;
+    font-size: 0.875rem;
+  }
+
+  :host ::ng-deep .view-mode-toggle .p-button-icon {
+    font-size: 1rem;
   }
 }
 

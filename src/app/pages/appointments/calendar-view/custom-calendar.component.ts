@@ -23,6 +23,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { SwipeDirective } from '../../../core/directives/swipe.directive';
 import { Appointment } from '../../../core/models/appointment.model';
+import { MobileService } from '../../../core/services/mobile.service';
 
 interface ViewOption {
   label: string;
@@ -73,6 +74,7 @@ export class CustomCalendarComponent implements AfterViewInit {
   // Dependency injection
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private mobileService = inject(MobileService);
 
   // Signals
   private appointmentsSignal = computed(() => this.appointments());
@@ -91,6 +93,10 @@ export class CustomCalendarComponent implements AfterViewInit {
     hour: i,
     label: `${i.toString().padStart(2, '0')}:00`,
   }));
+
+  get isMobile() {
+    return this.mobileService.isMobile;
+  }
 
   constructor() {
     // Read query params on init - FIRST
@@ -123,6 +129,50 @@ export class CustomCalendarComponent implements AfterViewInit {
   }
 
   // Computed signals
+  currentPeriodMainTitle = computed(() => {
+    const date = this.selectedDate();
+    const mode = this.viewMode();
+
+    if (mode === 'day') {
+      const dayName = date.toLocaleDateString('nl-NL', { weekday: 'long' });
+      return dayName.charAt(0).toUpperCase() + dayName.slice(1);
+    } else if (mode === 'week') {
+      return `Week ${this.getWeekNumber(date)}`;
+    } else {
+      const monthName = date.toLocaleDateString('nl-NL', { month: 'long' });
+      return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+    }
+  });
+
+  currentPeriodSubTitle = computed(() => {
+    const date = this.selectedDate();
+    const mode = this.viewMode();
+
+    if (mode === 'day') {
+      return date.toLocaleDateString('nl-NL', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+    } else if (mode === 'week') {
+      const weekStart = this.getWeekStart(date);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      const startDay = weekStart.getDate();
+      const endDay = weekEnd.getDate();
+      const monthName = weekStart.toLocaleDateString('nl-NL', {
+        month: 'long',
+      });
+      const year = weekStart.getFullYear();
+
+      return `${startDay} - ${endDay} ${monthName} ${year}`;
+    } else {
+      return date.getFullYear().toString();
+    }
+  });
+
+  // Keep for backwards compatibility
   currentPeriodTitle = computed(() => {
     const date = this.selectedDate();
     const mode = this.viewMode();
@@ -144,6 +194,29 @@ export class CustomCalendarComponent implements AfterViewInit {
         month: 'long',
         year: 'numeric',
       });
+    }
+  });
+
+  isCurrentPeriodToday = computed(() => {
+    const date = this.selectedDate();
+    const mode = this.viewMode();
+    const today = new Date();
+
+    if (mode === 'day') {
+      return this.isToday(date);
+    } else if (mode === 'week') {
+      const weekStart = this.getWeekStart(date);
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      // Check if today is within this week
+      return today >= weekStart && today <= weekEnd;
+    } else {
+      // Check if today is in this month
+      return (
+        today.getMonth() === date.getMonth() &&
+        today.getFullYear() === date.getFullYear()
+      );
     }
   });
 
@@ -326,6 +399,18 @@ export class CustomCalendarComponent implements AfterViewInit {
 
   isCurrentHour(hour: number): boolean {
     const now = new Date();
+    // Check if ANY day in the current view is today
+    if (this.viewMode() === 'week') {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const isAnyDayToday = this.weekDays().some((day) => {
+        const dayDate = new Date(day.date);
+        dayDate.setHours(0, 0, 0, 0);
+        return dayDate.getTime() === today.getTime();
+      });
+      return isAnyDayToday && now.getHours() === hour;
+    }
+    // For day view, check if selected date is today
     const today = this.isToday(this.selectedDate());
     return today && now.getHours() === hour;
   }
