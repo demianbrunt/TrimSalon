@@ -162,7 +162,6 @@ export class InvoiceFormComponent implements OnInit, CanDeactivateComponent {
         next: () => {
           // Mark form as pristine to prevent CanDeactivate warning
           this.form.markAsPristine();
-          console.log('[AppointmentForm] ✨ Form marked as pristine');
 
           this.toastrService.success(
             'Succes',

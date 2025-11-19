@@ -32,7 +32,6 @@ import { Service } from '../../../core/models/service.model';
 import { AppointmentService } from '../../../core/services/appointment.service';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { ClientService } from '../../../core/services/client.service';
-import { MobileService } from '../../../core/services/mobile.service';
 import { PackageService } from '../../../core/services/package.service';
 import {
   HourlyRateCalculation,
@@ -117,10 +116,6 @@ export class AppointmentFormComponent
     return this.form.controls.packages;
   }
 
-  get isMobile() {
-    return this.mobileService.isMobile;
-  }
-
   private readonly appointmentService = inject(AppointmentService);
   private readonly clientService = inject(ClientService);
   private readonly serviceService = inject(ServiceService);
@@ -130,7 +125,6 @@ export class AppointmentFormComponent
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
-  private readonly mobileService = inject(MobileService);
   private readonly pricingService = inject(PricingService);
 
   constructor() {
@@ -473,13 +467,7 @@ export class AppointmentFormComponent
   }
 
   save(): void {
-    console.log('[AppointmentForm] 💾 Save initiated');
-    console.log('[AppointmentForm] 📋 Form valid:', this.form.valid);
-    console.log('[AppointmentForm] 📋 Form value:', this.form.value);
-
     if (this.form.invalid) {
-      console.warn('[AppointmentForm] ⚠️ Form is invalid, cannot save');
-      console.log('[AppointmentForm] ❌ Form errors:', this.getFormErrors());
       this.toastrService.error('Fout', 'Vul alle verplichte velden in');
       return;
     }
@@ -487,9 +475,6 @@ export class AppointmentFormComponent
     const formValue = this.form.value;
     const appointmentDate = formValue.appointmentDate;
     const startTime = formValue.startTime;
-
-    console.log('[AppointmentForm] 📅 Appointment date:', appointmentDate);
-    console.log('[AppointmentForm] ⏰ Start time:', startTime);
 
     // Combine date and time into startTime
     let combinedStartTime: Date | null = null;
@@ -501,10 +486,6 @@ export class AppointmentFormComponent
         timeDate.getMinutes(),
         0,
         0,
-      );
-      console.log(
-        '[AppointmentForm] 🕐 Combined start time:',
-        combinedStartTime,
       );
     }
 
@@ -524,27 +505,14 @@ export class AppointmentFormComponent
       actualEndTime: formValue.actualEndTime || undefined,
     };
 
-    console.log(
-      '[AppointmentForm] 📦 Appointment data to save:',
-      JSON.stringify(appointmentData, null, 2),
-    );
-    console.log(
-      '[AppointmentForm] 🔀 Operation mode:',
-      this.isEditMode ? 'UPDATE' : 'CREATE',
-    );
-
     const operation = this.isEditMode
       ? this.appointmentService.update(appointmentData)
       : this.appointmentService.add(appointmentData);
 
     operation.subscribe({
       next: (result) => {
-        console.log('[AppointmentForm] ✅ Save successful');
-        console.log('[AppointmentForm] 📤 Result:', result);
-
         // Mark form as pristine to prevent CanDeactivate warning
         this.finalizeSaveSuccess();
-        console.log('[AppointmentForm] ✨ Form finalized after save');
 
         this.toastrService.success(
           'Succes',
@@ -553,10 +521,6 @@ export class AppointmentFormComponent
         this.router.navigate(['/appointments']);
       },
       error: (err) => {
-        console.error('[AppointmentForm] ❌ Save failed');
-        console.error('[AppointmentForm] 💥 Error:', err);
-        console.error('[AppointmentForm] 💥 Error message:', err.message);
-        console.error('[AppointmentForm] 💥 Error stack:', err.stack);
         this.toastrService.error('Fout', err.message);
       },
     });

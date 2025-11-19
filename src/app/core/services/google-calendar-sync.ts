@@ -71,7 +71,6 @@ export class GoogleCalendarSync implements OnDestroy {
     // Listen for calendar authorization completion
     this.authorizationSubscription =
       this.googleAuthService.authorizationComplete$.subscribe(() => {
-        console.log('Calendar authorization complete, starting sync...');
         // Wait a bit for backend to save tokens, then start sync
         setTimeout(() => {
           this.startSync();
@@ -167,8 +166,6 @@ export class GoogleCalendarSync implements OnDestroy {
       throw new Error('TrimSalon calendar not initialized');
     }
 
-    console.log('🔄 Starting sync (clear + recreate strategy)...');
-
     // Step 1: Clear all events from Google Calendar
     await this.clearCalendar();
 
@@ -182,12 +179,8 @@ export class GoogleCalendarSync implements OnDestroy {
       ? localAppointments
       : [];
 
-    console.log('📱 Local appointments:', safeLocalAppointments.length);
-
     // Step 3: Create all appointments in Google Calendar
     for (const appointment of safeLocalAppointments) {
-      console.log('➕ Creating event for appointment:', appointment.id);
-
       const createdEvent = await this.calendarService
         .addAppointment(this.trimSalonCalendarId, appointment)
         .pipe(take(1))
@@ -206,8 +199,6 @@ export class GoogleCalendarSync implements OnDestroy {
           .toPromise();
       }
     }
-
-    console.log('✅ Sync complete (clear + recreate)');
   }
 
   private async syncBothWays(
@@ -227,18 +218,12 @@ export class GoogleCalendarSync implements OnDestroy {
 
     const calendarEventsById = new Map(calendarEvents.map((e) => [e.id!, e]));
 
-    console.log('🔍 Local appointments with Google ID:', localByGoogleId.size);
-
     // SYNC FROM GOOGLE CALENDAR → APP (only updates & deletes)
     for (const [googleEventId, localAppointment] of localByGoogleId) {
       const googleEvent = calendarEventsById.get(googleEventId);
 
       if (!googleEvent) {
         // Event deleted in Google Calendar → delete locally
-        console.log(
-          '🗑️ Deleting appointment (removed from Google):',
-          localAppointment.id,
-        );
         if (localAppointment.id) {
           await this.appointmentService
             .delete(localAppointment.id)
@@ -266,10 +251,6 @@ export class GoogleCalendarSync implements OnDestroy {
           localEnd && googleEnd.getTime() !== localEnd.getTime();
 
         if (startChanged || endChanged) {
-          console.log(
-            '📅 Updating appointment dates from Google:',
-            localAppointment.id,
-          );
           const updatedAppointment = {
             ...localAppointment,
             startTime: googleStart,
@@ -317,10 +298,6 @@ export class GoogleCalendarSync implements OnDestroy {
             localEnd && googleEnd.getTime() !== localEnd.getTime();
 
           if (startChanged || endChanged) {
-            console.log(
-              '📤 Updating Google Calendar event from app:',
-              localAppointment.googleCalendarEventId,
-            );
             // Update the appointment with the eventId set
             const appointmentToUpdate = {
               ...localAppointment,
@@ -334,10 +311,6 @@ export class GoogleCalendarSync implements OnDestroy {
         }
       } else {
         // Not synced yet - create in Google Calendar
-        console.log(
-          '➕ Creating new Google Calendar event:',
-          localAppointment.id,
-        );
         const createdEvent = await this.calendarService
           .addAppointment(this.trimSalonCalendarId, localAppointment)
           .pipe(take(1))
@@ -368,10 +341,6 @@ export class GoogleCalendarSync implements OnDestroy {
       );
 
       if (wasOurEvent) {
-        console.log(
-          '🗑️ Deleting Google Calendar event (removed from app):',
-          googleEventId,
-        );
         await this.calendarService
           .deleteAppointment(this.trimSalonCalendarId, googleEventId)
           .pipe(take(1))

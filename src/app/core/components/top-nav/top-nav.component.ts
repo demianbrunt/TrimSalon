@@ -17,7 +17,12 @@ import { MobileService } from '../../services/mobile.service';
         class="flex align-items-center"
         [ngClass]="isMobile ? 'gap-2' : 'gap-3'"
       >
-        <span [ngClass]="isMobile ? 'text-3xl' : 'text-5xl'">🐾</span>
+        <img
+          src="icons/icon-144x144.png"
+          alt="TrimSalon Logo"
+          [ngClass]="isMobile ? 'h-2rem' : 'h-3rem'"
+          style="object-fit: contain;"
+        />
         <div>
           <div
             class="font-bold text-white"

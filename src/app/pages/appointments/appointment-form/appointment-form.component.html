@@ -1,15 +1,12 @@
-<div class="p-4">
-  <p-card
-    [ngClass]="{ 'mobile-card': isMobile }"
-    styleClass="mx-auto max-w-4xl"
-  >
+<div class="md:p-4">
+  <p-card styleClass="responsive-card mx-auto max-w-4xl">
     <ng-template pTemplate="title">
       <h2 class="m-0">
         {{ isEditMode ? "Afspraak Bewerken" : "Nieuwe Afspraak" }}
       </h2>
     </ng-template>
 
-    <form [formGroup]="form" class="p-fluid">
+    <form [formGroup]="form" class="p-fluid form-content-wrapper">
       <!-- STAP 1: KLANT & HOND SELECTIE -->
       <div class="mb-4">
         <h3 class="text-lg font-semibold mb-3 flex align-items-center gap-2">
@@ -542,7 +539,9 @@
     </form>
 
     <ng-template pTemplate="footer">
-      <div class="flex justify-content-between align-items-center">
+      <div
+        class="flex justify-content-between align-items-center sticky-footer-actions"
+      >
         <!-- Samenvatting -->
         @if (client.value && dog.value) {
           <div class="text-sm text-color-secondary">

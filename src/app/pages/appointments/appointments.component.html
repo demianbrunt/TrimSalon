@@ -1,21 +1,6 @@
-<!-- Compact View Toggle + Sync Button -->
 <div class="appointments-container">
-  <div class="view-toggle-bar">
-    <p-selectButton
-      [options]="viewModeOptions"
-      [(ngModel)]="viewMode"
-      optionLabel="label"
-      optionValue="value"
-      styleClass="view-mode-toggle"
-      [unselectable]="false"
-    >
-      <ng-template let-item>
-        <i [class]="item.icon"></i>
-        <span class="hidden md:inline ml-2">{{ item.label }}</span>
-      </ng-template>
-    </p-selectButton>
-
-    @if (viewMode === "calendar") {
+  @if (viewMode === "calendar") {
+    <div class="calendar-header">
       <p-button
         icon="pi pi-cog"
         label="Sync"
@@ -25,10 +10,9 @@
         [rounded]="true"
         pTooltip="Google Agenda synchronisatie"
         size="small"
-        styleClass="sync-btn"
       ></p-button>
-    }
-  </div>
+    </div>
+  }
 
   @if (viewMode === "calendar") {
     <app-custom-calendar
@@ -37,6 +21,22 @@
       (dateClick)="onCalendarDateClick($event)"
     ></app-custom-calendar>
   } @else {
+    <div class="view-toggle-fixed">
+      <p-selectButton
+        [options]="viewModeOptions"
+        [(ngModel)]="viewMode"
+        optionLabel="label"
+        optionValue="value"
+        [unselectable]="false"
+        size="small"
+      >
+        <ng-template let-item>
+          <i [class]="item.icon"></i>
+          <span class="hidden md:inline ml-2">{{ item.label }}</span>
+        </ng-template>
+      </p-selectButton>
+    </div>
+
     <ng-container *ngIf="isMobile; else desktopView">
       <p-dataView
         #dv
@@ -48,11 +48,13 @@
         [filterBy]="'client.name, dog.name'"
       >
         <ng-template #header>
-          <app-table-header
-            placeholder="Zoek afspraak"
-            [table]="dv"
-            (addClick)="showAppointmentForm()"
-          ></app-table-header>
+          <div class="flex justify-content-between align-items-center">
+            <app-table-header
+              placeholder="Zoek afspraak"
+              [table]="dv"
+              (addClick)="showAppointmentForm()"
+            ></app-table-header>
+          </div>
         </ng-template>
         <ng-template #emptymessage></ng-template>
         <ng-template #list let-appointments: Appointment[]>
@@ -106,9 +108,6 @@
                   </div>
                 }
                 <div>
-                  <div class="text-xs text-color-secondary mb-2">
-                    Werkzaamheden & Pakketten:
-                  </div>
                   <div class="flex flex-wrap gap-1">
                     @for (service of appointment.services; track service.id) {
                       <p-tag [value]="service.name" severity="info"></p-tag>
@@ -172,11 +171,13 @@
             [tableStyle]="{ 'min-width': '75rem' }"
           >
             <ng-template pTemplate="caption">
-              <app-table-header
-                placeholder="Zoek afspraak"
-                [table]="dt"
-                (addClick)="showAppointmentForm()"
-              ></app-table-header>
+              <div class="flex justify-content-between align-items-center">
+                <app-table-header
+                  placeholder="Zoek afspraak"
+                  [table]="dt"
+                  (addClick)="showAppointmentForm()"
+                ></app-table-header>
+              </div>
             </ng-template>
             <ng-template pTemplate="header">
               <tr>

@@ -22,12 +22,13 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Package } from '../../core/models/package.model';
 import { Price } from '../../core/models/price.model';
 import { Service } from '../../core/models/service.model';
+import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { PackageService } from '../../core/services/package.service';
 import { ServiceService } from '../../core/services/service.service';
@@ -79,6 +80,7 @@ export class PackagesComponent implements OnInit {
 
   private readonly packageService = inject(PackageService);
   private readonly serviceService = inject(ServiceService);
+  private readonly dialogService = inject(AppDialogService);
   private readonly toastrService = inject(ToastrService);
   private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly fb = inject(FormBuilder);

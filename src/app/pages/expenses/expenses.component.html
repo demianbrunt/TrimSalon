@@ -1,5 +1,7 @@
 <div class="p-4">
-  <div class="grid grid-nogutter justify-content-between align-items-center mb-3">
+  <div
+    class="grid grid-nogutter justify-content-between align-items-center mb-3"
+  >
     <div class="col-12 md:col-6">
       <h2 class="m-0 flex align-items-center gap-2">
         <i class="pi pi-wallet text-primary"></i>
@@ -38,92 +40,179 @@
     </div>
   </p-card>
 
-  <!-- Expenses Table -->
-  <p-card>
-    <p-table
+  <ng-container *ngIf="isMobile; else desktopView">
+    <p-dataView
+      #dv
       [value]="expenses"
-      [(selection)]="selectedExpense"
-      [rows]="10"
       [paginator]="true"
-      [rowsPerPageOptions]="[10, 25, 50]"
-      [showCurrentPageReport]="true"
-      currentPageReportTemplate="Weergave {first} tot {last} van {totalRecords} uitgaven"
-      [scrollable]="true"
-      [scrollHeight]="scrollableHeight"
+      [rows]="9"
+      [sortField]="sortField"
+      [sortOrder]="sortOrder"
+      [filterBy]="'description,type'"
     >
-      <ng-template pTemplate="header">
-        <tr>
-          <th pSortableColumn="date">
-            Datum <p-sortIcon field="date"></p-sortIcon>
-          </th>
-          <th pSortableColumn="description">
-            Omschrijving <p-sortIcon field="description"></p-sortIcon>
-          </th>
-          <th pSortableColumn="type">
-            Type <p-sortIcon field="type"></p-sortIcon>
-          </th>
-          <th pSortableColumn="amount" class="text-right">
-            Bedrag <p-sortIcon field="amount"></p-sortIcon>
-          </th>
-          <th style="width: 8rem"></th>
-        </tr>
+      <ng-template #header>
+        <app-table-header
+          placeholder="Zoek uitgave"
+          [table]="dv"
+          (addClick)="createExpense()"
+        ></app-table-header>
       </ng-template>
-      <ng-template pTemplate="body" let-expense>
-        <tr>
-          <td>{{ formatDate(expense.date) }}</td>
-          <td>
-            {{ expense.description }}
-            @if (expense.notes) {
-              <i
-                class="pi pi-info-circle ml-2 text-500"
-                [pTooltip]="expense.notes"
-              ></i>
-            }
-          </td>
-          <td>
-            <p-tag
-              [value]="getExpenseTypeLabel(expense.type)"
-              [severity]="getExpenseTypeSeverity(expense.type)"
-            ></p-tag>
-          </td>
-          <td class="text-right font-semibold">
-            {{ formatCurrency(expense.amount) }}
-          </td>
-          <td>
-            <div class="flex justify-content-end gap-2">
-              <p-button
-                icon="pi pi-pencil"
-                styleClass="p-button-text p-button-sm"
-                (onClick)="editExpense(expense)"
-                [pTooltip]="'Bewerken'"
-              ></p-button>
-              <p-button
-                icon="pi pi-trash"
-                styleClass="p-button-text p-button-danger p-button-sm"
-                (onClick)="deleteExpense(expense)"
-                [pTooltip]="'Verwijderen'"
-              ></p-button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="5" class="text-center">
-            <div class="py-4">
-              <i class="pi pi-wallet text-4xl text-300 mb-3"></i>
-              <p class="text-500">Nog geen uitgaven geregistreerd</p>
-              <p-button
-                label="Eerste Uitgave Toevoegen"
-                icon="pi pi-plus"
-                styleClass="p-button-text"
-                (onClick)="createExpense()"
-              ></p-button>
-            </div>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </p-card>
-</div>
+      <ng-template #emptymessage></ng-template>
+      <ng-template #list let-expenses>
+        @for (expense of expenses; track expense.id) {
+          <div class="col-12 md:col-6 lg:col-4 p-2">
+            <p-card styleClass="h-full">
+              <ng-template pTemplate="header">
+                <div class="p-3">
+                  <div class="flex justify-content-between align-items-center">
+                    <div class="font-bold text-lg">
+                      {{ formatDate(expense.date) }}
+                    </div>
+                    <p-tag
+                      [value]="getExpenseTypeLabel(expense.type)"
+                      [severity]="getExpenseTypeSeverity(expense.type)"
+                    ></p-tag>
+                  </div>
+                </div>
+              </ng-template>
 
+              <div class="mb-3">
+                <div class="font-medium mb-1">{{ expense.description }}</div>
+                @if (expense.notes) {
+                  <div class="text-sm text-500">
+                    <i class="pi pi-info-circle mr-1"></i>
+                    {{ expense.notes }}
+                  </div>
+                }
+              </div>
+
+              <div class="text-xl font-bold text-right mb-3">
+                {{ formatCurrency(expense.amount) }}
+              </div>
+
+              <ng-template pTemplate="footer">
+                <div class="flex justify-content-end gap-2">
+                  <p-button
+                    icon="pi pi-pencil"
+                    [text]="true"
+                    [rounded]="true"
+                    (click)="editExpense(expense)"
+                    pTooltip="Bewerken"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    (click)="deleteExpense(expense)"
+                    pTooltip="Verwijderen"
+                  ></p-button>
+                </div>
+              </ng-template>
+            </p-card>
+          </div>
+        } @empty {
+          <div class="text-center p-4">Geen uitgaven gevonden.</div>
+        }
+      </ng-template>
+    </p-dataView>
+  </ng-container>
+
+  <ng-template #desktopView>
+    <p-card>
+      <p-table
+        #dt
+        [value]="expenses"
+        [(selection)]="selectedExpense"
+        [rows]="10"
+        [paginator]="true"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [showCurrentPageReport]="true"
+        currentPageReportTemplate="Weergave {first} tot {last} van {totalRecords} uitgaven"
+        [scrollable]="true"
+        [scrollHeight]="scrollableHeight"
+        [globalFilterFields]="['description', 'type']"
+      >
+        <ng-template pTemplate="caption">
+          <app-table-header
+            placeholder="Zoek uitgave"
+            [table]="dt"
+            (addClick)="createExpense()"
+          ></app-table-header>
+        </ng-template>
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="date">
+              Datum <p-sortIcon field="date"></p-sortIcon>
+            </th>
+            <th pSortableColumn="description">
+              Omschrijving <p-sortIcon field="description"></p-sortIcon>
+            </th>
+            <th pSortableColumn="type">
+              Type <p-sortIcon field="type"></p-sortIcon>
+            </th>
+            <th pSortableColumn="amount" class="text-right">
+              Bedrag <p-sortIcon field="amount"></p-sortIcon>
+            </th>
+            <th style="width: 8rem"></th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-expense>
+          <tr>
+            <td>{{ formatDate(expense.date) }}</td>
+            <td>
+              {{ expense.description }}
+              @if (expense.notes) {
+                <i
+                  class="pi pi-info-circle ml-2 text-500"
+                  [pTooltip]="expense.notes"
+                ></i>
+              }
+            </td>
+            <td>
+              <p-tag
+                [value]="getExpenseTypeLabel(expense.type)"
+                [severity]="getExpenseTypeSeverity(expense.type)"
+              ></p-tag>
+            </td>
+            <td class="text-right font-semibold">
+              {{ formatCurrency(expense.amount) }}
+            </td>
+            <td>
+              <div class="flex justify-content-end gap-2">
+                <p-button
+                  icon="pi pi-pencil"
+                  styleClass="p-button-text p-button-rounded"
+                  (onClick)="editExpense(expense)"
+                  [pTooltip]="'Bewerken'"
+                ></p-button>
+                <p-button
+                  icon="pi pi-trash"
+                  styleClass="p-button-text p-button-rounded p-button-danger"
+                  (onClick)="deleteExpense(expense)"
+                  [pTooltip]="'Verwijderen'"
+                ></p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5" class="text-center">
+              <div class="py-4">
+                <i class="pi pi-wallet text-4xl text-300 mb-3"></i>
+                <p class="text-500">Nog geen uitgaven geregistreerd</p>
+                <p-button
+                  label="Eerste Uitgave Toevoegen"
+                  icon="pi pi-plus"
+                  styleClass="p-button-text"
+                  (onClick)="createExpense()"
+                ></p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </p-card>
+  </ng-template>
+</div>

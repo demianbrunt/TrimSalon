@@ -34,6 +34,8 @@ interface ViewModeOption {
   icon: string;
 }
 
+import { AppDialogService } from '../../core/services/app-dialog.service';
+
 @Component({
   standalone: true,
   imports: [
@@ -78,7 +80,7 @@ export class AppointmentsComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
-  private readonly dialogService = inject(DialogService);
+  private readonly dialogService = inject(AppDialogService);
   private dialogRef: DynamicDialogRef | undefined;
 
   get isMobile() {

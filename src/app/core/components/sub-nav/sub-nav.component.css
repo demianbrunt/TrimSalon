@@ -23,6 +23,16 @@
   .sub-nav-container p-button {
     flex: 1;
   }
+
+  .sub-nav-container ::ng-deep .p-button {
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1;
+  }
+
+  .active-nav-button ::ng-deep .p-button {
+    background: var(--p-paginator-nav-button-selected-background);
+    color: var(--p-highlight-color);
+  }
 }
 
 /* Desktop styles */
@@ -38,12 +48,18 @@
     padding: 1rem 0;
   }
 
-  .active-nav-button {
-    background: var(--p-highlight-bg) !important;
+  .sub-nav-container ::ng-deep .p-button {
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1;
+    background: transparent !important;
+  }
+
+  .active-nav-button ::ng-deep .p-button {
+    background: var(--p-paginator-nav-button-selected-background) !important;
     color: var(--p-highlight-text-color) !important;
   }
 
-  .active-nav-button:hover {
+  .active-nav-button:hover ::ng-deep .p-button {
     background: var(--p-surface-100) !important;
   }
 }

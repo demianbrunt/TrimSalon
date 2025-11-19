@@ -27,7 +27,6 @@ export class SubNavComponent {
   openGoogleCalendar(): void {
     // This URL will open the Google Calendar app if installed on mobile,
     // or the web version otherwise.
-    console.log('Opening Google Calendar...');
     window.open('https://calendar.google.com/', '_blank');
   }
 }

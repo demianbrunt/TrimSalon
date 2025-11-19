@@ -32,12 +32,10 @@ import { MobileService } from './core/services/mobile.service';
       [preventOpenDuplicates]="true"
     />
 
-    @if (authService.isAuthenticated()) {
-      <app-sub-nav></app-sub-nav>
-    }
     <div class="main-container">
       @if (authService.isAuthenticated()) {
         <app-top-nav></app-top-nav>
+        <app-sub-nav></app-sub-nav>
         <app-breadcrumb></app-breadcrumb>
       }
       <div class="content-outlet">

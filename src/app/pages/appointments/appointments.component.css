@@ -13,64 +13,40 @@
   border-color: var(--p-green-200) !important;
 }
 
-/* Main container - should scroll */
+/* Main container */
 .appointments-container {
-  height: auto;
-  max-height: calc(100vh - 140px);
-  overflow-y: auto;
-  overflow-x: hidden;
   display: flex;
   flex-direction: column;
 }
 
-@media (max-width: 768px) {
-  .appointments-container {
-    max-height: calc(100vh - 120px);
-  }
-}
-
-.view-toggle-bar {
+.calendar-header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-end;
   padding: 0.75rem 1rem;
-  margin-bottom: 0;
-  background-color: var(--p-surface-card);
+  margin-bottom: 0.5rem;
+}
+
+.view-toggle-fixed {
+  position: fixed;
+  top: 4.5rem;
+  right: 1rem;
+  z-index: 1100;
+  background: var(--p-surface-card);
   border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: visible;
-  flex-shrink: 0;
-  z-index: 100;
-  position: relative;
-}
-
-/* Sync button styling */
-:host ::ng-deep .sync-btn {
-  font-size: 0.75rem !important;
-}
-
-:host ::ng-deep .sync-btn .p-button-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-:host ::ng-deep .sync-btn .p-button-icon {
-  font-size: 0.875rem;
+  padding: 0.5rem;
 }
 
 @media (max-width: 768px) {
-  :host ::ng-deep .sync-btn .p-button-label {
-    font-size: 0.7rem;
+  .view-toggle-fixed {
+    top: 3rem;
+    bottom: auto;
+    right: 0.5rem;
   }
 
-  :host ::ng-deep .sync-btn .p-button-icon {
-    font-size: 0.8rem;
-  }
-}
-
-@media (max-width: 768px) {
   ::ng-deep .p-dataview .p-dataview-content {
     padding: 0.5rem !important;
+    padding-top: 40px !important;
+    padding-bottom: 80px !important;
   }
 
   .col-12.p-2 {
@@ -80,21 +56,6 @@
   ::ng-deep .p-tag {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
-  }
-
-  .view-toggle-bar {
-    padding: 0.5rem !important;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Compact buttons on mobile */
-  :host ::ng-deep .view-mode-toggle .p-button {
-    padding: 0.4rem 0.7rem !important;
-    font-size: 0.875rem;
-  }
-
-  :host ::ng-deep .view-mode-toggle .p-button-icon {
-    font-size: 1rem;
   }
 }
 

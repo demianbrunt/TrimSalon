@@ -393,6 +393,5 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
 
   exportToExcel(): void {
     // TODO: Implement Excel export functionality
-    console.log('Export to Excel - To be implemented');
   }
 }

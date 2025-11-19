@@ -28,7 +28,6 @@ import {
 } from '../../../core/models/size-pricing.model';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { BreedService } from '../../../core/services/breed.service';
-import { MobileService } from '../../../core/services/mobile.service';
 import { PricingService } from '../../../core/services/pricing.service';
 import { ServiceService } from '../../../core/services/service.service';
 import { ToastrService } from '../../../core/services/toastr.service';
@@ -83,13 +82,8 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly mobileService = inject(MobileService);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly pricingService = inject(PricingService);
-
-  get isMobile() {
-    return this.mobileService.isMobile;
-  }
 
   get targetHourlyRate() {
     return this.pricingService.getTargetHourlyRate();
