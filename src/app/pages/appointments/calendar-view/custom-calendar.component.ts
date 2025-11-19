@@ -81,6 +81,26 @@ export class CustomCalendarComponent implements AfterViewInit {
 
   viewMode = signal<'week' | 'day' | 'month'>('day');
   selectedDate = signal(new Date());
+  currentTime = signal(new Date()); // Signal for current time updates
+
+  // Optimized Appointment Map for O(1) lookup
+  private appointmentsMap = computed(() => {
+    const map = new Map<string, Appointment[]>();
+    const appointments = this.appointmentsSignal();
+
+    appointments.forEach((apt) => {
+      if (!apt.startTime) return;
+      const date = apt.startTime;
+      // Key format: YYYY-M-D-H (using simple values to avoid padding overhead)
+      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}`;
+
+      if (!map.has(key)) {
+        map.set(key, []);
+      }
+      map.get(key)!.push(apt);
+    });
+    return map;
+  });
 
   viewModeOptions: ViewOption[] = [
     { label: 'Dag', value: 'day', icon: 'pi pi-sun' },
@@ -99,6 +119,11 @@ export class CustomCalendarComponent implements AfterViewInit {
   }
 
   constructor() {
+    // Update current time every minute
+    setInterval(() => {
+      this.currentTime.set(new Date());
+    }, 60000);
+
     // Read query params on init - FIRST
     const queryParams = this.route.snapshot.queryParams;
     if (queryParams['view']) {
@@ -360,19 +385,8 @@ export class CustomCalendarComponent implements AfterViewInit {
 
   // Helper methods
   getAppointmentsForDayHour(date: Date, hour: number): Appointment[] {
-    return this.appointmentsSignal().filter((apt) => {
-      if (!apt.startTime) return false;
-
-      const aptDate = apt.startTime;
-      const aptHour = aptDate.getHours();
-
-      return (
-        aptDate.getDate() === date.getDate() &&
-        aptDate.getMonth() === date.getMonth() &&
-        aptDate.getFullYear() === date.getFullYear() &&
-        aptHour === hour
-      );
-    });
+    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${hour}`;
+    return this.appointmentsMap().get(key) || [];
   }
 
   getAppointmentsForDay(date: Date): Appointment[] {
@@ -398,7 +412,7 @@ export class CustomCalendarComponent implements AfterViewInit {
   }
 
   isCurrentHour(hour: number): boolean {
-    const now = new Date();
+    const now = this.currentTime();
     // Check if ANY day in the current view is today
     if (this.viewMode() === 'week') {
       const today = new Date();
@@ -413,6 +427,10 @@ export class CustomCalendarComponent implements AfterViewInit {
     // For day view, check if selected date is today
     const today = this.isToday(this.selectedDate());
     return today && now.getHours() === hour;
+  }
+
+  getCurrentMinutePercentage(): number {
+    return (this.currentTime().getMinutes() / 60) * 100;
   }
 
   private getWeekStart(date: Date): Date {

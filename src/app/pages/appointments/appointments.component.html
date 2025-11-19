@@ -1,25 +1,20 @@
 <div class="appointments-container">
   @if (viewMode === "calendar") {
-    <div class="calendar-header">
+    <app-custom-calendar
+      [appointments]="appointments"
+      (appointmentClick)="onCalendarAppointmentClick($event)"
+      (dateClick)="onCalendarDateClick($event)"
+    >
       <p-button
+        header-actions
         icon="pi pi-cog"
-        label="Sync"
-        severity="secondary"
         (onClick)="openSyncSettings()"
         [text]="true"
         [rounded]="true"
         pTooltip="Google Agenda synchronisatie"
         size="small"
       ></p-button>
-    </div>
-  }
-
-  @if (viewMode === "calendar") {
-    <app-custom-calendar
-      [appointments]="appointments"
-      (appointmentClick)="onCalendarAppointmentClick($event)"
-      (dateClick)="onCalendarDateClick($event)"
-    ></app-custom-calendar>
+    </app-custom-calendar>
   } @else {
     <div class="view-toggle-fixed">
       <p-selectButton

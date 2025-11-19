@@ -34,7 +34,7 @@
 /* Enhanced Date Display */
 .date-display {
   text-align: center;
-  padding: 0.5rem;
+  padding: 0.2rem;
   transition: all 0.3s ease;
   flex: 1;
 }

@@ -46,28 +46,40 @@
       <!-- Title - Enhanced Date Display -->
       <div class="date-display">
         <div class="date-main">
-          {{ currentPeriodMainTitle() }}
           @if (viewMode() === "day" && isCurrentPeriodToday()) {
-            <p-badge value="Vandaag" severity="success" styleClass="ml-2" />
+            <p-badge
+              [value]="currentPeriodMainTitle()"
+              severity="success"
+              styleClass="ml-2"
+            />
+          } @else {
+            {{ currentPeriodMainTitle() }}
           }
         </div>
         <div class="date-sub">{{ currentPeriodSubTitle() }}</div>
       </div>
 
-      <!-- View Toggle - Icon Only on Mobile -->
-      <p-selectButton
-        [options]="viewModeOptions"
-        [(ngModel)]="viewMode"
-        optionLabel="label"
-        optionValue="value"
-        styleClass="view-toggle-compact"
-        [unselectable]="false"
-      >
-        <ng-template let-item>
-          <i [class]="item.icon"></i>
-          <span class="hidden md:inline ml-2">{{ item.label }}</span>
-        </ng-template>
-      </p-selectButton>
+      <!-- Right Side Actions -->
+      <div class="flex align-items-center gap-2">
+        <!-- Projected Content -->
+        <ng-content select="[header-actions]"></ng-content>
+
+        <!-- View Toggle - Icon Only on Mobile -->
+        <p-selectButton
+          [options]="viewModeOptions"
+          [(ngModel)]="viewMode"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="view-toggle-compact"
+          size="small"
+          [unselectable]="false"
+        >
+          <ng-template let-item>
+            <i [class]="item.icon"></i>
+            <span class="hidden md:inline ml-2">{{ item.label }}</span>
+          </ng-template>
+        </p-selectButton>
+      </div>
     </div>
 
     <!-- Week View -->
@@ -78,7 +90,6 @@
         scrollHeight="flex"
         #calendarTable
       >
-        #calendarTable >
         <ng-template pTemplate="header">
           <tr>
             <th class="time-col">Tijd</th>
@@ -102,16 +113,24 @@
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-slot>
-          <tr [class.current-time]="isCurrentHour(slot.hour)">
+          <tr [class.current-time-row]="isCurrentHour(slot.hour)">
             <td class="time-col">{{ slot.label }}</td>
             @for (day of weekDays(); track day.date.getTime()) {
               <td
-                class="day-cell p-1"
+                class="day-cell p-1 relative"
                 [class.is-today]="day.isToday"
                 (click)="onCellClick(day.date, slot.hour)"
                 tabindex="0"
                 role="button"
               >
+                <!-- Current Time Line -->
+                @if (day.isToday && isCurrentHour(slot.hour)) {
+                  <div
+                    class="current-time-line"
+                    [style.top.%]="getCurrentMinutePercentage()"
+                  ></div>
+                }
+
                 @for (
                   apt of getAppointmentsForDayHour(day.date, slot.hour);
                   track apt.id
@@ -166,15 +185,23 @@
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-slot>
-          <tr [class.current-time]="isCurrentHour(slot.hour)">
+          <tr [class.current-time-row]="isCurrentHour(slot.hour)">
             <td class="time-col">{{ slot.label }}</td>
             <td
-              class="day-cell p-1"
+              class="day-cell p-1 relative"
               [class.is-today]="isToday(selectedDate())"
               (click)="onCellClick(selectedDate(), slot.hour)"
               tabindex="0"
               role="button"
             >
+              <!-- Current Time Line -->
+              @if (isToday(selectedDate()) && isCurrentHour(slot.hour)) {
+                <div
+                  class="current-time-line"
+                  [style.top.%]="getCurrentMinutePercentage()"
+                ></div>
+              }
+
               <div class="flex flex-column md:flex-row gap-1 md:gap-2">
                 @for (
                   apt of getAppointmentsForDayHour(selectedDate(), slot.hour);
