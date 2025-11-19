@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Messaging, getToken, onMessage } from '@angular/fire/messaging';
+import { Messaging, onMessage } from '@angular/fire/messaging';
 import { ToastrService } from './toastr.service';
 
 @Injectable({
@@ -38,11 +38,9 @@ export class NotificationService {
     try {
       const permission = await Notification.requestPermission();
       if (permission === 'granted') {
-        console.log('Notification permission granted');
         await this.getToken();
         return true;
       } else {
-        console.log('Notification permission denied');
         return false;
       }
     } catch (error) {
@@ -75,8 +73,6 @@ export class NotificationService {
     if (!this.messaging) return;
 
     onMessage(this.messaging, (payload) => {
-      console.log('Message received:', payload);
-
       const title = payload.notification?.title || 'Nieuwe notificatie';
       const body = payload.notification?.body || '';
 

@@ -1,0 +1,329 @@
+<div
+  class="calendar-wrapper"
+  appSwipe
+  (swipeLeft)="nextPeriod()"
+  (swipeRight)="previousPeriod()"
+>
+  <p-card>
+    <!-- Header - Optimized for Mobile -->
+    <div class="calendar-header mb-2">
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex gap-2 align-items-center">
+        <p-button
+          icon="pi pi-chevron-left"
+          (onClick)="previousPeriod()"
+          [rounded]="true"
+          [text]="true"
+          size="small"
+        />
+        <p-button
+          label="Vandaag"
+          (onClick)="goToToday()"
+          [text]="true"
+          size="small"
+        />
+        <p-button
+          icon="pi pi-chevron-right"
+          (onClick)="nextPeriod()"
+          [rounded]="true"
+          [text]="true"
+          size="small"
+        />
+      </div>
+
+      <!-- Mobile "Today" Button -->
+      <div class="md:hidden">
+        <p-button
+          icon="pi pi-stopwatch"
+          (onClick)="goToToday()"
+          [rounded]="true"
+          [text]="true"
+          size="small"
+          pTooltip="Ga naar vandaag"
+        />
+      </div>
+
+      <!-- Title - Enhanced Date Display -->
+      <div class="date-display">
+        <div class="date-main">
+          @if (viewMode() === "day" && isCurrentPeriodToday()) {
+            <p-badge
+              [value]="currentPeriodMainTitle()"
+              severity="success"
+              styleClass="ml-2"
+            />
+          } @else {
+            {{ currentPeriodMainTitle() }}
+          }
+        </div>
+        <div class="date-sub">{{ currentPeriodSubTitle() }}</div>
+      </div>
+
+      <!-- Right Side Actions -->
+      <div class="flex align-items-center gap-2">
+        <!-- Projected Content -->
+        <ng-content select="[header-actions]"></ng-content>
+
+        <!-- View Toggle - Icon Only on Mobile -->
+        <p-selectButton
+          [options]="viewModeOptions"
+          [(ngModel)]="viewMode"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="view-toggle-compact"
+          size="small"
+          [unselectable]="false"
+        >
+          <ng-template let-item>
+            <i [class]="item.icon"></i>
+            <span class="hidden md:inline ml-2">{{ item.label }}</span>
+          </ng-template>
+        </p-selectButton>
+      </div>
+    </div>
+
+    <!-- Week View -->
+    @if (viewMode() === "week") {
+      <p-table
+        [value]="timeSlots"
+        [scrollable]="true"
+        scrollHeight="flex"
+        #calendarTable
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="time-col">Tijd</th>
+            @for (day of weekDays(); track day.date.getTime()) {
+              <th [class.is-today]="day.isToday" class="text-center p-2">
+                <div class="text-sm text-color-secondary mb-1">
+                  {{ dayNames[$index] }}
+                </div>
+                <div
+                  class="inline-flex align-items-center justify-content-center border-circle text-sm md:text-base font-semibold"
+                  [ngClass]="{
+                    'w-2rem h-2rem md:w-2rem md:h-2rem': true,
+                    'bg-primary text-primary-contrast': day.isToday,
+                    'text-color': !day.isToday,
+                  }"
+                >
+                  {{ day.dayNumber }}
+                </div>
+              </th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-slot>
+          <tr [class.current-time-row]="isCurrentHour(slot.hour)">
+            <td class="time-col">{{ slot.label }}</td>
+            @for (day of weekDays(); track day.date.getTime()) {
+              <td
+                class="day-cell p-1 relative"
+                [class.is-today]="day.isToday"
+                (click)="onCellClick(day.date, slot.hour)"
+                tabindex="0"
+                role="button"
+              >
+                <!-- Current Time Line -->
+                @if (day.isToday && isCurrentHour(slot.hour)) {
+                  <div
+                    class="current-time-line"
+                    [style.top.%]="getCurrentMinutePercentage()"
+                  ></div>
+                }
+
+                @for (
+                  apt of getAppointmentsForDayHour(day.date, slot.hour);
+                  track apt.id
+                ) {
+                  <div
+                    class="apt-card p-1 md:p-2 mb-1 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                    [class.border-green-500]="apt.completed"
+                    [class.surface-green-50]="apt.completed"
+                    (click)="onAppointmentClick($event, apt)"
+                    tabindex="0"
+                    role="button"
+                    [pTooltip]="apt.client.name + ' - ' + apt.dog.name"
+                  >
+                    <div class="font-semibold text-xs md:text-sm">
+                      {{ apt.client.name }}
+                    </div>
+                    <div class="text-xs flex align-items-center gap-1">
+                      <span>{{ apt.dog.name }}</span>
+                      @if (apt.dog.isAggressive) {
+                        <i
+                          class="pi pi-exclamation-triangle text-orange-500 text-xs"
+                        ></i>
+                      }
+                    </div>
+                    <div class="text-xs mt-1 hidden md:block">
+                      {{ apt.startTime | date: "HH:mm" }} -
+                      {{ apt.endTime | date: "HH:mm" }}
+                    </div>
+                  </div>
+                }
+              </td>
+            }
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+
+    <!-- Day View -->
+    @if (viewMode() === "day") {
+      <p-table
+        [value]="timeSlots"
+        [scrollable]="true"
+        scrollHeight="flex"
+        #calendarTable
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="time-col">Tijd</th>
+            <th class="p-2">
+              <!-- Datum staat al in de header boven, niet meer nodig in tabel -->
+            </th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-slot>
+          <tr [class.current-time-row]="isCurrentHour(slot.hour)">
+            <td class="time-col">{{ slot.label }}</td>
+            <td
+              class="day-cell p-1 relative"
+              [class.is-today]="isToday(selectedDate())"
+              (click)="onCellClick(selectedDate(), slot.hour)"
+              tabindex="0"
+              role="button"
+            >
+              <!-- Current Time Line -->
+              @if (isToday(selectedDate()) && isCurrentHour(slot.hour)) {
+                <div
+                  class="current-time-line"
+                  [style.top.%]="getCurrentMinutePercentage()"
+                ></div>
+              }
+
+              <div class="flex flex-column md:flex-row gap-1 md:gap-2">
+                @for (
+                  apt of getAppointmentsForDayHour(selectedDate(), slot.hour);
+                  track apt.id
+                ) {
+                  <div
+                    class="flex-1 p-1 md:p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                    [class.border-green-500]="apt.completed"
+                    [class.surface-green-50]="apt.completed"
+                    (click)="onAppointmentClick($event, apt)"
+                    tabindex="0"
+                    role="button"
+                  >
+                    <div class="flex justify-content-between align-items-start">
+                      <div class="flex-1">
+                        <div class="font-semibold text-xs md:text-sm">
+                          {{ apt.client.name }}
+                        </div>
+                        <div class="text-xs flex align-items-center gap-1">
+                          <span>{{ apt.dog.name }}</span>
+                          @if (apt.dog.isAggressive) {
+                            <i
+                              class="pi pi-exclamation-triangle text-orange-500 text-xs"
+                            ></i>
+                          }
+                        </div>
+                        <div class="text-xs mt-1">
+                          {{ apt.startTime | date: "HH:mm" }} -
+                          {{ apt.endTime | date: "HH:mm" }}
+                        </div>
+                      </div>
+                    </div>
+                    <div class="hidden md:flex flex-wrap gap-1 mt-2">
+                      @for (service of apt.services; track service.id) {
+                        <p-tag
+                          [value]="service.name"
+                          severity="info"
+                          styleClass="text-xs"
+                        />
+                      }
+                      @for (pkg of apt.packages; track pkg.id) {
+                        <p-tag
+                          [value]="pkg.name"
+                          severity="success"
+                          styleClass="text-xs"
+                        />
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+    <!-- Month View -->
+    @if (viewMode() === "month") {
+      <p-table [value]="monthWeeks()">
+        <ng-template pTemplate="header">
+          <tr>
+            @for (dayName of dayNames; track dayName) {
+              <th class="text-center p-2 text-sm md:text-base">
+                {{ dayName }}
+              </th>
+            }
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-week>
+          <tr>
+            @for (day of week; track day.date.getTime()) {
+              <td
+                class="month-cell p-2"
+                [class.is-today]="day.isToday"
+                [class.other-month]="day.isOtherMonth"
+                (click)="onCellClick(day.date)"
+                tabindex="0"
+                role="button"
+              >
+                <div
+                  class="inline-flex align-items-center justify-content-center border-circle font-semibold text-sm mb-1"
+                  [ngClass]="{
+                    'w-1rem h-1rem md:w-2rem md:h-2rem': true,
+                    'bg-primary text-primary-contrast': day.isToday,
+                    'text-color': !day.isToday,
+                  }"
+                >
+                  {{ day.dayNumber }}
+                </div>
+                <div class="flex flex-column gap-1">
+                  @for (apt of day.appointments; track apt.id) {
+                    <div
+                      class="p-1 border-left-2 border-primary surface-50 border-round cursor-pointer text-xs hover:surface-100 transition-colors transition-duration-150 white-space-nowrap overflow-hidden text-overflow-ellipsis"
+                      [class.border-green-500]="apt.completed"
+                      [class.surface-green-50]="apt.completed"
+                      [pTooltip]="
+                        apt.client.name +
+                        ' - ' +
+                        apt.dog.name +
+                        ' (' +
+                        (apt.startTime | date: 'HH:mm') +
+                        ')'
+                      "
+                      (click)="onAppointmentClick($event, apt)"
+                      tabindex="0"
+                      role="button"
+                    >
+                      <span class="hidden md:inline">{{
+                        apt.startTime | date: "HH:mm"
+                      }}</span>
+                      <span class="md:hidden">{{
+                        apt.startTime | date: "HH"
+                      }}</span>
+                      {{ apt.client.name }}
+                    </div>
+                  }
+                </div>
+              </td>
+            }
+          </tr>
+        </ng-template>
+      </p-table>
+    }
+  </p-card>
+</div>

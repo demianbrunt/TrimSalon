@@ -1,11 +1,11 @@
-<div class="p-4">
-  <p-card [ngClass]="{ 'mobile-card': isMobile }" class="mx-auto max-w-2xl">
+<div class="md:p-4">
+  <p-card styleClass="responsive-card mx-auto max-w-2xl">
     <ng-template pTemplate="title">
       <h2 class="m-0 mb-5">
         {{ isEditMode ? "Klant Bewerken" : "Nieuwe Klant" }}
       </h2>
     </ng-template>
-    <form [formGroup]="form" class="p-fluid">
+    <form [formGroup]="form" class="p-fluid form-content-wrapper">
       <div class="field">
         <p-floatlabel variant="on">
           <input
@@ -125,12 +125,12 @@
             <div class="field col-12 md:col-4">
               <div class="flex align-items-center gap-2">
                 <p-checkbox
-                  [inputId]="'gekastreerd-' + $index"
+                  [inputId]="'gecastreerd-' + $index"
                   [formControl]="dogGroup.controls.isNeutered"
                   [binary]="true"
                 />
-                <label [for]="'gekastreerd-' + $index"
-                  >Gekastreerd/Gesteriliseerd</label
+                <label [for]="'gecastreerd-' + $index"
+                  >Gecastreerd/Gesteriliseerd</label
                 >
               </div>
             </div>
@@ -164,7 +164,7 @@
       }
     </form>
     <ng-template pTemplate="footer">
-      <div class="flex justify-content-end gap-2">
+      <div class="flex justify-content-end gap-2 sticky-footer-actions">
         <p-button
           label="Annuleren"
           icon="pi pi-times"

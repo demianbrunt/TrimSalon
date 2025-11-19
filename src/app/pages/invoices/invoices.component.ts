@@ -9,6 +9,7 @@ import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Invoice, PaymentStatus } from '../../core/models/invoice.model';
+import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { InvoiceService } from '../../core/services/invoice.service';
@@ -41,6 +42,7 @@ export class InvoicesComponent implements OnInit {
   private readonly confirmationDialogService = inject(
     ConfirmationDialogService,
   );
+  private readonly dialogService = inject(AppDialogService);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);

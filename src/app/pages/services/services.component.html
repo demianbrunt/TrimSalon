@@ -19,37 +19,44 @@
     <ng-template #list let-services: Service[]>
       @for (service of services; track service.id) {
         <div class="col-12 md:col-6 lg:col-4 p-2">
-          <div
-            class="p-4 border surface-border surface-card border-round h-full flex flex-column"
-          >
-            <div class="grow">
-              <div class="flex justify-content-between">
-                <div class="font-bold text-lg">{{ service.name }}</div>
-                <p-tag
-                  [value]="
-                    service.pricingType === 'FIXED' ? 'Vaste Prijs' : 'Per Tijd'
-                  "
-                ></p-tag>
+          <p-card styleClass="h-full">
+            <ng-template pTemplate="header">
+              <div class="p-3">
+                <div class="flex justify-content-between align-items-center">
+                  <div class="font-bold text-lg">{{ service.name }}</div>
+                  <p-tag
+                    [value]="
+                      service.pricingType === 'FIXED'
+                        ? 'Vaste Prijs'
+                        : 'Per Tijd'
+                    "
+                  ></p-tag>
+                </div>
               </div>
-              <p class="mt-2 mb-0">{{ service.description }}</p>
-            </div>
-            <div class="shrink-0 mt-3">
+            </ng-template>
+
+            <p class="m-0">{{ service.description }}</p>
+
+            <ng-template pTemplate="footer">
               <div class="flex justify-content-end gap-2">
                 <p-button
                   icon="pi pi-pencil"
-                  styleClass="p-button-text p-button-rounded"
+                  [text]="true"
+                  [rounded]="true"
                   (click)="showServiceForm(service)"
                   pTooltip="Bewerken"
                 ></p-button>
                 <p-button
                   icon="pi pi-trash"
-                  styleClass="p-button-text p-button-rounded p-button-danger"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
                   (click)="deleteService(service)"
                   pTooltip="Verwijderen"
                 ></p-button>
               </div>
-            </div>
-          </div>
+            </ng-template>
+          </p-card>
         </div>
       } @empty {
         <div class="text-center p-4">Geen werkzaamheden gevonden.</div>

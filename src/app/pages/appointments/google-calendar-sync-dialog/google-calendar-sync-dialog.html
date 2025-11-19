@@ -1,0 +1,131 @@
+<div class="p-fluid">
+  <p-card styleClass="mb-4">
+    <ng-template pTemplate="header">
+      <div class="p-3">
+        <h3 class="m-0 mb-2">Google Agenda Synchronisatie</h3>
+        <p class="text-color-secondary text-sm m-0">
+          Synchroniseer je afspraken automatisch met Google Agenda
+        </p>
+      </div>
+    </ng-template>
+
+    <!-- Sync Status -->
+    <div class="flex align-items-center gap-2 mb-3">
+      <i
+        class="pi"
+        [class.pi-check-circle]="syncStatus.enabled && !syncStatus.syncing"
+        [class.pi-spin]="syncStatus.syncing"
+        [class.pi-sync]="syncStatus.syncing"
+        [class.pi-times-circle]="!syncStatus.enabled && !syncStatus.syncing"
+        [class.text-green-500]="syncStatus.enabled && !syncStatus.syncing"
+        [class.text-red-500]="!syncStatus.enabled && !syncStatus.syncing"
+      ></i>
+      <span class="font-semibold">
+        @if (syncStatus.syncing) {
+          Bezig met synchroniseren...
+        } @else if (syncStatus.enabled) {
+          Automatische sync ingeschakeld
+        } @else {
+          Automatische sync uitgeschakeld
+        }
+      </span>
+    </div>
+
+    @if (syncStatus.lastSync) {
+      <p class="text-sm text-color-secondary mb-3">
+        Laatste sync: {{ syncStatus.lastSync | date: "dd-MM-yyyy HH:mm" }}
+      </p>
+    }
+
+    @if (syncStatus.error) {
+      <p class="text-sm text-red-500 mb-3">Fout: {{ syncStatus.error }}</p>
+    }
+
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-between align-items-center">
+        <p-button
+          label="Nu synchroniseren"
+          icon="pi pi-refresh"
+          (onClick)="startSync()"
+          [disabled]="syncStatus.syncing"
+          size="small"
+        ></p-button>
+        <p-button
+          label="Agenda legen"
+          icon="pi pi-trash"
+          severity="danger"
+          (onClick)="clearCalendar()"
+          [disabled]="syncStatus.syncing"
+          [outlined]="true"
+          size="small"
+        ></p-button>
+      </div>
+    </ng-template>
+  </p-card>
+
+  <!-- Settings -->
+  <p-card>
+    <ng-template pTemplate="header">
+      <div class="p-3">
+        <h4 class="m-0">Instellingen</h4>
+      </div>
+    </ng-template>
+
+    <div class="field mb-3">
+      <div class="flex align-items-center">
+        <p-checkbox
+          [(ngModel)]="syncSettings.autoSync"
+          [binary]="true"
+          inputId="autoSync"
+        ></p-checkbox>
+        <label for="autoSync" class="ml-2">Automatisch synchroniseren</label>
+      </div>
+    </div>
+
+    @if (syncSettings.autoSync) {
+      <div class="field mb-3">
+        <label for="syncInterval" class="block mb-2"
+          >Sync interval (minuten)</label
+        >
+        <p-inputNumber
+          [(ngModel)]="syncSettings.syncInterval"
+          inputId="syncInterval"
+          [min]="5"
+          [max]="60"
+          [step]="5"
+          [showButtons]="true"
+          styleClass="w-full"
+        ></p-inputNumber>
+      </div>
+    }
+
+    <!-- Authorization -->
+    @if (!syncStatus.enabled) {
+      <div class="surface-ground p-3 border-round mb-3">
+        <p class="text-sm mb-2">
+          <i class="pi pi-info-circle mr-2"></i>
+          Authoriseer toegang tot je Google Agenda om synchronisatie mogelijk te
+          maken.
+        </p>
+        <p-button
+          label="Authoriseer Google Agenda"
+          icon="pi pi-google"
+          (onClick)="requestAuth()"
+          size="small"
+        ></p-button>
+      </div>
+    }
+
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-end gap-2">
+        <p-button
+          label="Annuleren"
+          severity="secondary"
+          (onClick)="close()"
+          [outlined]="true"
+        ></p-button>
+        <p-button label="Opslaan" (onClick)="saveSettings()"></p-button>
+      </div>
+    </ng-template>
+  </p-card>
+</div>

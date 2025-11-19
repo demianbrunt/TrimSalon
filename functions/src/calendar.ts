@@ -8,6 +8,52 @@ const googleClientId = defineString('GOOGLE_CLIENT_ID');
 const googleClientSecret = defineString('GOOGLE_CLIENT_SECRET');
 
 /**
+ * Transform an Appointment object to a Google Calendar Event schema.
+ * @param {any} appointment The appointment object from Firestore.
+ * @param {boolean} includeId Whether to include the id field (for updates, not for creates).
+ * @return {calendar_v3.Schema$Event} The transformed Google Calendar event.
+ */
+export function appointmentToCalendarEvent(
+  appointment: any,
+  includeId = false,
+): calendar_v3.Schema$Event {
+  const dogName = appointment.dog?.name || 'Unknown Dog';
+  const clientName = appointment.client?.name || 'Unknown Client';
+  const services =
+    appointment.services?.map((s: any) => s.name).join(', ') || 'No services';
+  const packages =
+    appointment.packages?.map((p: any) => p.name).join(', ') || '';
+
+  const summary = `${dogName} (${clientName})`;
+  const description = `
+Services: ${services}
+${packages ? `Packages: ${packages}` : ''}
+${appointment.notes ? `Notes: ${appointment.notes}` : ''}
+`.trim();
+
+  const event: calendar_v3.Schema$Event = {
+    summary,
+    description,
+    start: {
+      dateTime: appointment.startTime,
+      timeZone: 'Europe/Amsterdam',
+    },
+    end: {
+      dateTime: appointment.endTime,
+      timeZone: 'Europe/Amsterdam',
+    },
+    colorId: '9', // Sage/Salie color in Google Calendar
+  };
+
+  // Only include ID for updates, not for new events
+  if (includeId && appointment.id) {
+    event.id = appointment.id;
+  }
+
+  return event;
+}
+
+/**
  * Exchange an authorization code for OAuth 2.0 tokens.
  * @param {string} code The authorization code from the client.
  * @return {Promise<Credentials>} A promise that resolves with the tokens.
@@ -38,6 +84,21 @@ export async function saveUserTokens(
   const firestore = admin.firestore();
   const userRef = firestore.collection('users').doc(userId);
   await userRef.set({ tokens }, { merge: true });
+}
+
+/**
+ * Remove the user's tokens from Firestore (for expired/invalid tokens).
+ * @param {string} userId The user's ID.
+ * @return {Promise<void>} A promise that resolves when the tokens are removed.
+ */
+export async function removeUserTokens(userId: string): Promise<void> {
+  const firestore = admin.firestore();
+  const userRef = firestore.collection('users').doc(userId);
+  await userRef.set(
+    { tokens: admin.firestore.FieldValue.delete() },
+    { merge: true },
+  );
+  console.log(`Tokens removed for user ${userId}`);
 }
 
 /**
@@ -94,12 +155,11 @@ export async function getCalendarClient(
 }
 
 /**
- * Get calendar events for a user within a given time range.
+ * Retrieve calendar events within a time range.
  * @param {string} userId The user's ID.
- * @param {object} [options] Optional parameters.
- * @param {string} [options.timeMin] Start of the time range.
- * @param {string} [options.timeMax] End of the time range.
- * @return {Promise<calendar_v3.Schema$Event[] | null>} A promise that resolves with the calendar events.
+ * @param {string} calendarId The calendar ID.
+ * @param {Object} options Optional parameters for filtering events.
+ * @return {Promise<calendar_v3.Schema$Event[] | null>} A promise that resolves with the list of events.
  */
 export async function getCalendarEvents(
   userId: string,
@@ -113,17 +173,31 @@ export async function getCalendarEvents(
 
   const { timeMin, timeMax } = options;
 
-  const now = new Date();
-  const dateStr = now.toISOString().split('T')[0];
-
-  const res = await calendarClient.events.list({
+  // Build list parameters
+  const listParams: calendar_v3.Params$Resource$Events$List = {
     calendarId: calendarId,
-    timeMin: timeMin || dateStr + 'T00:00:00Z',
-    timeMax: timeMax || dateStr + 'T23:59:59Z',
-    maxResults: 20,
+    maxResults: 2500, // Get all events, not just 20
     singleEvents: true,
-    orderBy: 'startTime',
-  });
+  };
+
+  // If time filters are provided, use them and enable ordering
+  if (timeMin || timeMax) {
+    if (timeMin) {
+      listParams.timeMin = timeMin;
+    }
+    if (timeMax) {
+      listParams.timeMax = timeMax;
+    }
+    listParams.orderBy = 'startTime'; // Only works with timeMin
+  } else {
+    // No time filters - get ALL events (no date restriction)
+    // Don't use orderBy without timeMin (Google Calendar API requirement)
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    listParams.timeMin = oneYearAgo.toISOString();
+  }
+
+  const res = await calendarClient.events.list(listParams);
 
   return res.data.items || null;
 }

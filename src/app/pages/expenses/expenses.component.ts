@@ -1,18 +1,19 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
+import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Expense, ExpenseType } from '../../core/models/expense.model';
+import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { ExpenseService } from '../../core/services/expense.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
@@ -22,15 +23,16 @@ import { ToastrService } from '../../core/services/toastr.service';
   imports: [
     CommonModule,
     TableModule,
+    DataViewModule,
     InputTextModule,
     ButtonModule,
     ToastModule,
     TagModule,
-    ConfirmDialogModule,
     TooltipModule,
     CardModule,
+    TableHeaderComponent,
   ],
-  providers: [ConfirmationService],
+  providers: [],
   templateUrl: './expenses.component.html',
   styleUrls: ['./expenses.component.css'],
 })
@@ -51,7 +53,10 @@ export class ExpensesComponent implements OnInit {
   private readonly mobileService = inject(MobileService);
   private readonly router = inject(Router);
   private readonly toastrService = inject(ToastrService);
-  private readonly confirmationDialogService = inject(ConfirmationDialogService);
+  private readonly confirmationDialogService = inject(
+    ConfirmationDialogService,
+  );
+  private readonly dialogService = inject(AppDialogService);
 
   ngOnInit(): void {
     this.breadcrumbService.setItems([{ label: 'Uitgaven' }]);

@@ -88,21 +88,6 @@ import { Appointment } from '../../../core/models/appointment.model';
       :host ::ng-deep .p-dialog {
         max-width: 600px;
       }
-
-      @media (max-width: 768px) {
-        :host ::ng-deep .p-dialog {
-          width: 95vw;
-          max-width: 95vw;
-        }
-
-        .flex-column.md\\:flex-row {
-          flex-direction: column;
-        }
-
-        .flex-column.md\\:flex-row p-button {
-          width: 100%;
-        }
-      }
     `,
   ],
 })

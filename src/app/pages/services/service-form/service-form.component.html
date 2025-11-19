@@ -1,14 +1,11 @@
-<div class="p-4">
-  <p-card
-    [ngClass]="{ 'mobile-card': isMobile }"
-    styleClass="mx-auto max-w-4xl"
-  >
+<div class="md:p-4">
+  <p-card styleClass="responsive-card mx-auto max-w-4xl">
     <ng-template pTemplate="title">
       <h2 class="m-0 mb-5">
         {{ isEditMode ? "Werkzaamheid Bewerken" : "Nieuwe Werkzaamheid" }}
       </h2>
     </ng-template>
-    <form [formGroup]="form" class="p-fluid">
+    <form [formGroup]="form" class="p-fluid form-content-wrapper">
       <!-- Basic Info -->
       <div class="field">
         <p-floatlabel variant="on">
@@ -228,7 +225,7 @@
       </div>
     </form>
     <ng-template pTemplate="footer">
-      <div class="flex justify-content-end gap-2">
+      <div class="flex justify-content-end gap-2 sticky-footer-actions">
         <p-button
           label="Annuleren"
           icon="pi pi-times"

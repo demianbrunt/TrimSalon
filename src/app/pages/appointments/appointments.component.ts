@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -11,9 +12,11 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
+import { TooltipModule } from 'primeng/tooltip';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Appointment } from '../../core/models/appointment.model';
 import { AppointmentService } from '../../core/services/appointment.service';
@@ -21,24 +24,38 @@ import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
+import { CustomCalendarComponent } from './calendar-view/custom-calendar.component';
 import { CompleteAppointmentDialogComponent } from './complete-appointment-dialog/complete-appointment-dialog.component';
+import { GoogleCalendarSyncDialog } from './google-calendar-sync-dialog/google-calendar-sync-dialog';
+
+interface ViewModeOption {
+  label: string;
+  value: 'list' | 'calendar';
+  icon: string;
+}
+
+import { AppDialogService } from '../../core/services/app-dialog.service';
 
 @Component({
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     TableModule,
     InputTextModule,
     ButtonModule,
     RippleModule,
     TagModule,
     ToastModule,
+    TooltipModule,
     IconFieldModule,
     InputIconModule,
     TableHeaderComponent,
     DataViewModule,
     ConfirmDialogModule,
     CardModule,
+    SelectButtonModule,
+    CustomCalendarComponent,
   ],
   providers: [ConfirmationService, DialogService],
   templateUrl: './appointments.component.html',
@@ -50,13 +67,20 @@ export class AppointmentsComponent implements OnInit {
   sortOrder = -1;
   isInitialized = false;
 
+  viewModeOptions: ViewModeOption[] = [
+    { label: 'Lijst', value: 'list', icon: 'pi pi-list' },
+    { label: 'Agenda', value: 'calendar', icon: 'pi pi-calendar' },
+  ];
+
+  viewMode: 'list' | 'calendar' = 'list';
+
   private readonly appointmentService = inject(AppointmentService);
   private readonly toastrService = inject(ToastrService);
   private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
-  private readonly dialogService = inject(DialogService);
+  private readonly dialogService = inject(AppDialogService);
   private dialogRef: DynamicDialogRef | undefined;
 
   get isMobile() {
@@ -145,6 +169,28 @@ export class AppointmentsComponent implements OnInit {
           },
         });
       }
+    });
+  }
+
+  onCalendarAppointmentClick(appointment: Appointment): void {
+    this.showAppointmentForm(appointment);
+  }
+
+  onCalendarDateClick(event: { date: Date; hour?: number }): void {
+    const startTime = new Date(event.date);
+    if (event.hour !== undefined) {
+      startTime.setHours(event.hour, 0, 0, 0);
+    }
+
+    this.router.navigate(['/appointments/new'], {
+      queryParams: { startTime: startTime.toISOString() },
+    });
+  }
+
+  openSyncSettings(): void {
+    this.dialogRef = this.dialogService.open(GoogleCalendarSyncDialog, {
+      width: '600px',
+      modal: true,
     });
   }
 }

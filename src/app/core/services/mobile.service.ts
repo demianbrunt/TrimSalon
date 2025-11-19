@@ -1,4 +1,4 @@
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { BreakpointObserver } from '@angular/cdk/layout';
 import { inject, Injectable } from '@angular/core';
 
 @Injectable({
@@ -14,8 +14,10 @@ export class MobileService {
   }
 
   constructor() {
-    this.breakpointObserver.observe(Breakpoints.XSmall).subscribe((result) => {
-      this._isMobile = result.matches;
-    });
+    this.breakpointObserver
+      .observe('(max-width: 768px)')
+      .subscribe((result) => {
+        this._isMobile = result.matches;
+      });
   }
 }

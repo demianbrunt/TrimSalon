@@ -1,7 +1,7 @@
 import { isPlatformBrowser } from '@angular/common';
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { BehaviorSubject, from, map } from 'rxjs';
+import { BehaviorSubject, from, map, Subject } from 'rxjs';
 import { APP_CONFIG, AppConfig } from '../../app.config.model';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,6 +27,10 @@ export class GoogleAuthService {
 
   private readonly _gapiInitialized = new BehaviorSubject<boolean>(false);
   gapiInitialized$ = this._gapiInitialized.asObservable();
+
+  private readonly _authorizationComplete = new Subject<void>();
+  authorizationComplete$ = this._authorizationComplete.asObservable();
+
   private platformId = inject(PLATFORM_ID);
 
   constructor() {
@@ -80,8 +84,11 @@ export class GoogleAuthService {
     from(callable({ code, userId: this.userId }))
       .pipe(map((result) => result.data))
       .subscribe({
-        next: (data) =>
-          console.log('Successfully exchanged code for tokens', data),
+        next: (data) => {
+          console.log('Successfully exchanged code for tokens', data);
+          // Emit event to notify that authorization is complete
+          this._authorizationComplete.next();
+        },
         error: (err) => console.error('Error exchanging code for tokens', err),
       });
   }

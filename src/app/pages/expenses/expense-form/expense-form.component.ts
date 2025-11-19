@@ -156,7 +156,6 @@ export class ExpenseFormComponent extends FormBaseComponent implements OnInit {
       next: () => {
         // Mark form as pristine to prevent CanDeactivate warning
         this.finalizeSaveSuccess();
-        console.log('[ExpenseForm] ✨ Form finalized after save');
 
         this.toastrService.success(
           'Succes',

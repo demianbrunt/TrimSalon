@@ -3,9 +3,9 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import localeNl from '@angular/common/locales/nl';
 import {
   ApplicationConfig,
+  isDevMode,
   LOCALE_ID,
   provideZoneChangeDetection,
-  isDevMode,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ConfirmationDialogService } from './core/services/confirmation-dialog.service';
@@ -23,13 +23,13 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 
 import Aura from '@primeuix/themes/aura';
 
+import { provideServiceWorker } from '@angular/service-worker';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { providePrimeNG } from 'primeng/config';
 import { DialogService } from 'primeng/dynamicdialog';
 import { APP_CONFIG, AppConfig } from './app.config.model';
 import { routes } from './app.routes';
 import { GoogleAuthService } from './core/services/google-auth.service';
-import { provideServiceWorker } from '@angular/service-worker';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyApnb2vrrWaiewHEMzn73LbyPoBaPt4FUQ',
@@ -72,7 +72,7 @@ export const commonProviders = [
   provideAuth(() => getAuth()),
   provideRemoteConfig(() => getRemoteConfig()),
   provideFirestore(() => getFirestore()),
-  provideFunctions(() => getFunctions()),
+  provideFunctions(() => getFunctions(undefined, 'europe-west1')),
   provideMessaging(() => getMessaging()),
   provideHttpClient(withFetch()),
   provideAnimations(),

@@ -6,18 +6,17 @@ import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DataViewModule } from 'primeng/dataview';
-import { DialogModule } from 'primeng/dialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { ToastModule } from 'primeng/toast';
-import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Service } from '../../core/models/service.model';
+import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
+import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ServiceService } from '../../core/services/service.service';
 import { ToastrService } from '../../core/services/toastr.service';
@@ -31,8 +30,6 @@ import { ToastrService } from '../../core/services/toastr.service';
     ButtonModule,
     RippleModule,
     TagModule,
-    DialogModule,
-    ToastModule,
     ConfirmDialogModule,
     IconFieldModule,
     InputIconModule,
@@ -51,6 +48,7 @@ export class ServicesComponent implements OnInit {
 
   private readonly serviceService = inject(ServiceService);
   private readonly toastrService = inject(ToastrService);
+  private readonly dialogService = inject(AppDialogService);
   private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);

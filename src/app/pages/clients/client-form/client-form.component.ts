@@ -31,7 +31,6 @@ import { Dog } from '../../../core/models/dog.model';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { BreedService } from '../../../core/services/breed.service';
 import { ClientService } from '../../../core/services/client.service';
-import { MobileService } from '../../../core/services/mobile.service';
 import { ToastrService } from '../../../core/services/toastr.service';
 @Component({
   selector: 'app-client-form',
@@ -83,11 +82,6 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
-  private readonly mobileService = inject(MobileService);
-
-  get isMobile() {
-    return this.mobileService.isMobile;
-  }
 
   get canDeleteDog() {
     return this.dogsArray.length > 1;

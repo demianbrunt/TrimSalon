@@ -19,41 +19,49 @@
     <ng-template #list let-packages>
       @for (pkg of packages; track pkg.id) {
         <div class="col-12 md:col-6 lg:col-4 p-2">
-          <div
-            class="p-4 border surface-border surface-card border-round h-full flex flex-column"
-          >
-            <div class="grow">
-              <div class="font-bold text-lg">{{ pkg.name }}</div>
-              <div class="mt-2">
-                <p>Bevat de volgende werkzaamheden:</p>
+          <p-card styleClass="h-full">
+            <ng-template pTemplate="header">
+              <div class="p-3">
+                <div class="font-bold text-lg">{{ pkg.name }}</div>
+              </div>
+            </ng-template>
+
+            <div>
+              <p class="mb-2">Bevat de volgende werkzaamheden:</p>
+              <div class="flex flex-wrap gap-2">
                 @for (service of pkg.services; track service.id) {
-                  <p-tag [value]="service.name" styleClass="mr-2 mb-2"></p-tag>
+                  <p-tag [value]="service.name"></p-tag>
                 }
               </div>
             </div>
-            <div class="shrink-0 mt-3">
+
+            <ng-template pTemplate="footer">
               <div class="flex justify-content-end gap-2">
                 <p-button
                   icon="pi pi-history"
-                  styleClass="p-button-text p-button-rounded"
+                  [text]="true"
+                  [rounded]="true"
                   (click)="showPriceHistory(pkg)"
                   pTooltip="Prijs historie"
                 ></p-button>
                 <p-button
                   icon="pi pi-pencil"
-                  styleClass="p-button-text p-button-rounded"
+                  [text]="true"
+                  [rounded]="true"
                   (click)="showPackageForm(pkg)"
                   pTooltip="Bewerken"
                 ></p-button>
                 <p-button
                   icon="pi pi-trash"
-                  styleClass="p-button-text p-button-rounded p-button-danger"
+                  severity="danger"
+                  [text]="true"
+                  [rounded]="true"
                   (click)="deletePackage(pkg)"
                   pTooltip="Verwijderen"
                 ></p-button>
               </div>
-            </div>
-          </div>
+            </ng-template>
+          </p-card>
         </div>
       } @empty {
         <div class="text-center p-4">Geen pakketten gevonden.</div>

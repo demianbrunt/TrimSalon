@@ -1,0 +1,15 @@
+@media (max-width: 768px) {
+  :host {
+    position: fixed !important;
+    top: 75px !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    z-index: 500 !important;
+    background: var(--p-surface-0, var(--surface-card, #ffffff)) !important;
+    border-bottom: 1px solid var(--surface-border) !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+  }
+}

@@ -60,13 +60,13 @@ export interface HourlyRateCalculation {
  *   [fullGroomPackage],
  *   labradorBreed
  * );
- * console.log(calc.totalPrice); // 75
- * console.log(calc.breakdown);  // [{name: 'Bath', price: 25}, ...]
+ * // calc.totalPrice -> 75
+ * // calc.breakdown -> [{name: 'Bath', price: 25}, ...]
  *
  * // Check uurtarief
  * const rate = pricingService.calculateHourlyRate(75, 60);
- * console.log(rate.effectiveHourlyRate); // 75
- * console.log(rate.rateComparison);      // 125% (boven target!)
+ * // rate.effectiveHourlyRate -> 75
+ * // rate.rateComparison -> 125% (boven target!)
  */
 @Injectable({
   providedIn: 'root',
