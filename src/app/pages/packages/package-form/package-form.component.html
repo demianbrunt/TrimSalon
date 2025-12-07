@@ -1,8 +1,5 @@
-<div class="p-4">
-  <p-card
-    [ngClass]="{ 'mobile-card': isMobile }"
-    styleClass="mx-auto max-w-4xl"
-  >
+<div class="md:p-4">
+  <p-card styleClass="responsive-card mx-auto max-w-4xl">
     <ng-template pTemplate="title">
       <h2 class="m-0 mb-5">
         {{ isEditMode ? "Pakket Bewerken" : "Nieuw Pakket" }}
@@ -145,8 +142,8 @@
       </div>
 
       <!-- Breed Overrides -->
-      <div class="mt-4" formArrayName="breedOverrides">
-        <div class="flex justify-content-between align-items-center mb-2">
+      <div class="mt-4 mb-5" formArrayName="breedOverrides">
+        <div class="flex justify-content-between align-items-center mb-3">
           <h4 class="m-0">Ras-specifieke Aanpassingen</h4>
           <p-button
             icon="pi pi-plus"
@@ -156,80 +153,90 @@
             size="small"
           ></p-button>
         </div>
-        <p-table
-          [value]="breedOverridesArray.controls"
-          styleClass="p-datatable-sm"
-        >
-          <ng-template pTemplate="header">
-            <tr>
-              <th>Ras</th>
-              <th>Prijsaanpassing</th>
-              <th>Tijdsaanpassing</th>
-              <th>Reden</th>
-              <th style="width: 5rem"></th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-overrideGroup let-i="rowIndex">
-            <tr [formGroupName]="i">
-              <td>
-                <p-select
-                  [options]="allBreeds"
-                  optionLabel="name"
-                  placeholder="Selecteer Ras"
-                  styleClass="w-full"
-                  appendTo="body"
-                  (onChange)="onBreedSelect(i, $event.value)"
-                ></p-select>
-              </td>
-              <td>
-                <p-inputNumber
-                  formControlName="priceAdjustment"
-                  mode="currency"
-                  currency="EUR"
-                  styleClass="w-full"
-                  placeholder="+/- prijs"
-                ></p-inputNumber>
-              </td>
-              <td>
-                <p-inputNumber
-                  formControlName="durationAdjustment"
-                  suffix=" min"
-                  styleClass="w-full"
-                  placeholder="+/- tijd"
-                ></p-inputNumber>
-              </td>
-              <td>
-                <input
-                  pInputText
-                  formControlName="reason"
-                  placeholder="Bv: dikke vacht, moeilijk gedrag"
-                  class="w-full"
-                />
-              </td>
-              <td>
-                <p-button
-                  icon="pi pi-trash"
-                  styleClass="p-button-danger"
-                  (click)="removeBreedOverride(i)"
-                  type="button"
-                  size="small"
-                ></p-button>
-              </td>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="emptymessage">
-            <tr>
-              <td colspan="5" class="text-center text-color-secondary">
-                Geen ras-specifieke aanpassingen. Klik op "Ras Toevoegen" voor
-                moeilijke rassen zoals Poedels.
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
+
+        @if (breedOverridesArray.controls.length === 0) {
+          <div
+            class="text-center text-color-secondary p-4 surface-ground border-round"
+          >
+            <i class="pi pi-info-circle mr-2"></i>
+            Geen ras-specifieke aanpassingen. Klik op "Ras Toevoegen" voor
+            moeilijke rassen zoals Poedels.
+          </div>
+        } @else {
+          <div class="flex flex-column gap-3">
+            @for (
+              overrideGroup of breedOverridesArray.controls;
+              track overrideGroup;
+              let i = $index
+            ) {
+              <div [formGroupName]="i" class="surface-ground border-round p-3">
+                <div
+                  class="flex justify-content-between align-items-start mb-3"
+                >
+                  <div class="grow mr-2">
+                    <p-select
+                      [options]="allBreeds"
+                      optionLabel="name"
+                      placeholder="Selecteer Ras"
+                      styleClass="w-full"
+                      appendTo="body"
+                      (onChange)="onBreedSelect(i, $event.value)"
+                    ></p-select>
+                  </div>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    (click)="removeBreedOverride(i)"
+                    type="button"
+                    pTooltip="Verwijderen"
+                  ></p-button>
+                </div>
+                <div class="grid">
+                  <div class="col-12 md:col-4">
+                    <span class="text-color-secondary text-sm block mb-1"
+                      >Prijsaanpassing</span
+                    >
+                    <p-inputNumber
+                      formControlName="priceAdjustment"
+                      mode="currency"
+                      currency="EUR"
+                      styleClass="w-full"
+                      placeholder="+/- prijs"
+                    ></p-inputNumber>
+                  </div>
+                  <div class="col-12 md:col-4">
+                    <span class="text-color-secondary text-sm block mb-1"
+                      >Tijdsaanpassing</span
+                    >
+                    <p-inputNumber
+                      formControlName="durationAdjustment"
+                      suffix=" min"
+                      styleClass="w-full"
+                      placeholder="+/- tijd"
+                    ></p-inputNumber>
+                  </div>
+                  <div class="col-12 md:col-4">
+                    <span class="text-color-secondary text-sm block mb-1"
+                      >Reden</span
+                    >
+                    <input
+                      pInputText
+                      formControlName="reason"
+                      placeholder="Bv: dikke vacht"
+                      class="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
       </div>
     </form>
     <ng-template pTemplate="footer">
-      <div class="flex justify-content-end gap-2">
+      <div class="flex justify-content-end gap-2 sticky-footer-actions">
         <p-button
           label="Annuleren"
           icon="pi pi-times"
@@ -240,8 +247,9 @@
         <p-button
           label="Opslaan"
           icon="pi pi-check"
-          (click)="save()"
-          [disabled]="form.invalid"
+          (click)="submit()"
+          [disabled]="form.invalid || isSaving"
+          [loading]="isSaving"
         ></p-button>
       </div>
     </ng-template>

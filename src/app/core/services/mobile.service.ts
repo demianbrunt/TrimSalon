@@ -7,7 +7,8 @@ import { inject, Injectable } from '@angular/core';
 export class MobileService {
   private readonly breakpointObserver = inject(BreakpointObserver);
 
-  private _isMobile = false;
+  // Initialize with current window width check
+  private _isMobile = window.innerWidth <= 768;
 
   get isMobile() {
     return this._isMobile;

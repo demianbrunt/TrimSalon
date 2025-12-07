@@ -569,8 +569,9 @@
           <p-button
             label="Opslaan"
             icon="pi pi-check"
-            (click)="save()"
-            [disabled]="form.invalid"
+            (click)="submit()"
+            [disabled]="form.invalid || isSaving"
+            [loading]="isSaving"
             type="button"
           />
         </div>

@@ -1,4 +1,4 @@
-<ng-container *ngIf="isMobile; else desktopView">
+@if (isMobile) {
   <p-dataView
     #dv
     [value]="services"
@@ -32,10 +32,37 @@
                     "
                   ></p-tag>
                 </div>
+                @if (service.description) {
+                  <div class="text-color-secondary text-sm mt-1">
+                    {{ service.description }}
+                  </div>
+                }
               </div>
             </ng-template>
 
-            <p class="m-0">{{ service.description }}</p>
+            <!-- Prijzen per grootte -->
+            @if (service.sizePricing?.pricing) {
+              <div class="grid text-sm">
+                <div class="col-4 text-center">
+                  <div class="text-color-secondary mb-1">Klein</div>
+                  <div class="font-semibold">
+                    €{{ service.sizePricing.pricing.small | number: "1.2-2" }}
+                  </div>
+                </div>
+                <div class="col-4 text-center">
+                  <div class="text-color-secondary mb-1">Medium</div>
+                  <div class="font-semibold">
+                    €{{ service.sizePricing.pricing.medium | number: "1.2-2" }}
+                  </div>
+                </div>
+                <div class="col-4 text-center">
+                  <div class="text-color-secondary mb-1">Groot</div>
+                  <div class="font-semibold">
+                    €{{ service.sizePricing.pricing.large | number: "1.2-2" }}
+                  </div>
+                </div>
+              </div>
+            }
 
             <ng-template pTemplate="footer">
               <div class="flex justify-content-end gap-2">
@@ -63,9 +90,7 @@
       }
     </ng-template>
   </p-dataView>
-</ng-container>
-
-<ng-template #desktopView>
+} @else {
   <div class="p-4">
     <p-card>
       <p-table
@@ -139,4 +164,4 @@
       </p-table>
     </p-card>
   </div>
-</ng-template>
+}

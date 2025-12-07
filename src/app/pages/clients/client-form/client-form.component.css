@@ -4,11 +4,11 @@
     border-radius: 0 !important;
     box-shadow: none !important;
   }
-  
+
   ::ng-deep .p-card-body {
     padding: 1rem !important;
   }
-  
+
   /* Better spacing for dog sections on mobile */
   .dog-section {
     padding: 0.75rem;
@@ -24,7 +24,7 @@
   ::ng-deep .p-card {
     box-shadow: 0 2px 8px rgba(74, 144, 112, 0.08);
   }
-  
+
   .dog-section {
     padding: 1rem;
     margin-bottom: 1rem;

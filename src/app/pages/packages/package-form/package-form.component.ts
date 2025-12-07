@@ -1,15 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
-  FormBuilder,
   FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -33,7 +32,6 @@ import { MobileService } from '../../../core/services/mobile.service';
 import { PackageService } from '../../../core/services/package.service';
 import { PricingService } from '../../../core/services/pricing.service';
 import { ServiceService } from '../../../core/services/service.service';
-import { ToastrService } from '../../../core/services/toastr.service';
 
 @Component({
   selector: 'app-package-form',
@@ -83,13 +81,10 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
   private readonly packageService = inject(PackageService);
   private readonly serviceService = inject(ServiceService);
   private readonly breedService = inject(BreedService);
-  private readonly toastrService = inject(ToastrService);
-  private readonly fb = inject(FormBuilder);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
   private readonly pricingService = inject(PricingService);
+  private readonly destroyRef = inject(DestroyRef);
 
   get isMobile() {
     return this.mobileService.isMobile;
@@ -104,12 +99,58 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
   }
 
   override afterValidityEnsured(): Promise<void> {
-    throw new Error('Method not implemented.');
+    return new Promise((resolve, reject) => {
+      const formValue = this.form.value;
+      const packageData: Package = {
+        id: formValue.id || undefined,
+        name: formValue.name!,
+        services: formValue.services!,
+        sizePricing: {
+          pricing: {
+            small: formValue.pricingSmall!,
+            medium: formValue.pricingMedium!,
+            large: formValue.pricingLarge!,
+          },
+          duration: {
+            small: formValue.durationSmall!,
+            medium: formValue.durationMedium!,
+            large: formValue.durationLarge!,
+          },
+          breedOverrides: formValue.breedOverrides?.map((o) => ({
+            breedId: o.breedId!,
+            breedName: o.breedName!,
+            priceAdjustment: o.priceAdjustment || undefined,
+            durationAdjustment: o.durationAdjustment || undefined,
+            reason: o.reason || undefined,
+          })),
+        },
+      };
+
+      const operation = this.isEditMode
+        ? this.packageService.update(packageData)
+        : this.packageService.add(packageData);
+
+      operation.subscribe({
+        next: () => {
+          this.finalizeSaveSuccess();
+          this.toastr.success(
+            'Succes',
+            `Pakket ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
+          );
+          this.router.navigate(['/packages']);
+          resolve();
+        },
+        error: (err) => {
+          this.toastr.error('Fout', err.message);
+          reject(err);
+        },
+      });
+    });
   }
 
   override initForm(): Promise<void> {
     return new Promise((resolve) => {
-      this.form = this.fb.group({
+      this.form = this.formBuilder.group({
         id: new FormControl(null),
         name: new FormControl(null, Validators.required),
         services: new FormControl<Service[]>([], Validators.required),
@@ -137,7 +178,7 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
           Validators.required,
           Validators.min(1),
         ]),
-        breedOverrides: this.fb.array<
+        breedOverrides: this.formBuilder.array<
           FormGroup<{
             breedId: FormControl<string | null>;
             breedName: FormControl<string | null>;
@@ -157,7 +198,7 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
     this.initForm();
 
     if (this.isEditMode) {
-      const packageId = this.route.snapshot.paramMap.get('id');
+      const packageId = this.activatedRoute.snapshot.paramMap.get('id');
       this.form.controls.id.patchValue(packageId);
       this.loadPackageData(packageId);
       return;
@@ -167,6 +208,8 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
       { label: 'Pakketten', routerLink: '/packages' },
       { label: 'Nieuw Pakket' },
     ]);
+    this.isInitialized = true;
+    this.isLoading = false;
   }
 
   get name() {
@@ -184,47 +227,65 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
   loadServices(): void {
     this.serviceService
       .getData$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => (this.allServices = data));
   }
 
   loadBreeds(): void {
-    this.breedService.getData$().subscribe((data) => (this.allBreeds = data));
+    this.breedService
+      .getData$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((data) => (this.allBreeds = data));
   }
 
   loadPackageData(id: string): void {
-    this.packageService.getById(id).subscribe((pkg) => {
-      if (pkg) {
-        // Load simplified pricing if exists
-        if (pkg.sizePricing) {
+    this.packageService
+      .getById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((pkg) => {
+        if (pkg) {
+          // Always load basic info including id
           this.form.patchValue({
+            id: pkg.id,
             name: pkg.name,
             services: pkg.services,
-            pricingSmall: pkg.sizePricing.pricing.small,
-            pricingMedium: pkg.sizePricing.pricing.medium,
-            pricingLarge: pkg.sizePricing.pricing.large,
-            durationSmall: pkg.sizePricing.duration.small,
-            durationMedium: pkg.sizePricing.duration.medium,
-            durationLarge: pkg.sizePricing.duration.large,
           });
 
-          // Load breed overrides
-          pkg.sizePricing.breedOverrides?.forEach((override) => {
-            this.breedOverridesArray.push(this.newBreedOverrideGroup(override));
-          });
+          // Load simplified pricing if exists
+          if (pkg.sizePricing) {
+            this.form.patchValue({
+              pricingSmall: pkg.sizePricing.pricing?.small ?? 0,
+              pricingMedium: pkg.sizePricing.pricing?.medium ?? 0,
+              pricingLarge: pkg.sizePricing.pricing?.large ?? 0,
+              durationSmall: pkg.sizePricing.duration?.small ?? 30,
+              durationMedium: pkg.sizePricing.duration?.medium ?? 45,
+              durationLarge: pkg.sizePricing.duration?.large ?? 60,
+            });
+
+            // Load breed overrides
+            pkg.sizePricing.breedOverrides?.forEach((override) => {
+              this.breedOverridesArray.push(
+                this.newBreedOverrideGroup(override),
+              );
+            });
+          }
+
+          this.breadcrumbService.setItems([
+            { label: 'Pakketten', routerLink: '/packages' },
+            { label: pkg.name },
+          ]);
+
+          // Mark as initialized after data is loaded
+          this.isInitialized = true;
+          this.isLoading = false;
+        } else {
+          this.router.navigate(['/not-found']);
         }
-
-        this.breadcrumbService.setItems([
-          { label: 'Pakketten', routerLink: '/packages' },
-          { label: pkg.name },
-        ]);
-      } else {
-        this.router.navigate(['/not-found']);
-      }
-    });
+      });
   }
 
   newBreedOverrideGroup(override?: BreedPricingOverride): FormGroup {
-    return this.fb.group({
+    return this.formBuilder.group({
       breedId: [override?.breedId || null, Validators.required],
       breedName: [override?.breedName || null, Validators.required],
       priceAdjustment: [override?.priceAdjustment || 0],
@@ -261,56 +322,6 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
     const duration = this.form.get(durationKey)?.value || 0;
 
     return calculateHourlyRate(price, duration);
-  }
-
-  save(): void {
-    if (this.form.invalid) {
-      return;
-    }
-
-    const formValue = this.form.value;
-    const packageData: Package = {
-      id: formValue.id || undefined,
-      name: formValue.name!,
-      services: formValue.services!,
-      sizePricing: {
-        pricing: {
-          small: formValue.pricingSmall!,
-          medium: formValue.pricingMedium!,
-          large: formValue.pricingLarge!,
-        },
-        duration: {
-          small: formValue.durationSmall!,
-          medium: formValue.durationMedium!,
-          large: formValue.durationLarge!,
-        },
-        breedOverrides: formValue.breedOverrides?.map((o) => ({
-          breedId: o.breedId!,
-          breedName: o.breedName!,
-          priceAdjustment: o.priceAdjustment || undefined,
-          durationAdjustment: o.durationAdjustment || undefined,
-          reason: o.reason || undefined,
-        })),
-      },
-    };
-
-    const operation = this.isEditMode
-      ? this.packageService.update(packageData)
-      : this.packageService.add(packageData);
-
-    operation.subscribe({
-      next: () => {
-        this.toastrService.success(
-          'Succes',
-          `Pakket ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
-        );
-        this.form.markAsPristine();
-        this.router.navigate(['/packages']);
-      },
-      error: (err) => {
-        this.toastrService.error('Fout', err.message);
-      },
-    });
   }
 
   override cancel() {

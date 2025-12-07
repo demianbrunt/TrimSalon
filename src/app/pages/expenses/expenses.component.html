@@ -1,4 +1,4 @@
-<div class="p-4">
+<div class="md:p-4">
   <div
     class="grid grid-nogutter justify-content-between align-items-center mb-3"
   >
@@ -40,7 +40,7 @@
     </div>
   </p-card>
 
-  <ng-container *ngIf="isMobile; else desktopView">
+  @if (isMobile) {
     <p-dataView
       #dv
       [value]="expenses"
@@ -116,9 +116,7 @@
         }
       </ng-template>
     </p-dataView>
-  </ng-container>
-
-  <ng-template #desktopView>
+  } @else {
     <p-card>
       <p-table
         #dt
@@ -183,13 +181,13 @@
                 <p-button
                   icon="pi pi-pencil"
                   styleClass="p-button-text p-button-rounded"
-                  (onClick)="editExpense(expense)"
+                  (click)="editExpense(expense)"
                   [pTooltip]="'Bewerken'"
                 ></p-button>
                 <p-button
                   icon="pi pi-trash"
                   styleClass="p-button-text p-button-rounded p-button-danger"
-                  (onClick)="deleteExpense(expense)"
+                  (click)="deleteExpense(expense)"
                   [pTooltip]="'Verwijderen'"
                 ></p-button>
               </div>
@@ -206,7 +204,7 @@
                   label="Eerste Uitgave Toevoegen"
                   icon="pi pi-plus"
                   styleClass="p-button-text"
-                  (onClick)="createExpense()"
+                  (click)="createExpense()"
                 ></p-button>
               </div>
             </td>
@@ -214,5 +212,5 @@
         </ng-template>
       </p-table>
     </p-card>
-  </ng-template>
+  }
 </div>

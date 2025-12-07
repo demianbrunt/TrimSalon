@@ -84,8 +84,7 @@ export class GoogleAuthService {
     from(callable({ code, userId: this.userId }))
       .pipe(map((result) => result.data))
       .subscribe({
-        next: (data) => {
-          console.log('Successfully exchanged code for tokens', data);
+        next: () => {
           // Emit event to notify that authorization is complete
           this._authorizationComplete.next();
         },

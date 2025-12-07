@@ -1,4 +1,4 @@
-<ng-container *ngIf="isMobile; else desktopView">
+@if (isMobile) {
   <p-dataView
     #dv
     [value]="packages"
@@ -23,17 +23,46 @@
             <ng-template pTemplate="header">
               <div class="p-3">
                 <div class="font-bold text-lg">{{ pkg.name }}</div>
+                <div class="text-color-secondary text-sm">
+                  {{ pkg.services?.length || 0 }} werkzaamhe{{
+                    pkg.services?.length === 1 ? "id" : "den"
+                  }}
+                </div>
               </div>
             </ng-template>
 
-            <div>
-              <p class="mb-2">Bevat de volgende werkzaamheden:</p>
+            <!-- Werkzaamheden -->
+            <div class="mb-3">
               <div class="flex flex-wrap gap-2">
                 @for (service of pkg.services; track service.id) {
                   <p-tag [value]="service.name"></p-tag>
                 }
               </div>
             </div>
+
+            <!-- Prijzen per grootte -->
+            @if (pkg.sizePricing?.pricing) {
+              <div class="grid text-sm border-top-1 surface-border pt-3">
+                <div class="col-4 text-center">
+                  <div class="text-color-secondary mb-1">Klein</div>
+                  <div class="font-semibold">
+                    €{{ pkg.sizePricing.pricing.small | number: "1.2-2" }}
+                  </div>
+                </div>
+                <div class="col-4 text-center">
+                  <div class="text-color-secondary mb-1">Medium</div>
+                  <div class="font-semibold">
+                    €{{ pkg.sizePricing.pricing.medium | number: "1.2-2" }}
+                  </div>
+                </div>
+                <div class="col-4 text-center">
+                  <div class="text-color-secondary mb-1">Groot</div>
+                  <div class="font-semibold">
+                    €{{ pkg.sizePricing.pricing.large | number: "1.2-2" }}
+                  </div>
+                </div>
+              </div>
+            }
 
             <ng-template pTemplate="footer">
               <div class="flex justify-content-end gap-2">
@@ -68,9 +97,7 @@
       }
     </ng-template>
   </p-dataView>
-</ng-container>
-
-<ng-template #desktopView>
+} @else {
   <div class="p-4">
     <p-card>
       <p-table
@@ -140,4 +167,4 @@
       </p-table>
     </p-card>
   </div>
-</ng-template>
+}

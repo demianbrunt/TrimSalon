@@ -5,7 +5,11 @@
         {{ isEditMode ? "Klant Bewerken" : "Nieuwe Klant" }}
       </h2>
     </ng-template>
-    <form [formGroup]="form" class="p-fluid form-content-wrapper">
+    <form
+      [formGroup]="form"
+      class="p-fluid form-content-wrapper"
+      (ngSubmit)="submit()"
+    >
       <div class="field">
         <p-floatlabel variant="on">
           <input
@@ -14,9 +18,11 @@
             class="w-full"
             [formControl]="form.controls.name"
             autocomplete="off"
+            aria-required="true"
           />
-          <label for="naam">Naam</label>
+          <label for="naam">Naam *</label>
         </p-floatlabel>
+        <app-validation-message [control]="form.controls.name" label="Naam" />
       </div>
       <div class="field">
         <p-floatlabel variant="on">
@@ -29,6 +35,10 @@
           />
           <label for="email">E-mail</label>
         </p-floatlabel>
+        <app-validation-message
+          [control]="form.controls.email"
+          label="E-mail"
+        />
       </div>
       <div class="field">
         <p-floatlabel variant="on">
@@ -42,6 +52,10 @@
           />
           <label for="telefoon">Telefoon</label>
         </p-floatlabel>
+        <app-validation-message
+          [control]="form.controls.phone"
+          label="Telefoon"
+        />
       </div>
       <p-divider />
       <div class="flex justify-content-between align-items-center w-full">
@@ -75,9 +89,14 @@
                   class="w-full"
                   [formControl]="dogGroup.controls.name"
                   autocomplete="off"
+                  aria-required="true"
                 />
-                <label for="naamHond">Naam</label>
+                <label for="naamHond">Naam *</label>
               </p-floatlabel>
+              <app-validation-message
+                [control]="dogGroup.controls.name"
+                label="Naam hond"
+              />
             </div>
             <div class="field col-12 md:col-6">
               <p-floatlabel variant="on" class="w-full">
@@ -141,9 +160,7 @@
                   [formControl]="dogGroup.controls.isAggressive"
                   [binary]="true"
                 />
-                <label [for]="'agressief-' + $index"
-                  >Agressief (Let op: wordt getoond bovenaan)</label
-                >
+                <label [for]="'agressief-' + $index">Agressief</label>
               </div>
             </div>
             @if (canDeleteDog) {
@@ -175,8 +192,9 @@
         <p-button
           label="Opslaan"
           icon="pi pi-check"
-          (click)="saveClient()"
+          (click)="submit()"
           [disabled]="form?.invalid || isSaving"
+          [loading]="isSaving"
         ></p-button>
       </div>
     </ng-template>

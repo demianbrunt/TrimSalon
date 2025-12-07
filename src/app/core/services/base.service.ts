@@ -1,4 +1,4 @@
-import { inject } from '@angular/core';
+import { inject, isDevMode } from '@angular/core';
 import {
   Firestore,
   Timestamp,
@@ -16,9 +16,16 @@ import { map } from 'rxjs/operators';
 export abstract class BaseService<T extends { id?: string }> {
   protected firestore = inject(Firestore);
   protected collection;
+  private readonly debug = isDevMode();
 
   constructor(collectionName: string) {
     this.collection = collection(this.firestore, collectionName);
+  }
+
+  private log(...args: unknown[]): void {
+    if (this.debug) {
+      console.log(...args);
+    }
   }
 
   /**
@@ -79,12 +86,12 @@ export abstract class BaseService<T extends { id?: string }> {
   }
 
   getData$(): Observable<T[]> {
-    console.log(
+    this.log(
       `[BaseService] 📋 Fetching all data from: ${this.collection.path}`,
     );
     return collectionData(this.collection, { idField: 'id' }).pipe(
       map((items) => {
-        console.log(
+        this.log(
           `[BaseService] 📥 Received ${items.length} documents, converting Timestamps...`,
         );
         return items.map((item) => this.convertTimestamps(item) as T);
@@ -93,13 +100,13 @@ export abstract class BaseService<T extends { id?: string }> {
   }
 
   getById(id: string): Observable<T> {
-    console.log(
+    this.log(
       `[BaseService] 🔍 Fetching document by ID: ${id} from: ${this.collection.path}`,
     );
     const document = doc(this.firestore, `${this.collection.path}/${id}`);
     return docData(document, { idField: 'id' }).pipe(
       map((item) => {
-        console.log(
+        this.log(
           `[BaseService] 📥 Received document, converting Timestamps...`,
         );
         return this.convertTimestamps(item) as T;
@@ -108,10 +115,10 @@ export abstract class BaseService<T extends { id?: string }> {
   }
 
   add(item: T): Observable<T> {
-    console.log(
+    this.log(
       `[BaseService] ➕ Adding new document to: ${this.collection.path}`,
     );
-    console.log(
+    this.log(
       '[BaseService] 📦 Data being added:',
       JSON.stringify(item, null, 2),
     );
@@ -120,7 +127,7 @@ export abstract class BaseService<T extends { id?: string }> {
     const cleanedItem = this.removeUndefinedFields(
       item as unknown as Record<string, unknown>,
     );
-    console.log(
+    this.log(
       '[BaseService] 🧹 Cleaned data (undefined removed):',
       JSON.stringify(cleanedItem, null, 2),
     );
@@ -129,10 +136,10 @@ export abstract class BaseService<T extends { id?: string }> {
       addDoc(this.collection, cleanedItem)
         .then((docRef) => {
           const newItem = { ...item, id: docRef.id };
-          console.log(
+          this.log(
             `[BaseService] ✅ Successfully added document with ID: ${docRef.id}`,
           );
-          console.log(
+          this.log(
             '[BaseService] 📤 Returning:',
             JSON.stringify(newItem, null, 2),
           );
@@ -144,20 +151,16 @@ export abstract class BaseService<T extends { id?: string }> {
             `[BaseService] ❌ Error adding document to ${this.collection.path}:`,
             error,
           );
-          console.error(
-            '[BaseService] 📦 Failed data:',
-            JSON.stringify(item, null, 2),
-          );
           subscriber.error(error);
         });
     });
   }
 
   update(item: T): Observable<T> {
-    console.log(
+    this.log(
       `[BaseService] 🔄 Updating document ID: ${item.id} in: ${this.collection.path}`,
     );
-    console.log(
+    this.log(
       '[BaseService] 📦 Data being updated:',
       JSON.stringify(item, null, 2),
     );
@@ -166,7 +169,7 @@ export abstract class BaseService<T extends { id?: string }> {
     const cleanedItem = this.removeUndefinedFields(
       item as unknown as Record<string, unknown>,
     );
-    console.log(
+    this.log(
       '[BaseService] 🧹 Cleaned data (undefined removed):',
       JSON.stringify(cleanedItem, null, 2),
     );
@@ -175,10 +178,10 @@ export abstract class BaseService<T extends { id?: string }> {
     return new Observable((subscriber) => {
       updateDoc(document, cleanedItem)
         .then(() => {
-          console.log(
+          this.log(
             `[BaseService] ✅ Successfully updated document ID: ${item.id}`,
           );
-          console.log(
+          this.log(
             '[BaseService] 📤 Returning:',
             JSON.stringify(item, null, 2),
           );
@@ -190,17 +193,13 @@ export abstract class BaseService<T extends { id?: string }> {
             `[BaseService] ❌ Error updating document ${item.id} in ${this.collection.path}:`,
             error,
           );
-          console.error(
-            '[BaseService] 📦 Failed data:',
-            JSON.stringify(item, null, 2),
-          );
           subscriber.error(error);
         });
     });
   }
 
   delete(id: string): Observable<void> {
-    console.log(
+    this.log(
       `[BaseService] 🗑️ Deleting document ID: ${id} from: ${this.collection.path}`,
     );
 
@@ -208,9 +207,7 @@ export abstract class BaseService<T extends { id?: string }> {
     return new Observable((subscriber) => {
       deleteDoc(document)
         .then(() => {
-          console.log(
-            `[BaseService] ✅ Successfully deleted document ID: ${id}`,
-          );
+          this.log(`[BaseService] ✅ Successfully deleted document ID: ${id}`);
           subscriber.next();
           subscriber.complete();
         })

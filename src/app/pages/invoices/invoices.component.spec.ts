@@ -1,13 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { DialogService } from 'primeng/dynamicdialog';
 import { of } from 'rxjs';
-import { InvoicesComponent } from './invoices.component';
-import { InvoiceService } from '../../core/services/invoice.service';
-import { ToastrService } from '../../core/services/toastr.service';
+import { PaymentStatus } from '../../core/models/invoice.model';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
+import { InvoiceService } from '../../core/services/invoice.service';
 import { MobileService } from '../../core/services/mobile.service';
-import { PaymentStatus } from '../../core/models/invoice.model';
+import { ToastrService } from '../../core/services/toastr.service';
+import { InvoicesComponent } from './invoices.component';
 
 describe('InvoicesComponent', () => {
   let component: InvoicesComponent;
@@ -18,6 +19,7 @@ describe('InvoicesComponent', () => {
   let mockBreadcrumbService: jasmine.SpyObj<BreadcrumbService>;
   let mockConfirmationDialogService: jasmine.SpyObj<ConfirmationDialogService>;
   let mockMobileService: jasmine.SpyObj<MobileService>;
+  let mockDialogService: jasmine.SpyObj<DialogService>;
 
   beforeEach(async () => {
     mockInvoiceService = jasmine.createSpyObj('InvoiceService', [
@@ -39,6 +41,10 @@ describe('InvoicesComponent', () => {
     mockMobileService = jasmine.createSpyObj('MobileService', [], {
       isMobile: false,
     });
+    mockDialogService = jasmine.createSpyObj('DialogService', [
+      'open',
+      'getInstance',
+    ]);
 
     mockInvoiceService.getData$.and.returnValue(of([]));
 
@@ -54,6 +60,7 @@ describe('InvoicesComponent', () => {
           useValue: mockConfirmationDialogService,
         },
         { provide: MobileService, useValue: mockMobileService },
+        { provide: DialogService, useValue: mockDialogService },
       ],
     }).compileComponents();
 

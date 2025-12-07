@@ -1,15 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
-  FormBuilder,
   FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -30,7 +29,6 @@ import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { BreedService } from '../../../core/services/breed.service';
 import { PricingService } from '../../../core/services/pricing.service';
 import { ServiceService } from '../../../core/services/service.service';
-import { ToastrService } from '../../../core/services/toastr.service';
 
 @Component({
   selector: 'app-service-form',
@@ -78,12 +76,9 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
 
   private readonly serviceService = inject(ServiceService);
   private readonly breedService = inject(BreedService);
-  private readonly toastrService = inject(ToastrService);
-  private readonly fb = inject(FormBuilder);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly pricingService = inject(PricingService);
+  private readonly destroyRef = inject(DestroyRef);
 
   get targetHourlyRate() {
     return this.pricingService.getTargetHourlyRate();
@@ -94,12 +89,58 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
   }
 
   override afterValidityEnsured(): Promise<void> {
-    throw new Error('Method not implemented.');
+    return new Promise((resolve, reject) => {
+      const formValue = this.form.value;
+      const serviceData: Service = {
+        id: formValue.id || undefined,
+        name: formValue.name!,
+        description: formValue.description!,
+        sizePricing: {
+          pricing: {
+            small: formValue.pricingSmall!,
+            medium: formValue.pricingMedium!,
+            large: formValue.pricingLarge!,
+          },
+          duration: {
+            small: formValue.durationSmall!,
+            medium: formValue.durationMedium!,
+            large: formValue.durationLarge!,
+          },
+          breedOverrides: formValue.breedOverrides?.map((o) => ({
+            breedId: o.breedId!,
+            breedName: o.breedName!,
+            priceAdjustment: o.priceAdjustment || undefined,
+            durationAdjustment: o.durationAdjustment || undefined,
+            reason: o.reason || undefined,
+          })),
+        },
+      };
+
+      const operation = this.isEditMode
+        ? this.serviceService.update(serviceData)
+        : this.serviceService.add(serviceData);
+
+      operation.subscribe({
+        next: () => {
+          this.finalizeSaveSuccess();
+          this.toastr.success(
+            'Succes',
+            `Werkzaamheid ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
+          );
+          this.router.navigate(['/services']);
+          resolve();
+        },
+        error: (err) => {
+          this.toastr.error('Fout', err.message);
+          reject(err);
+        },
+      });
+    });
   }
 
   override initForm(): Promise<void> {
     return new Promise((resolve) => {
-      this.form = this.fb.group({
+      this.form = this.formBuilder.group({
         id: new FormControl(null),
         name: new FormControl(null, Validators.required),
         description: new FormControl(''),
@@ -127,7 +168,7 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
           Validators.required,
           Validators.min(1),
         ]),
-        breedOverrides: this.fb.array<
+        breedOverrides: this.formBuilder.array<
           FormGroup<{
             breedId: FormControl<string | null>;
             breedName: FormControl<string | null>;
@@ -146,7 +187,7 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
     this.initForm();
 
     if (this.isEditMode) {
-      const serviceId = this.route.snapshot.paramMap.get('id');
+      const serviceId = this.activatedRoute.snapshot.paramMap.get('id');
       this.form.controls.id.patchValue(serviceId);
       this.loadServiceData(serviceId);
     } else {
@@ -154,6 +195,8 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
         { label: 'Werkzaamheden', routerLink: '/services' },
         { label: 'Nieuwe Werkzaamheid' },
       ]);
+      this.isInitialized = true;
+      this.isLoading = false;
     }
   }
 
@@ -170,43 +213,60 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
   }
 
   loadBreeds(): void {
-    this.breedService.getData$().subscribe((data) => (this.allBreeds = data));
+    this.breedService
+      .getData$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((data) => (this.allBreeds = data));
   }
 
   loadServiceData(id: string): void {
-    this.serviceService.getById(id).subscribe((service) => {
-      if (service) {
-        // Load simplified pricing if exists
-        if (service.sizePricing) {
+    this.serviceService
+      .getById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((service) => {
+        if (service) {
+          // Always load basic info including id
           this.form.patchValue({
+            id: service.id,
             name: service.name,
             description: service.description,
-            pricingSmall: service.sizePricing.pricing.small,
-            pricingMedium: service.sizePricing.pricing.medium,
-            pricingLarge: service.sizePricing.pricing.large,
-            durationSmall: service.sizePricing.duration.small,
-            durationMedium: service.sizePricing.duration.medium,
-            durationLarge: service.sizePricing.duration.large,
           });
 
-          // Load breed overrides
-          service.sizePricing.breedOverrides?.forEach((override) => {
-            this.breedOverridesArray.push(this.newBreedOverrideGroup(override));
-          });
+          // Load simplified pricing if exists
+          if (service.sizePricing) {
+            this.form.patchValue({
+              pricingSmall: service.sizePricing.pricing?.small ?? 0,
+              pricingMedium: service.sizePricing.pricing?.medium ?? 0,
+              pricingLarge: service.sizePricing.pricing?.large ?? 0,
+              durationSmall: service.sizePricing.duration?.small ?? 30,
+              durationMedium: service.sizePricing.duration?.medium ?? 45,
+              durationLarge: service.sizePricing.duration?.large ?? 60,
+            });
+
+            // Load breed overrides
+            service.sizePricing.breedOverrides?.forEach((override) => {
+              this.breedOverridesArray.push(
+                this.newBreedOverrideGroup(override),
+              );
+            });
+          }
+
+          this.breadcrumbService.setItems([
+            { label: 'Werkzaamheden', routerLink: '/services' },
+            { label: service.name },
+          ]);
+
+          // Mark as initialized after data is loaded
+          this.isInitialized = true;
+          this.isLoading = false;
+        } else {
+          this.router.navigate(['/not-found']);
         }
-
-        this.breadcrumbService.setItems([
-          { label: 'Werkzaamheden', routerLink: '/services' },
-          { label: service.name },
-        ]);
-      } else {
-        this.router.navigate(['/not-found']);
-      }
-    });
+      });
   }
 
   newBreedOverrideGroup(override?: BreedPricingOverride): FormGroup {
-    return this.fb.group({
+    return this.formBuilder.group({
       breedId: [override?.breedId || null, Validators.required],
       breedName: [override?.breedName || null, Validators.required],
       priceAdjustment: [override?.priceAdjustment || 0],
@@ -243,56 +303,6 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
     const duration = this.form.get(durationKey)?.value || 0;
 
     return calculateHourlyRate(price, duration);
-  }
-
-  save(): void {
-    if (this.form.invalid) {
-      return;
-    }
-
-    const formValue = this.form.value;
-    const serviceData: Service = {
-      id: formValue.id || undefined,
-      name: formValue.name!,
-      description: formValue.description!,
-      sizePricing: {
-        pricing: {
-          small: formValue.pricingSmall!,
-          medium: formValue.pricingMedium!,
-          large: formValue.pricingLarge!,
-        },
-        duration: {
-          small: formValue.durationSmall!,
-          medium: formValue.durationMedium!,
-          large: formValue.durationLarge!,
-        },
-        breedOverrides: formValue.breedOverrides?.map((o) => ({
-          breedId: o.breedId!,
-          breedName: o.breedName!,
-          priceAdjustment: o.priceAdjustment || undefined,
-          durationAdjustment: o.durationAdjustment || undefined,
-          reason: o.reason || undefined,
-        })),
-      },
-    };
-
-    const operation = this.isEditMode
-      ? this.serviceService.update(serviceData)
-      : this.serviceService.add(serviceData);
-
-    operation.subscribe({
-      next: () => {
-        this.toastrService.success(
-          'Succes',
-          `Werkzaamheid ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
-        );
-        this.form.markAsPristine();
-        this.router.navigate(['/services']);
-      },
-      error: (err) => {
-        this.toastrService.error('Fout', err.message);
-      },
-    });
   }
 
   override cancel() {

@@ -58,10 +58,9 @@ export class NotificationService {
       // const token = await getToken(this.messaging, {
       //   vapidKey: 'YOUR_VAPID_KEY_HERE'
       // });
-      // console.log('FCM Token:', token);
       // return token;
 
-      console.log('FCM token retrieval skipped - VAPID key not configured yet');
+      // FCM token retrieval skipped - VAPID key not configured yet
       return null;
     } catch (error) {
       console.error('Error getting FCM token:', error);

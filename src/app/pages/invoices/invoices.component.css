@@ -13,11 +13,11 @@
   ::ng-deep .p-dataview .p-dataview-content {
     padding: 0.5rem !important;
   }
-  
+
   .col-12.p-2 {
     padding: 0.5rem !important;
   }
-  
+
   ::ng-deep .p-tag {
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
@@ -28,7 +28,7 @@
   ::ng-deep .p-card {
     box-shadow: 0 2px 8px rgba(74, 144, 112, 0.08);
   }
-  
+
   ::ng-deep .p-card:hover {
     box-shadow: 0 4px 12px rgba(74, 144, 112, 0.12);
   }

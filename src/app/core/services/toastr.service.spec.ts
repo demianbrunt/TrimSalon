@@ -18,7 +18,9 @@ describe('ToastrService', () => {
     });
 
     service = TestBed.inject(ToastrService);
-    messageService = TestBed.inject(MessageService) as jasmine.SpyObj<MessageService>;
+    messageService = TestBed.inject(
+      MessageService,
+    ) as jasmine.SpyObj<MessageService>;
   });
 
   it('should be created', () => {

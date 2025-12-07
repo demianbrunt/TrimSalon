@@ -1,5 +1,6 @@
 import { Directive, HostListener, inject } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup } from '@angular/forms';
+import { Router } from '@angular/router';
 
 import { FormMode } from '../../enums/form-mode.enum';
 import { ConfirmationDialogService } from '../../services/confirmation-dialog.service';
@@ -56,6 +57,7 @@ export abstract class FormBaseComponent
   protected readonly formBuilder: FormBuilder = inject(FormBuilder);
   protected readonly toastr: ToastrService = inject(ToastrService);
   protected readonly confirmationService = inject(ConfirmationDialogService);
+  protected readonly router: Router = inject(Router);
 
   /**
    * Het Angular FormGroup of FormArray
@@ -99,8 +101,9 @@ export abstract class FormBaseComponent
     if (!this.isInitialized || this.isLoading) return;
 
     if (this.isSaving) {
-      this.isSaving = true;
+      return; // Already saving, prevent double submit
     }
+    this.isSaving = true;
 
     // Valideer form
     if (!this.ensureValidity()) {
@@ -140,7 +143,8 @@ export abstract class FormBaseComponent
    */
   @HostListener('window:beforeunload', ['$event'])
   protected unloadNotification($event: BeforeUnloadEvent) {
-    if (!this.canDeactivate()) {
+    // Check if form has unsaved changes (sync check, canDeactivate is async)
+    if ((this?.form?.dirty || this?.form?.touched) && !this.isCanceling) {
       $event.returnValue = true;
     }
   }

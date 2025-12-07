@@ -1,14 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  FormBuilder,
   FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -39,7 +38,6 @@ import {
   PricingService,
 } from '../../../core/services/pricing.service';
 import { ServiceService } from '../../../core/services/service.service';
-import { ToastrService } from '../../../core/services/toastr.service';
 
 @Component({
   selector: 'app-appointment-form',
@@ -120,24 +118,74 @@ export class AppointmentFormComponent
   private readonly clientService = inject(ClientService);
   private readonly serviceService = inject(ServiceService);
   private readonly packageService = inject(PackageService);
-  private readonly toastrService = inject(ToastrService);
-  private readonly fb = inject(FormBuilder);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly pricingService = inject(PricingService);
+  private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
     super();
   }
 
   override afterValidityEnsured(): Promise<void> {
-    throw new Error('Method not implemented.');
+    return new Promise((resolve, reject) => {
+      const formValue = this.form.value;
+      const appointmentDate = formValue.appointmentDate;
+      const startTime = formValue.startTime;
+
+      // Combine date and time into startTime
+      let combinedStartTime: Date | null = null;
+      if (appointmentDate && startTime) {
+        combinedStartTime = new Date(appointmentDate);
+        const timeDate = new Date(startTime);
+        combinedStartTime.setHours(
+          timeDate.getHours(),
+          timeDate.getMinutes(),
+          0,
+          0,
+        );
+      }
+
+      const appointmentData: Appointment = {
+        id: formValue.id || undefined,
+        client: formValue.client!,
+        dog: formValue.dog!,
+        services: formValue.services || [],
+        packages: formValue.packages || [],
+        startTime: combinedStartTime || undefined,
+        endTime: this.calculatedEndTime || formValue.endTime || undefined,
+        notes: formValue.notes || undefined,
+        estimatedDuration: this.estimatedDurationMinutes || undefined,
+        estimatedPrice: this.priceCalculation?.totalPrice || undefined,
+        actualServices: formValue.actualServices || undefined,
+        actualPackages: formValue.actualPackages || undefined,
+        actualEndTime: formValue.actualEndTime || undefined,
+      };
+
+      const operation = this.isEditMode
+        ? this.appointmentService.update(appointmentData)
+        : this.appointmentService.add(appointmentData);
+
+      operation.subscribe({
+        next: () => {
+          this.finalizeSaveSuccess();
+          this.toastr.success(
+            'Succes',
+            `Afspraak ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
+          );
+          this.router.navigate(['/appointments']);
+          resolve();
+        },
+        error: (err) => {
+          this.toastr.error('Fout', err.message);
+          reject(err);
+        },
+      });
+    });
   }
 
   override initForm(): Promise<void> {
     return new Promise((resolve) => {
-      this.form = this.fb.group({
+      this.form = this.formBuilder.group({
         id: new FormControl(null),
         client: new FormControl(null, Validators.required),
         dog: new FormControl(
@@ -166,7 +214,7 @@ export class AppointmentFormComponent
     this.loadPackages();
 
     if (this.isEditMode) {
-      const appointmentId = this.route.snapshot.paramMap.get('id');
+      const appointmentId = this.activatedRoute.snapshot.paramMap.get('id');
       this.form.controls.id.patchValue(appointmentId);
       this.loadAppointmentData(appointmentId);
       this.form.controls.appointmentDate.setValidators(Validators.required);
@@ -179,62 +227,93 @@ export class AppointmentFormComponent
       ]);
       this.form.controls.appointmentDate.setValidators(Validators.required);
       this.form.controls.startTime.setValidators(Validators.required);
+
+      // Create mode - form is ready
+      this.isInitialized = true;
+      this.isLoading = false;
     }
 
     // Subscribe to changes for duration calculation
     this.setupDurationCalculation();
 
-    this.form.get('client')?.valueChanges.subscribe((client) => {
-      this.dogs = client ? client.dogs : [];
-      this.form.get('dog')?.setValue(null);
+    this.form
+      .get('client')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((client) => {
+        this.dogs = client ? client.dogs : [];
+        this.form.get('dog')?.setValue(null);
 
-      // Enable/disable dog control based on client selection
-      if (client) {
-        this.form.get('dog')?.enable();
-      } else {
-        this.form.get('dog')?.disable();
-      }
-    });
+        // Enable/disable dog control based on client selection
+        if (client) {
+          this.form.get('dog')?.enable();
+        } else {
+          this.form.get('dog')?.disable();
+        }
+      });
   }
 
   setupDurationCalculation(): void {
     // Recalculate duration when dog, packages, or services change
-    this.form.get('dog')?.valueChanges.subscribe(() => {
-      this.calculateEstimatedDuration();
-      this.calculatePricing();
-    });
+    this.form
+      .get('dog')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.calculateEstimatedDuration();
+        this.calculatePricing();
+      });
 
-    this.form.get('packages')?.valueChanges.subscribe(() => {
-      this.calculateEstimatedDuration();
-      this.calculatePricing();
-    });
+    this.form
+      .get('packages')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.calculateEstimatedDuration();
+        this.calculatePricing();
+      });
 
-    this.form.get('services')?.valueChanges.subscribe(() => {
-      this.calculateEstimatedDuration();
-      this.calculatePricing();
-    });
+    this.form
+      .get('services')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.calculateEstimatedDuration();
+        this.calculatePricing();
+      });
 
     // Update end time when start time or duration changes
-    this.form.get('startTime')?.valueChanges.subscribe(() => {
-      this.updateCalculatedEndTime();
-    });
+    this.form
+      .get('startTime')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.updateCalculatedEndTime();
+      });
 
-    this.form.get('appointmentDate')?.valueChanges.subscribe(() => {
-      this.updateCalculatedEndTime();
-    });
+    this.form
+      .get('appointmentDate')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.updateCalculatedEndTime();
+      });
 
     // Calculate actual pricing when actual values change
-    this.form.get('actualServices')?.valueChanges.subscribe(() => {
-      this.calculateActualPricing();
-    });
+    this.form
+      .get('actualServices')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.calculateActualPricing();
+      });
 
-    this.form.get('actualPackages')?.valueChanges.subscribe(() => {
-      this.calculateActualPricing();
-    });
+    this.form
+      .get('actualPackages')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.calculateActualPricing();
+      });
 
-    this.form.get('actualEndTime')?.valueChanges.subscribe(() => {
-      this.calculateActualPricing();
-    });
+    this.form
+      .get('actualEndTime')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        this.calculateActualPricing();
+      });
   }
 
   calculateEstimatedDuration(): void {
@@ -402,128 +481,80 @@ export class AppointmentFormComponent
   }
 
   loadClients(): void {
-    this.clientService.getData$().subscribe((clients) => {
-      this.clients = clients;
-    });
+    this.clientService
+      .getData$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((clients) => {
+        this.clients = clients;
+      });
   }
 
   loadServices(): void {
     this.serviceService
       .getData$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((services) => (this.services = services));
   }
 
   loadPackages(): void {
     this.packageService
       .getData$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((packages) => (this.packages = packages));
   }
 
   loadAppointmentData(id: string): void {
-    this.appointmentService.getById(id).subscribe((appointment) => {
-      if (appointment) {
-        // Split startTime into date and time
-        if (appointment.startTime) {
-          const startDate = new Date(appointment.startTime);
-          this.form.patchValue({
-            ...appointment,
-            appointmentDate: startDate,
-            startTime: startDate,
-          });
+    this.appointmentService
+      .getById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((appointment) => {
+        if (appointment) {
+          // Split startTime into date and time
+          if (appointment.startTime) {
+            const startDate = new Date(appointment.startTime);
+            this.form.patchValue({
+              ...appointment,
+              appointmentDate: startDate,
+              startTime: startDate,
+            });
+          } else {
+            this.form.patchValue(appointment);
+          }
+
+          // Initialize actual values with estimated if not set
+          if (
+            !appointment.actualServices ||
+            appointment.actualServices.length === 0
+          ) {
+            this.form.patchValue({
+              actualServices: appointment.services || [],
+            });
+          }
+          if (
+            !appointment.actualPackages ||
+            appointment.actualPackages.length === 0
+          ) {
+            this.form.patchValue({
+              actualPackages: appointment.packages || [],
+            });
+          }
+
+          // Trigger pricing calculations
+          this.calculatePricing();
+          this.calculateActualPricing();
+
+          this.breadcrumbService.setItems([
+            { label: 'Afspraken', routerLink: '/appointments' },
+            { label: `Afspraak van ${appointment.client.name}` },
+          ]);
+
+          // Edit mode - form is ready after data loaded
+          this.isInitialized = true;
+          this.isLoading = false;
         } else {
-          this.form.patchValue(appointment);
+          this.router.navigate(['/not-found']);
         }
-
-        // Initialize actual values with estimated if not set
-        if (
-          !appointment.actualServices ||
-          appointment.actualServices.length === 0
-        ) {
-          this.form.patchValue({
-            actualServices: appointment.services || [],
-          });
-        }
-        if (
-          !appointment.actualPackages ||
-          appointment.actualPackages.length === 0
-        ) {
-          this.form.patchValue({
-            actualPackages: appointment.packages || [],
-          });
-        }
-
-        // Trigger pricing calculations
-        this.calculatePricing();
-        this.calculateActualPricing();
-
-        this.breadcrumbService.setItems([
-          { label: 'Afspraken', routerLink: '/appointments' },
-          { label: `Afspraak van ${appointment.client.name}` },
-        ]);
-      } else {
-        this.router.navigate(['/not-found']);
-      }
-    });
-  }
-
-  save(): void {
-    if (this.form.invalid) {
-      this.toastrService.error('Fout', 'Vul alle verplichte velden in');
-      return;
-    }
-
-    const formValue = this.form.value;
-    const appointmentDate = formValue.appointmentDate;
-    const startTime = formValue.startTime;
-
-    // Combine date and time into startTime
-    let combinedStartTime: Date | null = null;
-    if (appointmentDate && startTime) {
-      combinedStartTime = new Date(appointmentDate);
-      const timeDate = new Date(startTime);
-      combinedStartTime.setHours(
-        timeDate.getHours(),
-        timeDate.getMinutes(),
-        0,
-        0,
-      );
-    }
-
-    const appointmentData: Appointment = {
-      id: formValue.id || undefined,
-      client: formValue.client!,
-      dog: formValue.dog!,
-      services: formValue.services || [],
-      packages: formValue.packages || [],
-      startTime: combinedStartTime || undefined,
-      endTime: this.calculatedEndTime || formValue.endTime || undefined,
-      notes: formValue.notes || undefined,
-      estimatedDuration: this.estimatedDurationMinutes || undefined,
-      estimatedPrice: this.priceCalculation?.totalPrice || undefined,
-      actualServices: formValue.actualServices || undefined,
-      actualPackages: formValue.actualPackages || undefined,
-      actualEndTime: formValue.actualEndTime || undefined,
-    };
-
-    const operation = this.isEditMode
-      ? this.appointmentService.update(appointmentData)
-      : this.appointmentService.add(appointmentData);
-
-    operation.subscribe({
-      next: (result) => {
-        // Mark form as pristine to prevent CanDeactivate warning
-        this.finalizeSaveSuccess();
-
-        this.toastrService.success(
-          'Succes',
-          `Afspraak ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
-        );
-        this.router.navigate(['/appointments']);
-      },
-      error: (err) => {
-        this.toastrService.error('Fout', err.message);
-      },
-    });
+      });
   }
 
   private getFormErrors(): Record<string, unknown> {

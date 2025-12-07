@@ -32,6 +32,7 @@ import { MobileService } from '../../services/mobile.service';
           pInputText
           type="text"
           #searchInput
+          pSize="small"
           (input)="filter(searchInput.value)"
           [placeholder]="placeholder"
           class="w-full"
@@ -40,7 +41,7 @@ import { MobileService } from '../../services/mobile.service';
       <p-button
         [label]="addLabel"
         icon="pi pi-plus"
-        [size]="isMobile ? 'small' : 'large'"
+        size="small"
         (click)="addClick.emit()"
       ></p-button>
     </div>

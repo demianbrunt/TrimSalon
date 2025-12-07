@@ -188,7 +188,6 @@ export class BreedService extends BaseService<Breed> {
         );
 
         if (breedsToAdd.length > 0) {
-          console.log(`Adding ${breedsToAdd.length} default breeds.`);
           breedsToAdd.forEach((breed) => {
             this.add(breed).subscribe();
           });

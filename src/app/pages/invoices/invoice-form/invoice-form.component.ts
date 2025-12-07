@@ -1,13 +1,11 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-  FormBuilder,
+  FormControl,
   FormGroup,
-  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DatePicker } from 'primeng/datepicker';
@@ -16,20 +14,36 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { Textarea } from 'primeng/textarea';
-import { CanDeactivateComponent } from '../../../core/components/can-deactivate/can-deactivate.component';
+import { firstValueFrom } from 'rxjs';
+
+import { FormBaseComponent } from '../../../core/components/form-base/form-base.component';
+import { ValidationMessageComponent } from '../../../core/components/validation-message/validation-message.component';
 import { Client } from '../../../core/models/client.model';
 import { Invoice, PaymentStatus } from '../../../core/models/invoice.model';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { ClientService } from '../../../core/services/client.service';
-import { ConfirmationDialogService } from '../../../core/services/confirmation-dialog.service';
 import { InvoiceService } from '../../../core/services/invoice.service';
-import { ToastrService } from '../../../core/services/toastr.service';
+
+/**
+ * Typed form interface for Invoice
+ */
+interface InvoiceFormControls {
+  invoiceNumber: FormControl<string>;
+  client: FormControl<Client | null>;
+  subtotal: FormControl<number>;
+  vatRate: FormControl<number>;
+  vatAmount: FormControl<number>;
+  totalAmount: FormControl<number>;
+  paymentStatus: FormControl<PaymentStatus>;
+  issueDate: FormControl<Date>;
+  dueDate: FormControl<Date>;
+  paidDate: FormControl<Date | null>;
+  notes: FormControl<string>;
+}
 
 @Component({
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
@@ -39,13 +53,15 @@ import { ToastrService } from '../../../core/services/toastr.service';
     FloatLabelModule,
     DatePicker,
     CardModule,
+    ValidationMessageComponent,
   ],
   templateUrl: './invoice-form.component.html',
   styleUrls: ['./invoice-form.component.css'],
 })
-export class InvoiceFormComponent implements OnInit, CanDeactivateComponent {
-  form!: FormGroup;
+export class InvoiceFormComponent extends FormBaseComponent implements OnInit {
+  override form!: FormGroup<InvoiceFormControls>;
   clients: Client[] = [];
+
   paymentStatuses = [
     { label: 'Openstaand', value: PaymentStatus.PENDING },
     { label: 'Betaald', value: PaymentStatus.PAID },
@@ -53,178 +69,169 @@ export class InvoiceFormComponent implements OnInit, CanDeactivateComponent {
     { label: 'Geannuleerd', value: PaymentStatus.CANCELLED },
   ];
 
-  isSaving = false;
-  itemId?: string;
-  isEditMode = false;
-  hasUnsavedChanges = false;
-
-  private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly invoiceService = inject(InvoiceService);
   private readonly clientService = inject(ClientService);
-  private readonly toastrService = inject(ToastrService);
-  private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly breadcrumbService = inject(BreadcrumbService);
-  private readonly confirmationDialogService = inject(
-    ConfirmationDialogService,
-  );
 
   ngOnInit(): void {
-    this.itemId = this.route.snapshot.paramMap.get('id') || undefined;
-    this.isEditMode = !!this.itemId;
-
     this.breadcrumbService.setItems([
       { label: 'Facturen', routerLink: '/invoices' },
       { label: this.isEditMode ? 'Bewerken' : 'Nieuw' },
     ]);
 
-    this.initializeForm();
-    this.loadData();
-
-    // Track form changes
-    this.form.valueChanges.subscribe(() => {
-      this.hasUnsavedChanges = true;
-    });
+    this.initForm();
   }
 
-  initializeForm(): void {
-    this.form = this.fb.group({
-      invoiceNumber: ['', Validators.required],
-      client: [null, Validators.required],
-      subtotal: [0, [Validators.required, Validators.min(0)]],
-      vatRate: [
-        0,
-        [Validators.required, Validators.min(0), Validators.max(100)],
-      ],
-      vatAmount: [{ value: 0, disabled: true }],
-      totalAmount: [{ value: 0, disabled: true }],
-      paymentStatus: [PaymentStatus.PENDING, Validators.required],
-      issueDate: [new Date(), Validators.required],
-      dueDate: [this.getDefaultDueDate(), Validators.required],
-      paidDate: [null],
-      notes: [''],
+  /**
+   * Initialize form with typed controls and setup value change listeners
+   */
+  async initForm(): Promise<void> {
+    this.form = new FormGroup<InvoiceFormControls>({
+      invoiceNumber: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      client: new FormControl<Client | null>(null, {
+        validators: [Validators.required],
+      }),
+      subtotal: new FormControl(0, {
+        nonNullable: true,
+        validators: [Validators.required, Validators.min(0)],
+      }),
+      vatRate: new FormControl(0, {
+        nonNullable: true,
+        validators: [
+          Validators.required,
+          Validators.min(0),
+          Validators.max(100),
+        ],
+      }),
+      vatAmount: new FormControl(
+        { value: 0, disabled: true },
+        { nonNullable: true },
+      ),
+      totalAmount: new FormControl(
+        { value: 0, disabled: true },
+        { nonNullable: true },
+      ),
+      paymentStatus: new FormControl(PaymentStatus.PENDING, {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      issueDate: new FormControl(new Date(), {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      dueDate: new FormControl(this.getDefaultDueDate(), {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      paidDate: new FormControl<Date | null>(null),
+      notes: new FormControl('', { nonNullable: true }),
     });
 
+    this.setupValueChangeListeners();
+    await this.loadData();
+  }
+
+  /**
+   * Setup reactive listeners for calculated fields
+   * Uses takeUntilDestroyed for automatic cleanup
+   */
+  private setupValueChangeListeners(): void {
     // Calculate VAT and total when subtotal or VAT rate changes
-    this.form.get('subtotal')?.valueChanges.subscribe(() => {
-      this.calculateTotals();
-    });
-    this.form.get('vatRate')?.valueChanges.subscribe(() => {
-      this.calculateTotals();
-    });
+    this.form.controls.subtotal.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.calculateTotals());
+
+    this.form.controls.vatRate.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.calculateTotals());
 
     // Auto-set paid date to today when status changes to PAID
-    this.form.get('paymentStatus')?.valueChanges.subscribe((status) => {
-      if (status === PaymentStatus.PAID && !this.form.get('paidDate')?.value) {
-        this.form.patchValue({ paidDate: new Date() }, { emitEvent: false });
+    this.form.controls.paymentStatus.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((status) => {
+        if (
+          status === PaymentStatus.PAID &&
+          !this.form.controls.paidDate.value
+        ) {
+          this.form.controls.paidDate.setValue(new Date());
+        }
+      });
+  }
+
+  /**
+   * Load clients and invoice data (if editing)
+   */
+  private async loadData(): Promise<void> {
+    try {
+      this.clients = await firstValueFrom(this.clientService.getData$());
+
+      if (this.isEditMode && this.routeIdParam) {
+        const invoice = await firstValueFrom(
+          this.invoiceService.getById(this.routeIdParam as string),
+        );
+        this.form.patchValue(invoice);
       }
-    });
-  }
 
-  loadData(): void {
-    this.clientService.getData$().subscribe({
-      next: (clients) => {
-        this.clients = clients;
-      },
-      error: (err) => {
-        this.toastrService.error('Fout', err.message);
-      },
-    });
-
-    if (this.isEditMode && this.itemId) {
-      this.invoiceService.getById(this.itemId).subscribe({
-        next: (invoice) => {
-          this.form.patchValue(invoice);
-        },
-        error: (err) => {
-          this.toastrService.error('Fout', err.message);
-        },
-      });
+      // Form is ready after data loaded
+      this.isInitialized = true;
+      this.isLoading = false;
+    } catch (err) {
+      this.toastr.error('Fout', (err as Error).message);
     }
   }
 
-  save(): void {
-    if (this.form.valid) {
-      this.isSaving = true;
-      const formValue = this.form.getRawValue();
+  /**
+   * Called by FormBaseComponent.submit() after validation passes
+   */
+  async afterValidityEnsured(): Promise<void> {
+    const formValue = this.form.getRawValue();
 
-      const invoice: Invoice = {
-        ...formValue,
-        items: [], // Simplified - no line items for now
-        id: this.itemId,
-      };
+    const invoice: Invoice = {
+      ...formValue,
+      items: [], // Simplified - no line items for now
+      id: this.routeIdParam as string | undefined,
+    };
 
-      const saveObservable = this.isEditMode
-        ? this.invoiceService.update(invoice)
-        : this.invoiceService.add(invoice);
+    try {
+      if (this.isEditMode) {
+        await firstValueFrom(this.invoiceService.update(invoice));
+      } else {
+        await firstValueFrom(this.invoiceService.add(invoice));
+      }
 
-      saveObservable.subscribe({
-        next: () => {
-          // Mark form as pristine to prevent CanDeactivate warning
-          this.form.markAsPristine();
-
-          this.toastrService.success(
-            'Succes',
-            `Factuur ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
-          );
-          this.hasUnsavedChanges = false;
-          this.router.navigate(['/invoices']);
-        },
-        error: (err) => {
-          this.toastrService.error('Fout', err.message);
-          this.isSaving = false;
-        },
-      });
-    } else {
-      this.toastrService.error('Fout', 'Vul alle verplichte velden in');
-    }
-  }
-
-  cancel(): void {
-    if (this.form.dirty) {
-      this.confirmationDialogService
-        .open(
-          'Wijzigingen annuleren',
-          'Weet je zeker dat je wilt annuleren? De gemaakte wijzigingen zullen verloren gaan.',
-        )
-        .then((confirmed) => {
-          if (confirmed) {
-            this.router.navigate(['/invoices']);
-          }
-        });
-    } else {
-      this.router.navigate(['/invoices']);
-    }
-  }
-
-  canDeactivate(): Promise<boolean> {
-    if (this.form.dirty && this.hasUnsavedChanges) {
-      return this.confirmationDialogService.open(
-        'Openstaande wijzigingen',
-        '<b>Let op!</b> Vergeten op te slaan? Als je doorgaat zullen de niet opgeslagen wijzigingen verloren gaan.',
+      this.finalizeSaveSuccess();
+      this.toastr.success(
+        'Succes',
+        `Factuur ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
       );
+      this.router.navigate(['/invoices']);
+    } catch (err) {
+      this.toastr.error('Fout', (err as Error).message);
     }
-    return Promise.resolve(true);
   }
 
+  /**
+   * Calculate VAT amount and total from subtotal and VAT rate
+   */
   private calculateTotals(): void {
-    const subtotal = this.form.get('subtotal')?.value || 0;
-    const vatRate = this.form.get('vatRate')?.value || 0;
+    const subtotal = this.form.controls.subtotal.value || 0;
+    const vatRate = this.form.controls.vatRate.value || 0;
     const vatAmount = (subtotal * vatRate) / 100;
     const totalAmount = subtotal + vatAmount;
 
-    this.form.patchValue(
-      {
-        vatAmount,
-        totalAmount,
-      },
-      { emitEvent: false },
-    );
+    this.form.patchValue({ vatAmount, totalAmount }, { emitEvent: false });
   }
 
+  /**
+   * Get default due date (30 days from today)
+   */
   private getDefaultDueDate(): Date {
     const date = new Date();
-    date.setDate(date.getDate() + 30); // 30 days from now
+    date.setDate(date.getDate() + 30);
     return date;
   }
 }

@@ -19,15 +19,27 @@ export class AppDialogService {
     const finalConfig: DynamicDialogConfig = isMobile
       ? {
           ...config,
+          maximizable: true,
           width: '100%',
-          height: '100%',
-          styleClass: `mobile-dialog ${config.styleClass || ''}`,
+          height: '100vh',
           modal: true,
           closeOnEscape: false,
           dismissableMask: false,
         }
       : config;
 
-    return this.dialogService.open(component, finalConfig);
+    const ref = this.dialogService.open(component, finalConfig);
+
+    // Maximize dialog on mobile after it opens
+    if (isMobile) {
+      setTimeout(() => {
+        const dialogInstance = this.dialogService.getInstance(ref);
+        if (dialogInstance) {
+          dialogInstance.maximize();
+        }
+      }, 0);
+    }
+
+    return ref;
   }
 }

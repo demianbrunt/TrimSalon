@@ -7,7 +7,9 @@ describe('CanDeactivateComponentGuard', () => {
   let mockComponent: jasmine.SpyObj<CanDeactivateComponent>;
 
   beforeEach(() => {
-    mockComponent = jasmine.createSpyObj('CanDeactivateComponent', ['canDeactivate']);
+    mockComponent = jasmine.createSpyObj('CanDeactivateComponent', [
+      'canDeactivate',
+    ]);
 
     TestBed.configureTestingModule({
       providers: [CanDeactivateComponentGuard],

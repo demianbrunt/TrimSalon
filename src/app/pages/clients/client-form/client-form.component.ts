@@ -1,15 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormArray,
-  FormBuilder,
   FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
 import {
   AutoCompleteCompleteEvent,
   AutoCompleteModule,
@@ -25,13 +24,13 @@ import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { FormBaseComponent } from '../../../core/components/form-base/form-base.component';
+import { ValidationMessageComponent } from '../../../core/components/validation-message/validation-message.component';
 import { Breed } from '../../../core/models/breed.model';
 import { Client } from '../../../core/models/client.model';
 import { Dog } from '../../../core/models/dog.model';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { BreedService } from '../../../core/services/breed.service';
 import { ClientService } from '../../../core/services/client.service';
-import { ToastrService } from '../../../core/services/toastr.service';
 @Component({
   selector: 'app-client-form',
   standalone: true,
@@ -50,6 +49,7 @@ import { ToastrService } from '../../../core/services/toastr.service';
     AutoCompleteModule,
     CardModule,
     MessageModule,
+    ValidationMessageComponent,
   ],
   templateUrl: './client-form.component.html',
   styleUrls: ['./client-form.component.css'],
@@ -77,11 +77,8 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
 
   private readonly clientService = inject(ClientService);
   private readonly breedService = inject(BreedService);
-  private readonly toastrService = inject(ToastrService);
-  private readonly fb = inject(FormBuilder);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly breadcrumbService = inject(BreadcrumbService);
+  private readonly destroyRef = inject(DestroyRef);
 
   get canDeleteDog() {
     return this.dogsArray.length > 1;
@@ -104,17 +101,52 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   }
 
   override afterValidityEnsured(): Promise<void> {
-    throw new Error('Method not implemented.');
+    return new Promise((resolve, reject) => {
+      const clientData: Client = {
+        id: this.form.value.id,
+        name: this.form.value.name,
+        email: this.form.value.email,
+        phone: this.form.value.phone,
+        dogs: this.form.value.dogs.map((dog) => ({
+          name: dog.name,
+          breed: dog.breed,
+          age: dog.age,
+          gender: dog.gender,
+          isNeutered: dog.isNeutered,
+          isAggressive: dog.isAggressive,
+        })),
+      };
+
+      const operation = this.isEditMode
+        ? this.clientService.update(clientData)
+        : this.clientService.add(clientData);
+
+      operation.subscribe({
+        next: () => {
+          this.finalizeSaveSuccess();
+          this.toastr.success(
+            'Succes',
+            `Klant ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
+          );
+          this.router.navigate(['/clients']);
+          resolve();
+        },
+        error: (err) => {
+          this.toastr.error('Fout', err.message);
+          reject(err);
+        },
+      });
+    });
   }
 
   override initForm(): Promise<void> {
     return new Promise((resolve) => {
-      this.form = this.fb.group({
+      this.form = this.formBuilder.group({
         id: new FormControl(null),
         name: new FormControl(null, Validators.required),
         email: new FormControl(null, [Validators.required, Validators.email]),
         phone: new FormControl(null, Validators.required),
-        dogs: this.fb.array<
+        dogs: this.formBuilder.array<
           FormGroup<{
             name: FormControl<string | null>;
             breed: FormControl<Breed | null>;
@@ -138,11 +170,15 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
     this.initForm();
 
     if (this.isEditMode) {
-      const clientId = this.route.snapshot.paramMap.get('id');
+      const clientId = this.activatedRoute.snapshot.paramMap.get('id');
       this.form.controls.id.patchValue(clientId);
       this.loadClientData(clientId);
       return;
     }
+
+    // Create mode - form is ready
+    this.isInitialized = true;
+    this.isLoading = false;
 
     this.breadcrumbService.setItems([
       { label: 'Klanten', routerLink: '/clients' },
@@ -158,26 +194,39 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   }
 
   loadBreeds(): void {
-    this.breedService.getData$().subscribe((data) => {
-      this.allBreeds = data.sort((a, b) => a.name.localeCompare(b.name));
-      this.filteredBreeds = this.allBreeds;
-    });
+    this.breedService
+      .getData$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((data) => {
+        this.allBreeds = data.sort((a, b) => a.name.localeCompare(b.name));
+        this.filteredBreeds = this.allBreeds;
+      });
   }
 
   loadClientData(id: string): void {
-    this.clientService.getById(id).subscribe((client) => {
-      if (client == null) {
-        this.router.navigate(['/not-found']);
-      }
+    this.clientService
+      .getById(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((client) => {
+        if (client == null) {
+          this.router.navigate(['/not-found']);
+          return;
+        }
 
-      this.form.patchValue(client);
-      this.dogsArray.clear();
-      client.dogs.forEach((dog) => this.dogsArray.push(this.newDogGroup(dog)));
-      this.breadcrumbService.setItems([
-        { label: 'Klanten', routerLink: '/clients' },
-        { label: client.name },
-      ]);
-    });
+        this.form.patchValue(client);
+        this.dogsArray.clear();
+        client.dogs.forEach((dog) =>
+          this.dogsArray.push(this.newDogGroup(dog)),
+        );
+        this.breadcrumbService.setItems([
+          { label: 'Klanten', routerLink: '/clients' },
+          { label: client.name },
+        ]);
+
+        // Edit mode - form is ready after data loaded
+        this.isInitialized = true;
+        this.isLoading = false;
+      });
   }
 
   get dogsArray() {
@@ -185,7 +234,7 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   }
 
   newDogGroup(dog?: Dog): FormGroup {
-    return this.fb.group({
+    return this.formBuilder.group({
       name: [dog?.name || '', Validators.required],
       breed: [dog?.breed, Validators.required],
       age: [dog?.age || null],
@@ -201,44 +250,6 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
 
   removeDog(index: number): void {
     this.dogsArray.removeAt(index);
-  }
-
-  saveClient(): void {
-    if (this.form.invalid) {
-      return;
-    }
-
-    const clientData: Client = {
-      id: this.form.value.id,
-      name: this.form.value.name,
-      email: this.form.value.email,
-      phone: this.form.value.phone,
-      dogs: this.form.value.dogs.map((dog) => ({
-        name: dog.name,
-        breed: dog.breed,
-        age: dog.age,
-        gender: dog.gender,
-        isNeutered: dog.isNeutered,
-        isAggressive: dog.isAggressive,
-      })),
-    };
-
-    const operation = this.isEditMode
-      ? this.clientService.update(clientData)
-      : this.clientService.add(clientData);
-
-    operation.subscribe({
-      next: () => {
-        this.toastrService.success(
-          'Succes',
-          `Klant ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
-        );
-        this.router.navigate(['/clients']);
-      },
-      error: (err) => {
-        this.toastrService.error('Fout', err.message);
-      },
-    });
   }
 
   override cancel() {

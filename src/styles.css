@@ -13,19 +13,6 @@ body {
   overflow: hidden; /* Prevent body scroll, handle in content-outlet */
 }
 
-/* Mobile Dialog Styles */
-.mobile-dialog .p-dialog {
-  max-height: 100vh !important;
-  height: 100% !important;
-  border-radius: 0 !important;
-}
-
-.mobile-dialog .p-dialog-content {
-  height: 100% !important;
-  flex-grow: 1;
-  padding: 0 !important;
-}
-
 /* Layout Utilities */
 .main-container {
   height: 100vh;
@@ -60,7 +47,9 @@ body {
   /* Sticky Footer for Forms */
   .sticky-footer-actions {
     position: fixed;
-    bottom: 60px; /* Height of sub-nav */
+    bottom: calc(
+      75px + env(safe-area-inset-bottom)
+    ); /* Height of sub-nav + safe area */
     left: 0;
     width: 100%;
     background: var(--p-surface-0, var(--surface-card, #ffffff));
@@ -75,7 +64,7 @@ body {
 
   /* Ensure content isn't hidden behind sticky footer + sub-nav */
   .form-content-wrapper {
-    padding-bottom: 160px;
+    padding-bottom: calc(200px + env(safe-area-inset-bottom));
   }
 
   /* Dialog Footer Mobile */
@@ -88,14 +77,14 @@ body {
     z-index: 1;
   }
 
-  /* Sticky paginator */
+  /* Sticky paginator - z-index below sub-nav to avoid overlap */
   .p-paginator {
     position: fixed !important;
-    bottom: 60px !important;
+    bottom: calc(75px + env(safe-area-inset-bottom)) !important;
     left: 0 !important;
     right: 0 !important;
     width: 100% !important;
-    z-index: 1001 !important;
+    z-index: 900 !important; /* Below sub-nav (1000) */
     background: var(--p-surface-0) !important;
     border-top: 1px solid var(--surface-border) !important;
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05) !important;
@@ -104,7 +93,7 @@ body {
   /* Content padding for fixed header and paginator */
   .p-dataview-content {
     padding-top: 40px !important;
-    padding-bottom: 40px !important;
+    padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
   }
 
   /* Style view toggle bar */
@@ -216,15 +205,37 @@ body::before {
   html {
     font-size: 16px;
   }
+
+  /* Desktop layout with side navigation */
   .main-container {
-    margin-left: 80px;
+    margin-left: 80px; /* Space for sub-nav */
+  }
+
+  /* Top-nav spans full width on desktop, above sub-nav */
+  app-top-nav {
+    position: fixed;
+    top: 0;
+    left: 0; /* Full width from left edge */
+    right: 0;
+    z-index: 1100; /* Above sub-nav (1050) */
+  }
+
+  /* Sub-nav starts below top-nav on desktop */
+  app-sub-nav {
+    display: block;
+  }
+
+  /* Breadcrumb positioning on desktop */
+  app-breadcrumb {
+    display: block;
+    padding-top: 70px; /* Space for top-nav (approximately) */
   }
 }
 
 /* Mobile styles */
 @media (max-width: 768px) {
   .main-container {
-    padding-bottom: 70px;
+    padding-bottom: calc(75px + env(safe-area-inset-bottom));
   }
 }
 
@@ -239,9 +250,20 @@ body::before {
     padding: 1rem;
   }
 
-  .p-dialog {
+  /* Non-maximized dialogs get 95vw width */
+  .p-dialog:not(.p-dialog-maximized) {
     width: 95vw !important;
     max-width: 95vw !important;
+  }
+
+  /* Maximized dialogs get full width */
+  .p-dialog.p-dialog-maximized {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
   }
 }
 
@@ -249,10 +271,6 @@ body::before {
 @media (max-width: 768px) {
   .p-field {
     margin-bottom: 1.5rem;
-  }
-
-  .p-button {
-    padding: 0.75rem 1rem;
   }
 }
 

@@ -2,10 +2,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0 1rem 0 1rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   background-color: var(--p-surface-0);
-  z-index: 1000;
+  z-index: 1050; /* Higher than paginator (900) and sticky-footer (900) */
 }
 
 /* Mobile styles */
@@ -15,7 +15,6 @@
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 0.75rem 1rem;
     padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
     background-color: var(--p-surface-0);
   }
@@ -40,12 +39,11 @@
   .sub-nav-container {
     flex-direction: column;
     width: 80px;
-    height: 100vh;
+    height: calc(100vh - 70px); /* Subtract top-nav height */
     position: fixed;
     left: 0;
-    top: 0;
+    top: 70px; /* Start below top-nav */
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-    padding: 1rem 0;
   }
 
   .sub-nav-container ::ng-deep .p-button {

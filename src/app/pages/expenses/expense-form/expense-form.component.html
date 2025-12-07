@@ -1,15 +1,12 @@
-<div class="p-4">
-  <p-card
-    [ngClass]="{ 'mobile-card': isMobile }"
-    styleClass="mx-auto max-w-3xl"
-  >
+<div class="md:p-4">
+  <p-card [class.mobile-card]="isMobile" styleClass="max-w-3xl">
     <ng-template pTemplate="title">
       <h2 class="m-0 mb-5">
         {{ isEditMode ? "Uitgave Bewerken" : "Nieuwe Uitgave" }}
       </h2>
     </ng-template>
 
-    <form [formGroup]="form" class="p-fluid">
+    <form [formGroup]="form" class="p-fluid" (ngSubmit)="submit()">
       <div class="field">
         <p-floatlabel variant="on">
           <input
@@ -18,9 +15,14 @@
             formControlName="description"
             class="w-full"
             autocomplete="off"
+            aria-required="true"
           />
           <label for="description">Omschrijving *</label>
         </p-floatlabel>
+        <app-validation-message
+          [control]="form.controls.description"
+          label="Omschrijving"
+        />
       </div>
 
       <div class="formgrid grid">
@@ -32,9 +34,14 @@
               mode="currency"
               currency="EUR"
               styleClass="w-full"
+              aria-required="true"
             ></p-inputNumber>
             <label for="amount">Bedrag *</label>
           </p-floatlabel>
+          <app-validation-message
+            [control]="form.controls.amount"
+            label="Bedrag"
+          />
         </div>
 
         <div class="field col-12 md:col-6">
@@ -45,9 +52,14 @@
               dateFormat="dd-mm-yy"
               [showIcon]="true"
               styleClass="w-full"
+              aria-required="true"
             ></p-datepicker>
             <label for="date">Datum *</label>
           </p-floatlabel>
+          <app-validation-message
+            [control]="form.controls.date"
+            label="Datum"
+          />
         </div>
       </div>
 
@@ -60,9 +72,11 @@
             optionLabel="label"
             optionValue="value"
             styleClass="w-full"
+            aria-required="true"
           ></p-select>
           <label for="type">Type *</label>
         </p-floatlabel>
+        <app-validation-message [control]="form.controls.type" label="Type" />
       </div>
 
       <div class="field">
@@ -77,10 +91,12 @@
           <label for="notes">Notities (optioneel)</label>
         </p-floatlabel>
       </div>
-    </form>
 
+      <!-- Hidden submit button for form submission -->
+      <button type="submit" class="hidden"></button>
+    </form>
     <ng-template pTemplate="footer">
-      <div class="flex justify-content-end gap-2">
+      <div class="flex justify-content-end gap-2 sticky-footer-actions">
         <p-button
           label="Annuleren"
           icon="pi pi-times"
@@ -91,8 +107,8 @@
         <p-button
           label="Opslaan"
           icon="pi pi-check"
-          (click)="save()"
-          [disabled]="form.invalid"
+          (click)="submit()"
+          [loading]="isSaving"
           type="button"
         ></p-button>
       </div>

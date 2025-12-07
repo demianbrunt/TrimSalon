@@ -3,12 +3,14 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import localeNl from '@angular/common/locales/nl';
 import {
   ApplicationConfig,
+  ErrorHandler,
   isDevMode,
   LOCALE_ID,
   provideZoneChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ConfirmationDialogService } from './core/services/confirmation-dialog.service';
+import { GlobalErrorHandler } from './core/services/global-error-handler.service';
 
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
@@ -56,6 +58,7 @@ registerLocaleData(localeNl);
 export const commonProviders = [
   provideZoneChangeDetection({ eventCoalescing: true }),
   provideRouter(routes),
+  { provide: ErrorHandler, useClass: GlobalErrorHandler },
   providePrimeNG({
     theme: {
       preset: Aura,

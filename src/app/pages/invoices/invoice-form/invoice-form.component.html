@@ -1,4 +1,4 @@
-<div class="p-4">
+<div class="md:p-4">
   <p-card>
     <ng-template pTemplate="header">
       <div class="p-3">
@@ -8,7 +8,7 @@
       </div>
     </ng-template>
 
-    <form [formGroup]="form" (ngSubmit)="save()">
+    <form [formGroup]="form" (ngSubmit)="submit()">
       <div class="grid">
         <!-- Invoice Number -->
         <div class="col-12 md:col-6">
@@ -19,16 +19,12 @@
             formControlName="invoiceNumber"
             class="w-full"
             placeholder="Bijv. INV-2024-001"
+            aria-required="true"
           />
-          <small
-            class="text-red-500"
-            *ngIf="
-              form.get('invoiceNumber')?.invalid &&
-              form.get('invoiceNumber')?.touched
-            "
-          >
-            Factuurnummer is verplicht
-          </small>
+          <app-validation-message
+            [control]="form.controls.invoiceNumber"
+            label="Factuurnummer"
+          />
         </div>
 
         <!-- Client -->
@@ -41,13 +37,12 @@
             optionLabel="name"
             placeholder="Selecteer klant"
             class="w-full"
+            aria-required="true"
           ></p-select>
-          <small
-            class="text-red-500"
-            *ngIf="form.get('client')?.invalid && form.get('client')?.touched"
-          >
-            Klant is verplicht
-          </small>
+          <app-validation-message
+            [control]="form.controls.client"
+            label="Klant"
+          />
         </div>
 
         <!-- Issue Date -->
@@ -60,7 +55,12 @@
             placeholder="Selecteer datum"
             [showIcon]="true"
             class="w-full"
+            aria-required="true"
           ></p-datepicker>
+          <app-validation-message
+            [control]="form.controls.issueDate"
+            label="Factuurdatum"
+          />
         </div>
 
         <!-- Due Date -->
@@ -73,7 +73,12 @@
             placeholder="Selecteer datum"
             [showIcon]="true"
             class="w-full"
+            aria-required="true"
           ></p-datepicker>
+          <app-validation-message
+            [control]="form.controls.dueDate"
+            label="Vervaldatum"
+          />
         </div>
 
         <!-- Subtotal -->
@@ -87,7 +92,12 @@
             locale="nl-NL"
             class="w-full"
             [minFractionDigits]="2"
+            aria-required="true"
           ></p-inputNumber>
+          <app-validation-message
+            [control]="form.controls.subtotal"
+            label="Subtotaal"
+          />
         </div>
 
         <!-- VAT Rate -->
@@ -100,7 +110,12 @@
             [max]="100"
             suffix="%"
             class="w-full"
+            aria-required="true"
           ></p-inputNumber>
+          <app-validation-message
+            [control]="form.controls.vatRate"
+            label="BTW percentage"
+          />
         </div>
 
         <!-- VAT Amount (readonly) -->
@@ -142,27 +157,31 @@
             optionValue="value"
             placeholder="Selecteer status"
             class="w-full"
+            aria-required="true"
           ></p-select>
+          <app-validation-message
+            [control]="form.controls.paymentStatus"
+            label="Status"
+          />
         </div>
 
         <!-- Paid Date (only show if status is PAID) -->
-        <div
-          class="col-12 md:col-6"
-          *ngIf="form.get('paymentStatus')?.value === 'PAID'"
-        >
-          <label for="paidDate" class="block mb-2">Betaaldatum</label>
-          <p-datepicker
-            id="paidDate"
-            formControlName="paidDate"
-            dateFormat="dd-mm-yy"
-            placeholder="Selecteer datum"
-            [showIcon]="true"
-            class="w-full"
-          ></p-datepicker>
-        </div>
+        @if (form.controls.paymentStatus.value === "PAID") {
+          <div class="col-12 md:col-6">
+            <label for="paidDate" class="block mb-2">Betaaldatum</label>
+            <p-datepicker
+              id="paidDate"
+              formControlName="paidDate"
+              dateFormat="dd-mm-yy"
+              placeholder="Selecteer datum"
+              [showIcon]="true"
+              class="w-full"
+            ></p-datepicker>
+          </div>
+        }
 
         <!-- Notes -->
-        <div class="col-12">
+        <div class="col-12 mb-5">
           <label for="notes" class="block mb-2">Notities</label>
           <textarea
             pTextarea
@@ -176,7 +195,7 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="flex justify-content-end gap-2 mt-4">
+      <div class="flex justify-content-end gap-2 mt-4 sticky-footer-actions">
         <p-button
           label="Annuleren"
           icon="pi pi-times"
@@ -189,7 +208,6 @@
           icon="pi pi-check"
           type="submit"
           [loading]="isSaving"
-          [disabled]="form.invalid"
         ></p-button>
       </div>
     </form>

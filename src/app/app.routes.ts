@@ -3,28 +3,17 @@ import { FormMode } from './core/enums/form-mode.enum';
 import { authGuard } from './core/guards/auth.guard';
 
 import { CanDeactivateComponentGuard } from './core/guards/can-deactivate.guard';
-import { AppointmentsComponent } from './pages/appointments/appointments.component';
 import { AppointmentFormComponent } from './pages/appointments/appointment-form/appointment-form.component';
-import { ClientFormComponent } from './pages/clients/client-form/client-form.component';
-import { ClientsComponent } from './pages/clients/clients.component';
-import { ExpenseFormComponent } from './pages/expenses/expense-form/expense-form.component';
-import { ExpensesComponent } from './pages/expenses/expenses.component';
+import { AppointmentsComponent } from './pages/appointments/appointments.component';
 import { ForbiddenComponent } from './pages/forbidden/forbidden.component';
-import { InvoiceFormComponent } from './pages/invoices/invoice-form/invoice-form.component';
-import { InvoicesComponent } from './pages/invoices/invoices.component';
 import { NotFoundComponent } from './pages/not-found/not-found.component';
-import { PackageFormComponent } from './pages/packages/package-form/package-form.component';
-import { PackagesComponent } from './pages/packages/packages.component';
-import { ReportsComponent } from './pages/reports/reports.component';
-import { ServiceFormComponent } from './pages/services/service-form/service-form.component';
-import { ServicesComponent } from './pages/services/services.component';
 import { SignInComponent } from './pages/signin/signin.component';
 import { SignoutComponent } from './pages/signout/signout.component';
 
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'signin',
+    redirectTo: 'appointments',
     pathMatch: 'full',
   },
   {
@@ -54,100 +43,154 @@ export const routes: Routes = [
 
   {
     path: 'clients',
-    component: ClientsComponent,
+    loadComponent: () =>
+      import('./pages/clients/clients.component').then(
+        (m) => m.ClientsComponent,
+      ),
     canActivate: [authGuard],
     data: { breadcrumb: 'Klanten' },
   },
   {
     path: 'clients/new',
-    component: ClientFormComponent,
+    loadComponent: () =>
+      import('./pages/clients/client-form/client-form.component').then(
+        (m) => m.ClientFormComponent,
+      ),
     canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Nieuwe Klant' },
   },
   {
     path: 'clients/:id',
-    component: ClientFormComponent,
+    loadComponent: () =>
+      import('./pages/clients/client-form/client-form.component').then(
+        (m) => m.ClientFormComponent,
+      ),
     canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Klant Bewerken', formMode: FormMode.Edit },
   },
   {
     path: 'services',
-    component: ServicesComponent,
+    loadComponent: () =>
+      import('./pages/services/services.component').then(
+        (m) => m.ServicesComponent,
+      ),
     canActivate: [authGuard],
     data: { breadcrumb: 'Werkzaamheden' },
   },
   {
     path: 'services/new',
-    component: ServiceFormComponent,
+    loadComponent: () =>
+      import('./pages/services/service-form/service-form.component').then(
+        (m) => m.ServiceFormComponent,
+      ),
     canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Nieuwe Werkzaamheid' },
   },
   {
     path: 'services/:id',
-    component: ServiceFormComponent,
+    loadComponent: () =>
+      import('./pages/services/service-form/service-form.component').then(
+        (m) => m.ServiceFormComponent,
+      ),
     canActivate: [authGuard],
-    data: { breadcrumb: 'Werkzaamheid Bewerken' },
+    canDeactivate: [CanDeactivateComponentGuard],
+    data: { breadcrumb: 'Werkzaamheid Bewerken', formMode: FormMode.Edit },
   },
   {
     path: 'packages',
-    component: PackagesComponent,
+    loadComponent: () =>
+      import('./pages/packages/packages.component').then(
+        (m) => m.PackagesComponent,
+      ),
     canActivate: [authGuard],
     data: { breadcrumb: 'Pakketten' },
   },
   {
     path: 'packages/new',
-    component: PackageFormComponent,
+    loadComponent: () =>
+      import('./pages/packages/package-form/package-form.component').then(
+        (m) => m.PackageFormComponent,
+      ),
     canActivate: [authGuard],
+    canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Nieuw Pakket' },
   },
   {
     path: 'packages/:id',
-    component: PackageFormComponent,
+    loadComponent: () =>
+      import('./pages/packages/package-form/package-form.component').then(
+        (m) => m.PackageFormComponent,
+      ),
     canActivate: [authGuard],
-    data: { breadcrumb: 'Pakket Bewerken' },
+    canDeactivate: [CanDeactivateComponentGuard],
+    data: { breadcrumb: 'Pakket Bewerken', formMode: FormMode.Edit },
   },
   {
     path: 'reports',
-    component: ReportsComponent,
+    loadComponent: () =>
+      import('./pages/reports/reports.component').then(
+        (m) => m.ReportsComponent,
+      ),
     canActivate: [authGuard],
     data: { breadcrumb: 'Rapportages' },
   },
   {
     path: 'expenses',
-    component: ExpensesComponent,
+    loadComponent: () =>
+      import('./pages/expenses/expenses.component').then(
+        (m) => m.ExpensesComponent,
+      ),
     canActivate: [authGuard],
     data: { breadcrumb: 'Uitgaven' },
   },
   {
     path: 'expenses/new',
-    component: ExpenseFormComponent,
+    loadComponent: () =>
+      import('./pages/expenses/expense-form/expense-form.component').then(
+        (m) => m.ExpenseFormComponent,
+      ),
     canActivate: [authGuard],
     canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Nieuwe Uitgave' },
   },
   {
     path: 'expenses/:id',
-    component: ExpenseFormComponent,
+    loadComponent: () =>
+      import('./pages/expenses/expense-form/expense-form.component').then(
+        (m) => m.ExpenseFormComponent,
+      ),
     canActivate: [authGuard],
     canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Uitgave Bewerken', formMode: FormMode.Edit },
   },
   {
     path: 'invoices',
-    component: InvoicesComponent,
+    loadComponent: () =>
+      import('./pages/invoices/invoices.component').then(
+        (m) => m.InvoicesComponent,
+      ),
     canActivate: [authGuard],
     data: { breadcrumb: 'Facturen' },
   },
   {
     path: 'invoices/new',
-    component: InvoiceFormComponent,
+    loadComponent: () =>
+      import('./pages/invoices/invoice-form/invoice-form.component').then(
+        (m) => m.InvoiceFormComponent,
+      ),
     canActivate: [authGuard],
     canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Nieuwe Factuur' },
   },
   {
     path: 'invoices/:id',
-    component: InvoiceFormComponent,
+    loadComponent: () =>
+      import('./pages/invoices/invoice-form/invoice-form.component').then(
+        (m) => m.InvoiceFormComponent,
+      ),
     canActivate: [authGuard],
     canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Factuur Bewerken', formMode: FormMode.Edit },
