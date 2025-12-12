@@ -5,6 +5,8 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
+import { DialogModule } from 'primeng/dialog';
+import { DividerModule } from 'primeng/divider';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -23,6 +25,8 @@ import {
     ButtonModule,
     CardModule,
     CheckboxModule,
+    DialogModule,
+    DividerModule,
     InputNumberModule,
     ProgressSpinnerModule,
   ],
@@ -57,42 +61,46 @@ export class GoogleCalendarSyncDialog implements OnInit {
     this.dialogRef.close({ saved: true });
   }
 
-  async startSync(): Promise<void> {
-    try {
-      await this.syncService.startSync();
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Sync voltooid',
-        detail: 'Google Agenda is gesynchroniseerd',
-      });
-    } catch (error) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Sync mislukt',
-        detail: error instanceof Error ? error.message : 'Onbekende fout',
-      });
-    }
+  startSync(): void {
+    this.syncService.startSync().then(
+      () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Sync voltooid',
+          detail: 'Google Agenda is gesynchroniseerd',
+        });
+      },
+      (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Sync mislukt',
+          detail: error instanceof Error ? error.message : 'Onbekende fout',
+        });
+      },
+    );
   }
 
   stopSync(): void {
     this.syncService.stopAutoSync();
   }
 
-  async clearCalendar(): Promise<void> {
-    try {
-      await this.syncService.clearCalendar();
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Agenda gewist',
-        detail: 'Google Agenda is leeggemaakt',
-      });
-    } catch (error) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Wissen mislukt',
-        detail: error instanceof Error ? error.message : 'Onbekende fout',
-      });
-    }
+  clearCalendar(): void {
+    this.syncService.clearCalendar().then(
+      () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Agenda gewist',
+          detail: 'Google Agenda is leeggemaakt',
+        });
+      },
+      (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Wissen mislukt',
+          detail: error instanceof Error ? error.message : 'Onbekende fout',
+        });
+      },
+    );
   }
 
   requestAuth(): void {

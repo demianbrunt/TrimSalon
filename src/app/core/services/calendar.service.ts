@@ -18,6 +18,10 @@ export class CalendarService {
     return from(callable(data)).pipe(map((result) => result.data as T));
   }
 
+  triggerSync(): Observable<{ success: boolean }> {
+    return this.call<{ success: boolean }>('triggerCalendarSync');
+  }
+
   listCalendars(): Observable<GoogleCalendarList> {
     const userId = this.authService.getCurrentUserId();
     return this.call<GoogleCalendarList>('listCalendars', { userId });

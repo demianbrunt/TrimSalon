@@ -64,7 +64,7 @@ import { AppDialogService } from '../../core/services/app-dialog.service';
 export class AppointmentsComponent implements OnInit {
   appointments: Appointment[] = [];
   sortField = 'startTime';
-  sortOrder = -1;
+  sortOrder = 1;
   isInitialized = false;
 
   viewModeOptions: ViewModeOption[] = [
@@ -189,6 +189,7 @@ export class AppointmentsComponent implements OnInit {
 
   openSyncSettings(): void {
     this.dialogRef = this.dialogService.open(GoogleCalendarSyncDialog, {
+      header: 'Google Agenda Synchronisatie',
       width: '600px',
       modal: true,
     });

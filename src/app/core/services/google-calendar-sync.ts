@@ -162,44 +162,19 @@ export class GoogleCalendarSync implements OnDestroy {
   }
 
   private async performSync(): Promise<void> {
+    // Use the backend function for consistent sync logic
+    await this.calendarService.triggerSync().toPromise();
+  }
+
+  /*
+  // Legacy client-side sync logic - removed in favor of backend sync
+  private async performSyncLegacy(): Promise<void> {
     if (!this.trimSalonCalendarId) {
       throw new Error('TrimSalon calendar not initialized');
     }
-
-    // Step 1: Clear all events from Google Calendar
-    await this.clearCalendar();
-
-    // Step 2: Get local appointments
-    const localAppointments = await this.appointmentService
-      .getData$()
-      .pipe(take(1))
-      .toPromise();
-
-    const safeLocalAppointments = Array.isArray(localAppointments)
-      ? localAppointments
-      : [];
-
-    // Step 3: Create all appointments in Google Calendar
-    for (const appointment of safeLocalAppointments) {
-      const createdEvent = await this.calendarService
-        .addAppointment(this.trimSalonCalendarId, appointment)
-        .pipe(take(1))
-        .toPromise();
-
-      // Save the Google Calendar event ID back to the appointment
-      if (createdEvent?.id && appointment.id) {
-        const updatedAppointment = {
-          ...appointment,
-          googleCalendarEventId: createdEvent.id,
-          lastModified: new Date(),
-        };
-        await this.appointmentService
-          .update(updatedAppointment)
-          .pipe(take(1))
-          .toPromise();
-      }
-    }
+    // ... (rest of the old logic)
   }
+  */
 
   private async syncBothWays(
     localAppointments: Appointment[],

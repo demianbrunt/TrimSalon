@@ -2,9 +2,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Only authenticated users can read/write files
+    // Helper function to check if user is in the allowed-users list
+    function isAllowedUser() {
+      return request.auth != null && exists(/databases/(default)/documents/allowed-users/$(request.auth.token.email));
+    }
+    
+    // Only allowed users can read/write files
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isAllowedUser();
     }
   }
 }

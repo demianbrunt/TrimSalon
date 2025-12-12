@@ -127,7 +127,9 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
             'Succes',
             `Werkzaamheid ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
           );
-          this.router.navigate(['/services']);
+          this.router.navigate(['/services'], {
+            queryParamsHandling: 'preserve',
+          });
           resolve();
         },
         error: (err) => {
@@ -308,7 +310,9 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
   override cancel() {
     return super.cancel().then((confirmed) => {
       if (confirmed) {
-        this.router.navigate(['/services']);
+        this.router.navigate(['/services'], {
+          queryParamsHandling: 'preserve',
+        });
       }
       return confirmed;
     });

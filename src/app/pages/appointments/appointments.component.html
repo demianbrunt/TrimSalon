@@ -1,4 +1,19 @@
 <div class="appointments-container">
+  <div class="view-toggle-container">
+    <div class="gradient-toggle">
+      @for (option of viewModeOptions; track option.value) {
+        <button
+          class="gradient-option"
+          [class.active]="viewMode === option.value"
+          (click)="viewMode = option.value"
+        >
+          <i [class]="option.icon"></i>
+          <span class="hidden md:inline ml-2">{{ option.label }}</span>
+        </button>
+      }
+    </div>
+  </div>
+
   @if (viewMode === "calendar") {
     <app-custom-calendar
       [appointments]="appointments"
@@ -16,22 +31,6 @@
       ></p-button>
     </app-custom-calendar>
   } @else {
-    <div class="view-toggle-fixed">
-      <p-selectButton
-        [options]="viewModeOptions"
-        [(ngModel)]="viewMode"
-        optionLabel="label"
-        optionValue="value"
-        [unselectable]="false"
-        size="small"
-      >
-        <ng-template let-item>
-          <i [class]="item.icon"></i>
-          <span class="hidden md:inline ml-2">{{ item.label }}</span>
-        </ng-template>
-      </p-selectButton>
-    </div>
-
     <ng-container *ngIf="isMobile; else desktopView">
       <p-dataView
         #dv

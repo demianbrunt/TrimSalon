@@ -15,6 +15,7 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { Client } from '../../core/models/client.model';
+import { Dog } from '../../core/models/dog.model';
 import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ClientService } from '../../core/services/client.service';
@@ -47,6 +48,23 @@ export class ClientsComponent implements OnInit {
   sortField = 'name';
   sortOrder = 1;
   isIntialized = false;
+
+  getDogAge(dog: Dog): string | null {
+    if (dog.dateOfBirth) {
+      const birthDate = new Date(dog.dateOfBirth);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return `${age} jaar`;
+    }
+    if (dog.age) {
+      return `${dog.age} jaar`;
+    }
+    return null;
+  }
 
   private readonly clientService = inject(ClientService);
   private readonly toastrService = inject(ToastrService);

@@ -1,20 +1,27 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, combineLatest, map } from 'rxjs';
+import { ACTIVITY_LABELS, ActivityType } from '../models/appointment.model';
+import { PaymentStatus } from '../models/invoice.model';
 import {
+  ActivityBreakdown,
+  BreedPerformance,
+  CalendarOccupancy,
   DashboardReport,
   ExpenseReport,
+  HourlyRateKPI,
   PopularPackage,
   PopularService,
   ProfitLossReport,
   ReportPeriod,
   RevenueReport,
   TopClient,
-  CalendarOccupancy,
 } from '../models/report.model';
 import { AppointmentService } from './appointment.service';
 import { ExpenseService } from './expense.service';
 import { InvoiceService } from './invoice.service';
-import { PaymentStatus } from '../models/invoice.model';
+
+// Target hourly rate (configurable)
+const TARGET_HOURLY_RATE = 60;
 
 @Injectable({
   providedIn: 'root',
@@ -322,6 +329,9 @@ export class ReportService {
       this.getPopularServices(period, 5),
       this.getPopularPackages(period, 5),
       this.getCalendarOccupancy(period),
+      this.getHourlyRateKPI(period),
+      this.getActivityBreakdown(period),
+      this.getBreedPerformance(period),
     ]).pipe(
       map(
         ([
@@ -332,6 +342,9 @@ export class ReportService {
           popularServices,
           popularPackages,
           occupancy,
+          hourlyRateKPI,
+          activityBreakdown,
+          breedPerformance,
         ]) => ({
           revenueReport,
           expenseReport,
@@ -340,8 +353,258 @@ export class ReportService {
           popularServices,
           popularPackages,
           occupancy,
+          hourlyRateKPI,
+          activityBreakdown,
+          breedPerformance,
         }),
       ),
+    );
+  }
+
+  /**
+   * Calculate the hourly rate KPI against the €60/hour target.
+   */
+  getHourlyRateKPI(period: ReportPeriod): Observable<HourlyRateKPI> {
+    return combineLatest([
+      this.appointmentService.getData$(),
+      this.invoiceService.getData$(),
+      this.expenseService.getData$(),
+    ]).pipe(
+      map(([appointments, invoices, expenses]) => {
+        // Filter appointments in period
+        const filteredAppointments = appointments.filter(
+          (apt) =>
+            apt.startTime &&
+            apt.startTime >= period.startDate &&
+            apt.startTime <= period.endDate &&
+            apt.completed,
+        );
+
+        // Calculate total active minutes from time logs
+        let totalActiveMinutes = 0;
+        filteredAppointments.forEach((apt) => {
+          if (apt.totalActiveMinutes) {
+            totalActiveMinutes += apt.totalActiveMinutes;
+          } else if (apt.timeLogs) {
+            // Calculate from time logs if totalActiveMinutes not set
+            totalActiveMinutes += apt.timeLogs
+              .filter((log) => log.activity !== 'BREAK' && log.durationMinutes)
+              .reduce((sum, log) => sum + (log.durationMinutes || 0), 0);
+          } else if (apt.startTime && apt.actualEndTime) {
+            // Fallback to appointment duration
+            totalActiveMinutes += Math.round(
+              (apt.actualEndTime.getTime() - apt.startTime.getTime()) / 60000,
+            );
+          } else if (apt.startTime && apt.endTime) {
+            // Fallback to estimated duration
+            totalActiveMinutes += Math.round(
+              (apt.endTime.getTime() - apt.startTime.getTime()) / 60000,
+            );
+          }
+        });
+
+        const totalHoursWorked = totalActiveMinutes / 60;
+
+        // Calculate revenue from paid invoices
+        const totalRevenue = invoices
+          .filter(
+            (inv) =>
+              inv.issueDate >= period.startDate &&
+              inv.issueDate <= period.endDate &&
+              inv.paymentStatus === PaymentStatus.PAID,
+          )
+          .reduce((sum, inv) => sum + inv.totalAmount, 0);
+
+        // Calculate expenses
+        const totalExpenses = expenses
+          .filter(
+            (exp) =>
+              !exp.deletedAt &&
+              exp.date >= period.startDate &&
+              exp.date <= period.endDate,
+          )
+          .reduce((sum, exp) => sum + exp.amount, 0);
+
+        // Calculate rates
+        const actualHourlyRate =
+          totalHoursWorked > 0 ? totalRevenue / totalHoursWorked : 0;
+        const netHourlyRate =
+          totalHoursWorked > 0
+            ? (totalRevenue - totalExpenses) / totalHoursWorked
+            : 0;
+        const percentageOfTarget =
+          TARGET_HOURLY_RATE > 0
+            ? (actualHourlyRate / TARGET_HOURLY_RATE) * 100
+            : 0;
+
+        // Determine status
+        let status: 'BELOW' | 'APPROACHING' | 'TARGET' | 'EXCEEDING';
+        if (percentageOfTarget < 83) {
+          status = 'BELOW'; // < €50
+        } else if (percentageOfTarget < 100) {
+          status = 'APPROACHING'; // €50-60
+        } else if (percentageOfTarget <= 110) {
+          status = 'TARGET'; // €60-66
+        } else {
+          status = 'EXCEEDING'; // > €66
+        }
+
+        return {
+          period,
+          targetHourlyRate: TARGET_HOURLY_RATE,
+          actualHourlyRate,
+          netHourlyRate,
+          totalRevenue,
+          totalExpenses,
+          totalHoursWorked,
+          totalActiveMinutes,
+          percentageOfTarget,
+          status,
+        };
+      }),
+    );
+  }
+
+  /**
+   * Get breakdown of time spent on each activity type.
+   */
+  getActivityBreakdown(period: ReportPeriod): Observable<ActivityBreakdown[]> {
+    return this.appointmentService.getData$().pipe(
+      map((appointments) => {
+        const filteredAppointments = appointments.filter(
+          (apt) =>
+            apt.startTime &&
+            apt.startTime >= period.startDate &&
+            apt.startTime <= period.endDate &&
+            apt.timeLogs &&
+            apt.timeLogs.length > 0,
+        );
+
+        // Aggregate by activity
+        const activityMap = new Map<
+          ActivityType,
+          { totalMinutes: number; count: number }
+        >();
+
+        filteredAppointments.forEach((apt) => {
+          apt.timeLogs?.forEach((log) => {
+            if (!activityMap.has(log.activity)) {
+              activityMap.set(log.activity, { totalMinutes: 0, count: 0 });
+            }
+            const data = activityMap.get(log.activity)!;
+            data.totalMinutes += log.durationMinutes || 0;
+            data.count++;
+          });
+        });
+
+        // Calculate totals
+        let grandTotal = 0;
+        activityMap.forEach((data) => {
+          grandTotal += data.totalMinutes;
+        });
+
+        // Build breakdown
+        const breakdown: ActivityBreakdown[] = [];
+        activityMap.forEach((data, activity) => {
+          breakdown.push({
+            activity: ACTIVITY_LABELS[activity] || activity,
+            totalMinutes: data.totalMinutes,
+            averageMinutesPerAppointment:
+              data.count > 0 ? data.totalMinutes / data.count : 0,
+            percentageOfTotal:
+              grandTotal > 0 ? (data.totalMinutes / grandTotal) * 100 : 0,
+          });
+        });
+
+        // Sort by total minutes descending
+        return breakdown.sort((a, b) => b.totalMinutes - a.totalMinutes);
+      }),
+    );
+  }
+
+  /**
+   * Get performance metrics by dog breed.
+   */
+  getBreedPerformance(period: ReportPeriod): Observable<BreedPerformance[]> {
+    return combineLatest([
+      this.appointmentService.getData$(),
+      this.invoiceService.getData$(),
+    ]).pipe(
+      map(([appointments, invoices]) => {
+        const filteredAppointments = appointments.filter(
+          (apt) =>
+            apt.startTime &&
+            apt.startTime >= period.startDate &&
+            apt.startTime <= period.endDate &&
+            apt.completed,
+        );
+
+        // Group by breed
+        const breedMap = new Map<
+          string,
+          {
+            count: number;
+            totalRevenue: number;
+            totalMinutes: number;
+          }
+        >();
+
+        filteredAppointments.forEach((apt) => {
+          const breedName = apt.dog?.breed?.name || 'Onbekend';
+
+          if (!breedMap.has(breedName)) {
+            breedMap.set(breedName, {
+              count: 0,
+              totalRevenue: 0,
+              totalMinutes: 0,
+            });
+          }
+
+          const data = breedMap.get(breedName)!;
+          data.count++;
+
+          // Get revenue from invoice
+          const relatedInvoice = invoices.find(
+            (inv) =>
+              inv.appointment?.id === apt.id &&
+              inv.paymentStatus === PaymentStatus.PAID,
+          );
+          if (relatedInvoice) {
+            data.totalRevenue += relatedInvoice.totalAmount;
+          }
+
+          // Get minutes worked
+          if (apt.totalActiveMinutes) {
+            data.totalMinutes += apt.totalActiveMinutes;
+          } else if (apt.startTime && apt.actualEndTime) {
+            data.totalMinutes += Math.round(
+              (apt.actualEndTime.getTime() - apt.startTime.getTime()) / 60000,
+            );
+          }
+        });
+
+        // Build performance array
+        const performance: BreedPerformance[] = [];
+        breedMap.forEach((data, breedName) => {
+          const averageMinutes =
+            data.count > 0 ? data.totalMinutes / data.count : 0;
+          const hoursWorked = data.totalMinutes / 60;
+          performance.push({
+            breedName,
+            appointmentCount: data.count,
+            totalRevenue: data.totalRevenue,
+            averageRevenue: data.count > 0 ? data.totalRevenue / data.count : 0,
+            averageMinutesWorked: averageMinutes,
+            effectiveHourlyRate:
+              hoursWorked > 0 ? data.totalRevenue / hoursWorked : 0,
+          });
+        });
+
+        // Sort by effective hourly rate descending
+        return performance.sort(
+          (a, b) => b.effectiveHourlyRate - a.effectiveHourlyRate,
+        );
+      }),
     );
   }
 }

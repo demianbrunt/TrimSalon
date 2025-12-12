@@ -28,6 +28,44 @@ export interface ProfitLossReport {
   effectiveHourlyRate?: number; // €/hour
 }
 
+/**
+ * Hourly rate KPI for tracking against €60/hour target.
+ */
+export interface HourlyRateKPI {
+  period: ReportPeriod;
+  targetHourlyRate: number; // Default: 60
+  actualHourlyRate: number;
+  netHourlyRate: number; // After expenses
+  totalRevenue: number;
+  totalExpenses: number;
+  totalHoursWorked: number;
+  totalActiveMinutes: number; // From time logs
+  percentageOfTarget: number;
+  status: 'BELOW' | 'APPROACHING' | 'TARGET' | 'EXCEEDING';
+}
+
+/**
+ * Activity breakdown from time logs.
+ */
+export interface ActivityBreakdown {
+  activity: string;
+  totalMinutes: number;
+  averageMinutesPerAppointment: number;
+  percentageOfTotal: number;
+}
+
+/**
+ * Performance by dog breed for optimization insights.
+ */
+export interface BreedPerformance {
+  breedName: string;
+  appointmentCount: number;
+  totalRevenue: number;
+  averageRevenue: number;
+  averageMinutesWorked: number;
+  effectiveHourlyRate: number;
+}
+
 export interface TopClient {
   clientId: string;
   clientName: string;
@@ -64,4 +102,7 @@ export interface DashboardReport {
   popularServices: PopularService[];
   popularPackages: PopularPackage[];
   occupancy: CalendarOccupancy;
+  hourlyRateKPI?: HourlyRateKPI;
+  activityBreakdown?: ActivityBreakdown[];
+  breedPerformance?: BreedPerformance[];
 }

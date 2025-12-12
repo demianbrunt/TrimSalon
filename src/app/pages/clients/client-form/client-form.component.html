@@ -112,18 +112,37 @@
                 <label for="ras">Ras</label>
               </p-floatlabel>
             </div>
-            <div class="field mt-2 col-12 md:col-4">
-              <p-floatlabel variant="on">
-                <p-inputnumber
-                  inputId="leeftijd"
-                  class="w-full"
-                  [formControl]="dogGroup.controls.age"
-                  [min]="0"
-                  [max]="30"
-                  suffix=" jaar"
-                />
-                <label for="leeftijd">Leeftijd</label>
-              </p-floatlabel>
+            <div class="field mt-2 col-12 md:col-6">
+              <div class="flex align-items-end gap-2 flex-wrap md:flex-nowrap">
+                <div class="flex-1 min-w-12rem">
+                  <p-floatlabel variant="on" class="w-full">
+                    <p-datepicker
+                      inputId="geboortedatum"
+                      class="w-full"
+                      [formControl]="dogGroup.controls.dateOfBirth"
+                      dateFormat="dd-mm-yy"
+                      appendTo="body"
+                    />
+                    <label for="geboortedatum">Geboortedatum</label>
+                  </p-floatlabel>
+                </div>
+                <div class="flex flex-column w-8rem min-w-7rem shrink-0">
+                  <label
+                    class="text-sm text-color-secondary mb-1 block"
+                    [for]="'leeftijd-' + $index"
+                  >
+                    Leeftijd
+                  </label>
+                  <p-inputnumber
+                    [inputId]="'leeftijd-' + $index"
+                    class="w-full"
+                    [formControl]="dogGroup.controls.age"
+                    [disabled]="true"
+                    suffix=" jaar"
+                    inputStyleClass="w-full text-sm"
+                  ></p-inputnumber>
+                </div>
+              </div>
             </div>
             <div class="field col-12 md:col-4">
               <p-floatlabel variant="on">
@@ -131,8 +150,8 @@
                   inputId="geslacht"
                   [formControl]="dogGroup.controls.gender"
                   [options]="[
-                    { label: 'Mannetje', value: 'male' },
-                    { label: 'Vrouwtje', value: 'female' },
+                    { label: 'Reu', value: 'male' },
+                    { label: 'Teefje', value: 'female' },
                   ]"
                   optionLabel="label"
                   optionValue="value"

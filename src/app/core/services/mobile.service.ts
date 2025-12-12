@@ -16,9 +16,13 @@ export class MobileService {
 
   constructor() {
     this.breakpointObserver
-      .observe('(max-width: 768px)')
+      .observe([
+        '(max-width: 768px)',
+        '(max-width: 768px) and (orientation: landscape)',
+      ])
       .subscribe((result) => {
-        this._isMobile = result.matches;
+        this._isMobile = result.matches || window.innerWidth <= 768;
+        console.log('[MobileService] Mobile state changed:', this._isMobile);
       });
   }
 }

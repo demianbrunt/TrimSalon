@@ -197,34 +197,47 @@
             <div
               class="text-3xl font-bold"
               [class.text-green-600]="
-                (profitLossReport?.effectiveHourlyRate || 0) >= 60
+                hourlyRateKPI?.status === 'EXCEEDING' ||
+                hourlyRateKPI?.status === 'TARGET'
               "
-              [class.text-orange-600]="
-                (profitLossReport?.effectiveHourlyRate || 0) < 60 &&
-                (profitLossReport?.effectiveHourlyRate || 0) > 0
-              "
+              [class.text-orange-600]="hourlyRateKPI?.status === 'APPROACHING'"
               [class.text-red-500]="
-                (profitLossReport?.effectiveHourlyRate || 0) <= 0
+                hourlyRateKPI?.status === 'BELOW' || !hourlyRateKPI
               "
             >
-              {{
-                formatCurrency(profitLossReport?.effectiveHourlyRate || 0)
-              }}/uur
+              {{ formatCurrency(hourlyRateKPI?.actualHourlyRate || 0) }}/uur
             </div>
             <small class="text-500">
-              @if ((profitLossReport?.effectiveHourlyRate || 0) >= 60) {
-                <i class="pi pi-check-circle"></i> Target bereikt (€60)
-              } @else if ((profitLossReport?.effectiveHourlyRate || 0) > 0) {
-                {{
-                  (
-                    ((profitLossReport?.effectiveHourlyRate || 0) / 60) *
-                    100
-                  ).toFixed(0)
-                }}% van target (€60)
+              @if (hourlyRateKPI?.status === "EXCEEDING") {
+                <i class="pi pi-star-fill text-green-600"></i> Boven target! ({{
+                  hourlyRateKPI?.percentageOfTarget?.toFixed(0)
+                }}%)
+              } @else if (hourlyRateKPI?.status === "TARGET") {
+                <i class="pi pi-check-circle text-green-600"></i> Target bereikt
+                (€60)
+              } @else if (hourlyRateKPI?.status === "APPROACHING") {
+                <i class="pi pi-arrow-up text-orange-600"></i>
+                {{ hourlyRateKPI?.percentageOfTarget?.toFixed(0) }}% van €60
+                target
+              } @else if (
+                hourlyRateKPI?.totalHoursWorked &&
+                hourlyRateKPI.totalHoursWorked > 0
+              ) {
+                <i class="pi pi-arrow-right text-red-500"></i>
+                {{ hourlyRateKPI?.percentageOfTarget?.toFixed(0) }}% van €60
+                target
               } @else {
-                Geen data
+                Geen tijddata beschikbaar
               }
             </small>
+            @if (
+              hourlyRateKPI?.totalHoursWorked &&
+              hourlyRateKPI.totalHoursWorked > 0
+            ) {
+              <div class="mt-2 text-xs text-500">
+                {{ hourlyRateKPI.totalHoursWorked.toFixed(1) }} uur gewerkt
+              </div>
+            }
           </div>
         </p-card>
       </div>
@@ -393,6 +406,102 @@
 
     <!-- Financial Section -->
     <div class="grid mt-3">
+      <!-- Activity Breakdown -->
+      <div class="col-12 lg:col-6">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="text-xl font-semibold">
+                ⏱️ Tijdsbesteding per Activiteit
+              </h3>
+            </div>
+          </ng-template>
+          @if (activityBreakdown && activityBreakdown.length > 0) {
+            <p-table [value]="activityBreakdown" [rows]="10">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Activiteit</th>
+                  <th>Totaal (min)</th>
+                  <th>Gem./afspraak</th>
+                  <th>%</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-item>
+                <tr>
+                  <td>{{ item.activity }}</td>
+                  <td>{{ item.totalMinutes }}</td>
+                  <td>{{ item.averageMinutesPerAppointment.toFixed(0) }}</td>
+                  <td>
+                    <span class="font-semibold"
+                      >{{ item.percentageOfTotal.toFixed(1) }}%</span
+                    >
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          } @else {
+            <div class="p-3 text-center text-500">
+              <i class="pi pi-clock" style="font-size: 2rem"></i>
+              <p class="mt-2">Geen tijdsregistratie beschikbaar.</p>
+              <p class="text-sm">
+                Gebruik Tablet Mode om activiteiten te loggen.
+              </p>
+            </div>
+          }
+        </p-card>
+      </div>
+
+      <!-- Breed Performance -->
+      <div class="col-12 lg:col-6">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="text-xl font-semibold">🐕 Uurloon per Ras</h3>
+            </div>
+          </ng-template>
+          @if (breedPerformance && breedPerformance.length > 0) {
+            <p-table [value]="breedPerformance" [rows]="10">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th>Ras</th>
+                  <th>Afspraken</th>
+                  <th>Gem. tijd</th>
+                  <th>€/uur</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-breed>
+                <tr>
+                  <td>{{ breed.breedName }}</td>
+                  <td>{{ breed.appointmentCount }}</td>
+                  <td>{{ breed.averageMinutesWorked.toFixed(0) }} min</td>
+                  <td>
+                    <span
+                      class="font-semibold"
+                      [class.text-green-600]="breed.effectiveHourlyRate >= 60"
+                      [class.text-orange-600]="
+                        breed.effectiveHourlyRate >= 50 &&
+                        breed.effectiveHourlyRate < 60
+                      "
+                      [class.text-red-500]="breed.effectiveHourlyRate < 50"
+                    >
+                      {{ formatCurrency(breed.effectiveHourlyRate) }}
+                    </span>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          } @else {
+            <div class="p-3 text-center text-500">
+              <i class="pi pi-chart-bar" style="font-size: 2rem"></i>
+              <p class="mt-2">Geen prestatie data per ras beschikbaar.</p>
+              <p class="text-sm">
+                Log afspraken met rassen om inzicht te krijgen.
+              </p>
+            </div>
+          }
+        </p-card>
+      </div>
+
       <div class="col-12">
         <p-card>
           <ng-template pTemplate="header">

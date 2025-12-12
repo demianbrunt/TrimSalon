@@ -137,7 +137,9 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
             'Succes',
             `Pakket ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
           );
-          this.router.navigate(['/packages']);
+          this.router.navigate(['/packages'], {
+            queryParamsHandling: 'preserve',
+          });
           resolve();
         },
         error: (err) => {
@@ -327,7 +329,9 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
   override cancel() {
     return super.cancel().then((confirmed) => {
       if (confirmed) {
-        this.router.navigate(['/packages']);
+        this.router.navigate(['/packages'], {
+          queryParamsHandling: 'preserve',
+        });
       }
       return confirmed;
     });

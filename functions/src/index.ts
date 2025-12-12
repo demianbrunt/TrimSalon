@@ -1,8 +1,174 @@
 import * as admin from 'firebase-admin';
 import { onCall } from 'firebase-functions/v2/https';
 import { HttpsError } from 'firebase-functions/v2/identity';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as calendar from './calendar';
+import { CalendarErrorType } from './calendar';
 import * as email from './email';
+
+// Background calendar sync settings (cost-aware)
+const SYNC_LOOKAHEAD_DAYS = 30; // how far ahead we sync
+const SYNC_LOOKBACK_DAYS = 7; // sync a limited window of past events
+const SYNC_MAX_APPOINTMENTS = 150; // per run per user to cap API usage
+
+interface AppointmentDoc {
+  id: string;
+  startTime?: FirebaseFirestore.Timestamp | string;
+  endTime?: FirebaseFirestore.Timestamp | string;
+  client?: { name?: string };
+  dog?: { name?: string; breed?: { name?: string }; isAggressive?: boolean };
+  services?: { name: string }[];
+  packages?: { name: string }[];
+  notes?: string;
+  completed?: boolean;
+  deletedAt?: FirebaseFirestore.Timestamp | null;
+  googleCalendarEventId?: string;
+  lastModified?: FirebaseFirestore.Timestamp | string;
+}
+
+function toDate(value?: FirebaseFirestore.Timestamp | string): Date | null {
+  if (!value) return null;
+  if (typeof value === 'string') return new Date(value);
+  if (typeof (value as FirebaseFirestore.Timestamp).toDate === 'function') {
+    return (value as FirebaseFirestore.Timestamp).toDate();
+  }
+  return null;
+}
+
+async function syncUserAgenda(
+  userId: string,
+  calendarId: string,
+  timeMin: Date,
+  timeMax: Date,
+): Promise<void> {
+  const firestore = admin.firestore();
+
+  // Fetch upcoming appointments within the window
+  const appointmentsSnap = await firestore
+    .collection('appointments')
+    .where('startTime', '>=', timeMin)
+    .where('startTime', '<=', timeMax)
+    .orderBy('startTime', 'asc')
+    .limit(SYNC_MAX_APPOINTMENTS)
+    .get();
+
+  const appointments: AppointmentDoc[] = appointmentsSnap.docs
+    .map((doc) => ({ ...(doc.data() as AppointmentDoc), id: doc.id }))
+    // Filter out soft-deleted records client-side to avoid extra indexes
+    .filter((a) => !a.deletedAt);
+
+  console.log(
+    `Found ${appointments.length} active appointments for user ${userId}`,
+  );
+
+  // Fetch existing Google events in the same window (only once per user)
+  const googleEvents =
+    (await calendar.getCalendarEvents(userId, calendarId, {
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+    })) || [];
+
+  const googleEventsMap = new Map(
+    googleEvents
+      .filter(
+        (e) =>
+          e.id && e.extendedProperties?.private?.['source'] === 'trimsalon-app',
+      )
+      .map((e) => [e.id as string, e]),
+  );
+
+  const processedGoogleIds = new Set<string>();
+
+  for (const appointment of appointments) {
+    const start = toDate(appointment.startTime);
+    const end =
+      toDate(appointment.endTime) ||
+      (start ? new Date(start.getTime() + 60 * 60 * 1000) : null);
+
+    if (!start || !end) {
+      console.warn(
+        `Skipping appointment ${appointment.id} due to missing start/end time`,
+      );
+      continue;
+    }
+
+    const eventPayload = calendar.appointmentToCalendarEvent(
+      {
+        ...appointment,
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        deletedAt: toDate(appointment.deletedAt || undefined) || undefined,
+      },
+      false,
+    );
+
+    if (appointment.googleCalendarEventId) {
+      try {
+        await calendar.updateCalendarEvent(
+          userId,
+          calendarId,
+          appointment.googleCalendarEventId,
+          eventPayload,
+        );
+        processedGoogleIds.add(appointment.googleCalendarEventId);
+      } catch (error) {
+        const errorType = calendar.categorizeCalendarError(error);
+
+        if (errorType === CalendarErrorType.NOT_FOUND) {
+          // Event missing in Google, recreate
+          const created = await calendar.createCalendarEvent(
+            userId,
+            calendarId,
+            eventPayload,
+          );
+          if (created?.id) {
+            await firestore.collection('appointments').doc(appointment.id).set(
+              {
+                googleCalendarEventId: created.id,
+                lastModified: admin.firestore.FieldValue.serverTimestamp(),
+              },
+              { merge: true },
+            );
+            processedGoogleIds.add(created.id);
+          }
+        } else {
+          throw error;
+        }
+      }
+    } else {
+      const created = await calendar.createCalendarEvent(
+        userId,
+        calendarId,
+        eventPayload,
+      );
+
+      if (created?.id) {
+        await firestore.collection('appointments').doc(appointment.id).set(
+          {
+            googleCalendarEventId: created.id,
+            lastModified: admin.firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+        processedGoogleIds.add(created.id);
+      }
+    }
+  }
+
+  // Clean up Google events that belong to the app but no longer exist locally
+  const localGoogleIds = new Set(
+    appointments
+      .map((a) => a.googleCalendarEventId)
+      .filter((id): id is string => !!id),
+  );
+
+  for (const [googleEventId] of googleEventsMap) {
+    if (!localGoogleIds.has(googleEventId)) {
+      console.log(`Deleting orphaned Google event: ${googleEventId}`);
+      await calendar.deleteCalendarEvent(userId, calendarId, googleEventId);
+    }
+  }
+}
 
 admin.initializeApp();
 
@@ -108,20 +274,22 @@ export const getCalendarEvents = onCall(
     } catch (error: unknown) {
       console.error('Error getting calendar events:', error);
 
-      // Check if error is from Google OAuth (invalid/expired token)
-      const errorMessage = (error as { message?: string })?.message || '';
-      const errorCode = (error as { code?: string | number })?.code;
+      const errorType = calendar.categorizeCalendarError(error);
 
-      if (
-        errorMessage.includes('invalid_grant') ||
-        errorMessage.includes('Token has been expired or revoked') ||
-        errorCode === 401
-      ) {
-        // Remove invalid tokens so user can re-authorize
+      if (errorType === CalendarErrorType.AUTH_EXPIRED) {
+        // Remove invalid tokens and mark for re-auth
         await calendar.removeUserTokens(userId);
+        await calendar.markSyncNeedsReauth(userId);
         throw new HttpsError(
           'unauthenticated',
           'Calendar authorization has expired. Please re-authorize calendar access.',
+        );
+      }
+
+      if (errorType === CalendarErrorType.RATE_LIMITED) {
+        throw new HttpsError(
+          'resource-exhausted',
+          'Google Calendar rate limit exceeded. Please try again later.',
         );
       }
 
@@ -172,24 +340,27 @@ export const createCalendarEvent = onCall(
         calendarId,
         calendarEvent,
       );
+      // Clear any previous sync errors on success
+      await calendar.clearSyncStatus(userId);
       return { event: newEvent };
     } catch (error: unknown) {
       console.error('Error creating calendar event:', error);
 
-      // Check if error is from Google OAuth (invalid/expired token)
-      const errorMessage = (error as { message?: string })?.message || '';
-      const errorCode = (error as { code?: string | number })?.code;
+      const errorType = calendar.categorizeCalendarError(error);
 
-      if (
-        errorMessage.includes('invalid_grant') ||
-        errorMessage.includes('Token has been expired or revoked') ||
-        errorCode === 401
-      ) {
-        // Remove invalid tokens so user can re-authorize
+      if (errorType === CalendarErrorType.AUTH_EXPIRED) {
         await calendar.removeUserTokens(userId);
+        await calendar.markSyncNeedsReauth(userId);
         throw new HttpsError(
           'unauthenticated',
           'Calendar authorization has expired. Please re-authorize calendar access.',
+        );
+      }
+
+      if (errorType === CalendarErrorType.RATE_LIMITED) {
+        throw new HttpsError(
+          'resource-exhausted',
+          'Google Calendar rate limit exceeded. Please try again later.',
         );
       }
 
@@ -219,25 +390,34 @@ export const updateCalendarEvent = onCall(
         eventId,
         calendarEvent,
       );
+      // Clear any previous sync errors on success
+      await calendar.clearSyncStatus(userId);
       return { event: updatedEvent };
     } catch (error: unknown) {
       console.error('Error updating calendar event:', error);
 
-      // Check if error is from Google OAuth (invalid/expired token)
-      const errorMessage = (error as { message?: string })?.message || '';
-      const errorCode = (error as { code?: string | number })?.code;
+      const errorType = calendar.categorizeCalendarError(error);
 
-      if (
-        errorMessage.includes('invalid_grant') ||
-        errorMessage.includes('Token has been expired or revoked') ||
-        errorCode === 401
-      ) {
-        // Remove invalid tokens so user can re-authorize
+      if (errorType === CalendarErrorType.AUTH_EXPIRED) {
         await calendar.removeUserTokens(userId);
+        await calendar.markSyncNeedsReauth(userId);
         throw new HttpsError(
           'unauthenticated',
           'Calendar authorization has expired. Please re-authorize calendar access.',
         );
+      }
+
+      if (errorType === CalendarErrorType.RATE_LIMITED) {
+        throw new HttpsError(
+          'resource-exhausted',
+          'Google Calendar rate limit exceeded. Please try again later.',
+        );
+      }
+
+      if (errorType === CalendarErrorType.NOT_FOUND) {
+        // Event doesn't exist in Google, might have been deleted manually
+        console.warn(`Calendar event ${eventId} not found, skipping update.`);
+        return { event: null, warning: 'Event not found in calendar' };
       }
 
       throw new HttpsError('internal', 'Failed to update calendar event.');
@@ -263,21 +443,28 @@ export const deleteCalendarEvent = onCall(
     } catch (error: unknown) {
       console.error('Error deleting calendar event:', error);
 
-      // Check if error is from Google OAuth (invalid/expired token)
-      const errorMessage = (error as { message?: string })?.message || '';
-      const errorCode = (error as { code?: string | number })?.code;
+      const errorType = calendar.categorizeCalendarError(error);
 
-      if (
-        errorMessage.includes('invalid_grant') ||
-        errorMessage.includes('Token has been expired or revoked') ||
-        errorCode === 401
-      ) {
-        // Remove invalid tokens so user can re-authorize
+      if (errorType === CalendarErrorType.AUTH_EXPIRED) {
         await calendar.removeUserTokens(userId);
+        await calendar.markSyncNeedsReauth(userId);
         throw new HttpsError(
           'unauthenticated',
           'Calendar authorization has expired. Please re-authorize calendar access.',
         );
+      }
+
+      if (errorType === CalendarErrorType.RATE_LIMITED) {
+        throw new HttpsError(
+          'resource-exhausted',
+          'Google Calendar rate limit exceeded. Please try again later.',
+        );
+      }
+
+      if (errorType === CalendarErrorType.NOT_FOUND) {
+        // Event already deleted, that's fine
+        console.warn(`Calendar event ${eventId} not found, already deleted.`);
+        return { success: true, warning: 'Event was already deleted' };
       }
 
       throw new HttpsError('internal', 'Failed to delete calendar event.');
@@ -307,20 +494,21 @@ export const listCalendars = onCall(
     } catch (error: unknown) {
       console.error('Error listing calendars:', error);
 
-      // Check if error is from Google OAuth (invalid/expired token)
-      const errorMessage = (error as { message?: string })?.message || '';
-      const errorCode = (error as { code?: string | number })?.code;
+      const errorType = calendar.categorizeCalendarError(error);
 
-      if (
-        errorMessage.includes('invalid_grant') ||
-        errorMessage.includes('Token has been expired or revoked') ||
-        errorCode === 401
-      ) {
-        // Remove invalid tokens so user can re-authorize
+      if (errorType === CalendarErrorType.AUTH_EXPIRED) {
         await calendar.removeUserTokens(userId);
+        await calendar.markSyncNeedsReauth(userId);
         throw new HttpsError(
           'unauthenticated',
           'Calendar authorization has expired. Please re-authorize calendar access.',
+        );
+      }
+
+      if (errorType === CalendarErrorType.RATE_LIMITED) {
+        throw new HttpsError(
+          'resource-exhausted',
+          'Google Calendar rate limit exceeded. Please try again later.',
         );
       }
 
@@ -354,6 +542,109 @@ export const createCalendar = onCall(
     } catch (error) {
       console.error('Error creating calendar:', error);
       throw new HttpsError('internal', 'Failed to create calendar.');
+    }
+  },
+);
+
+// Manual trigger for calendar sync
+export const triggerCalendarSync = onCall(
+  { region: 'europe-west1' },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    const userId = request.auth.uid;
+
+    const now = new Date();
+    const timeMin = new Date(
+      now.getTime() - SYNC_LOOKBACK_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const timeMax = new Date(
+      now.getTime() + SYNC_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    try {
+      const hasAccess = await calendar.hasCalendarAccess(userId);
+      if (!hasAccess) {
+        throw new HttpsError(
+          'failed-precondition',
+          'No calendar access. Please link your account first.',
+        );
+      }
+
+      const calendarId = await calendar.ensureTrimSalonCalendar(userId);
+      if (!calendarId) {
+        throw new HttpsError(
+          'internal',
+          'TrimSalon calendar unavailable. Please try again.',
+        );
+      }
+
+      await syncUserAgenda(userId, calendarId, timeMin, timeMax);
+      return { success: true };
+    } catch (error) {
+      console.error('Manual sync failed:', error);
+      // Re-throw HttpsErrors, wrap others
+      if (error instanceof HttpsError) {
+        throw error;
+      }
+      throw new HttpsError('internal', 'Sync failed.');
+    }
+  },
+);
+
+// Scheduled background sync (cost-aware, limited scope)
+export const scheduledCalendarSync = onSchedule(
+  {
+    region: 'europe-west1',
+    schedule: 'every 2 hours',
+    timeZone: 'Europe/Amsterdam',
+    timeoutSeconds: 300,
+    memory: '256MiB',
+  },
+  async () => {
+    const firestore = admin.firestore();
+    const allowedUsersSnap = await firestore.collection('allowed-users').get();
+
+    if (allowedUsersSnap.empty) {
+      console.log('No allowed users configured, skipping background sync.');
+      return;
+    }
+
+    const now = new Date();
+    const timeMin = new Date(
+      now.getTime() - SYNC_LOOKBACK_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const timeMax = new Date(
+      now.getTime() + SYNC_LOOKAHEAD_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    for (const doc of allowedUsersSnap.docs) {
+      const email = doc.id || (doc.data() as { email?: string }).email;
+      if (!email) {
+        continue;
+      }
+
+      try {
+        const userRecord = await admin.auth().getUserByEmail(email);
+        const userId = userRecord.uid;
+
+        const hasAccess = await calendar.hasCalendarAccess(userId);
+        if (!hasAccess) {
+          console.log(`Skipping ${email}: no calendar tokens stored.`);
+          continue;
+        }
+
+        const calendarId = await calendar.ensureTrimSalonCalendar(userId);
+        if (!calendarId) {
+          console.warn(`Skipping ${email}: TrimSalon calendar unavailable.`);
+          continue;
+        }
+
+        await syncUserAgenda(userId, calendarId, timeMin, timeMax);
+      } catch (error) {
+        console.error(`Background sync failed for ${email}:`, error);
+      }
     }
   },
 );

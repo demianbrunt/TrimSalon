@@ -20,26 +20,17 @@ export class AppDialogService {
       ? {
           ...config,
           maximizable: true,
-          width: '100%',
+          width: '100vw',
           height: '100vh',
           modal: true,
           closeOnEscape: false,
           dismissableMask: false,
+          styleClass:
+            (config.styleClass || '') + ' p-dialog-maximized mobile-dialog',
+          contentStyle: { ...(config.contentStyle || {}), height: '100%' },
         }
       : config;
 
-    const ref = this.dialogService.open(component, finalConfig);
-
-    // Maximize dialog on mobile after it opens
-    if (isMobile) {
-      setTimeout(() => {
-        const dialogInstance = this.dialogService.getInstance(ref);
-        if (dialogInstance) {
-          dialogInstance.maximize();
-        }
-      }, 0);
-    }
-
-    return ref;
+    return this.dialogService.open(component, finalConfig);
   }
 }

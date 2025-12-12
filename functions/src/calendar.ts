@@ -7,33 +7,112 @@ import { calendar_v3, google } from 'googleapis';
 const googleClientId = defineString('GOOGLE_CLIENT_ID');
 const googleClientSecret = defineString('GOOGLE_CLIENT_SECRET');
 
+// App configuration
+const APP_BASE_URL = 'https://trimsalon-9b823.web.app';
+const SALON_NAME = "Marlie's Trimsalon";
+
+/**
+ * Google Calendar color IDs mapped to appointment statuses.
+ * See: https://developers.google.com/calendar/api/v3/reference/colors/get
+ *
+ * Available colors:
+ * 1 = Lavender, 2 = Sage, 3 = Grape, 4 = Flamingo, 5 = Banana,
+ * 6 = Tangerine, 7 = Peacock, 8 = Graphite, 9 = Blueberry, 10 = Basil, 11 = Tomato
+ */
+const CALENDAR_COLORS: Record<string, string> = {
+  DEFAULT: '2', // Sage (Green) - matches app theme preference
+  COMPLETED: '2', // Sage (Green) - success
+  CANCELLED: '8', // Graphite (Gray) - inactive
+};
+
+// Appointment interface for type safety
+interface AppointmentData {
+  id?: string;
+  dog?: {
+    name?: string;
+    breed?: { name?: string };
+    isAggressive?: boolean;
+    gender?: 'male' | 'female';
+  };
+  client?: { name?: string; phone?: string; email?: string };
+  services?: { name: string }[];
+  packages?: { name: string }[];
+  notes?: string;
+  startTime?: string;
+  endTime?: string;
+  completed?: boolean;
+  deletedAt?: Date;
+}
+
 /**
  * Transform an Appointment object to a Google Calendar Event schema.
- * @param {any} appointment The appointment object from Firestore.
+ * @param {AppointmentData} appointment The appointment object from Firestore.
  * @param {boolean} includeId Whether to include the id field (for updates, not for creates).
  * @return {calendar_v3.Schema$Event} The transformed Google Calendar event.
  */
 export function appointmentToCalendarEvent(
-  appointment: any,
+  appointment: AppointmentData,
   includeId = false,
 ): calendar_v3.Schema$Event {
-  const dogName = appointment.dog?.name || 'Unknown Dog';
-  const clientName = appointment.client?.name || 'Unknown Client';
+  const dogName = appointment.dog?.name || 'Onbekende Hond';
+  const clientName = appointment.client?.name || 'Onbekende Klant';
+  const breed = appointment.dog?.breed?.name || '';
+  const gender =
+    appointment.dog?.gender === 'male'
+      ? 'Reu'
+      : appointment.dog?.gender === 'female'
+        ? 'Teefje'
+        : '';
   const services =
-    appointment.services?.map((s: any) => s.name).join(', ') || 'No services';
-  const packages =
-    appointment.packages?.map((p: any) => p.name).join(', ') || '';
+    appointment.services?.map((s) => s.name).join(', ') || 'Geen services';
+  const packages = appointment.packages?.map((p) => p.name).join(', ') || '';
+  const phone = appointment.client?.phone || '';
+  const email = appointment.client?.email || '';
+  const timeRange =
+    appointment.startTime && appointment.endTime
+      ? `${appointment.startTime} → ${appointment.endTime}`
+      : appointment.startTime
+        ? `${appointment.startTime}`
+        : '';
 
-  const summary = `${dogName} (${clientName})`;
-  const description = `
-Services: ${services}
-${packages ? `Packages: ${packages}` : ''}
-${appointment.notes ? `Notes: ${appointment.notes}` : ''}
-`.trim();
+  // Professional title format
+  const summary = `🐕 ${dogName} - ${clientName}`;
+
+  // Build rich description with deep link
+  const descriptionParts = [
+    appointment.dog?.isAggressive
+      ? '⚠️ WAARSCHUWING: HOND IS AGRESSIEF ⚠️'
+      : '',
+    gender ? `⚧ Geslacht: ${gender}` : '',
+    `📋 Services: ${services}`,
+    packages ? `📦 Pakketten: ${packages}` : '',
+    breed ? `🐾 Ras: ${breed}` : '',
+    phone ? `📞 Telefoon: ${phone}` : '',
+    email ? `✉️ Email: ${email}` : '',
+    timeRange ? `⏰ Tijd: ${timeRange}` : '',
+    appointment.notes ? `📝 Notities: ${appointment.notes}` : '',
+    '',
+    `━━━━━━━━━━━━━━━━━━━━━━`,
+    `📱 Open in app:`,
+    appointment.id
+      ? `${APP_BASE_URL}/appointments/${appointment.id}`
+      : 'Link wordt beschikbaar na opslaan',
+  ].filter(Boolean);
+
+  const description = descriptionParts.join('\n');
+
+  // Determine color based on status
+  let colorId = CALENDAR_COLORS.DEFAULT;
+  if (appointment.completed) {
+    colorId = CALENDAR_COLORS.COMPLETED;
+  } else if (appointment.deletedAt) {
+    colorId = CALENDAR_COLORS.CANCELLED;
+  }
 
   const event: calendar_v3.Schema$Event = {
     summary,
     description,
+    location: SALON_NAME,
     start: {
       dateTime: appointment.startTime,
       timeZone: 'Europe/Amsterdam',
@@ -42,7 +121,14 @@ ${appointment.notes ? `Notes: ${appointment.notes}` : ''}
       dateTime: appointment.endTime,
       timeZone: 'Europe/Amsterdam',
     },
-    colorId: '9', // Sage/Salie color in Google Calendar
+    colorId,
+    // Extended properties for two-way sync (future use)
+    extendedProperties: {
+      private: {
+        appointmentId: appointment.id || '',
+        source: 'trimsalon-app',
+      },
+    },
   };
 
   // Only include ID for updates, not for new events
@@ -51,6 +137,118 @@ ${appointment.notes ? `Notes: ${appointment.notes}` : ''}
   }
 
   return event;
+}
+
+/**
+ * Error types for calendar operations.
+ */
+export enum CalendarErrorType {
+  AUTH_EXPIRED = 'AUTH_EXPIRED',
+  RATE_LIMITED = 'RATE_LIMITED',
+  NOT_FOUND = 'NOT_FOUND',
+  UNKNOWN = 'UNKNOWN',
+}
+
+/**
+ * Analyze a calendar API error and return the error type.
+ * @param {unknown} error The error to analyze.
+ * @return {CalendarErrorType} The categorized error type.
+ */
+export function categorizeCalendarError(error: unknown): CalendarErrorType {
+  const errorMessage = (error as { message?: string })?.message || '';
+  const errorCode = (error as { code?: string | number })?.code;
+
+  // Auth errors - token expired or revoked
+  if (
+    errorMessage.includes('invalid_grant') ||
+    errorMessage.includes('Token has been expired or revoked') ||
+    errorCode === 401
+  ) {
+    return CalendarErrorType.AUTH_EXPIRED;
+  }
+
+  // Rate limiting
+  if (errorCode === 429 || errorMessage.includes('Rate Limit Exceeded')) {
+    return CalendarErrorType.RATE_LIMITED;
+  }
+
+  // Not found
+  if (errorCode === 404) {
+    return CalendarErrorType.NOT_FOUND;
+  }
+
+  return CalendarErrorType.UNKNOWN;
+}
+
+/**
+ * Mark user's Google sync as needing re-authorization.
+ * @param {string} userId The user's ID.
+ * @return {Promise<void>} A promise that resolves when the status is updated.
+ */
+export async function markSyncNeedsReauth(userId: string): Promise<void> {
+  const firestore = admin.firestore();
+  const userRef = firestore.collection('users').doc(userId);
+  await userRef.set(
+    {
+      googleSyncStatus: 'NEEDS_REAUTH',
+      googleSyncStatusUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+  console.log(`Google sync marked as needing re-auth for user ${userId}`);
+}
+
+/**
+ * Clear the user's sync error status (call after successful re-auth).
+ * @param {string} userId The user's ID.
+ * @return {Promise<void>} A promise that resolves when the status is cleared.
+ */
+export async function clearSyncStatus(userId: string): Promise<void> {
+  const firestore = admin.firestore();
+  const userRef = firestore.collection('users').doc(userId);
+  await userRef.set(
+    {
+      googleSyncStatus: 'OK',
+      googleSyncStatusUpdatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true },
+  );
+  console.log(`Google sync status cleared for user ${userId}`);
+}
+
+/**
+ * Check if an appointment update is significant enough to sync to Google.
+ * Prevents unnecessary API calls for irrelevant changes.
+ * @param {AppointmentData | null} before The appointment data before the change.
+ * @param {AppointmentData | null} after The appointment data after the change.
+ * @return {boolean} True if the change should trigger a sync.
+ */
+export function isSignificantChange(
+  before: AppointmentData | null,
+  after: AppointmentData | null,
+): boolean {
+  // Fields that matter for Google Calendar
+  const relevantFields: (keyof AppointmentData)[] = [
+    'startTime',
+    'endTime',
+    'dog',
+    'client',
+    'services',
+    'packages',
+    'notes',
+    'completed',
+    'deletedAt',
+  ];
+
+  for (const field of relevantFields) {
+    const beforeValue = JSON.stringify(before?.[field]);
+    const afterValue = JSON.stringify(after?.[field]);
+    if (beforeValue !== afterValue) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -152,6 +350,48 @@ export async function getCalendarClient(
 
   console.log(`Calendar client created for user ${userId}`);
   return google.calendar({ version: 'v3', auth: oAuth2Client });
+}
+
+/**
+ * Ensure the "TrimSalon" calendar exists for the user and return its ID.
+ * This is useful for background sync where the calendar may not be initialized by the client.
+ * @param {string} userId The user's ID.
+ * @return {Promise<string | null>} The calendar ID or null if unavailable.
+ */
+export async function ensureTrimSalonCalendar(
+  userId: string,
+): Promise<string | null> {
+  try {
+    const calendarClient = await getCalendarClient(userId);
+    if (!calendarClient) {
+      return null;
+    }
+
+    const list = await calendarClient.calendarList.list();
+    const existing = list.data.items?.find(
+      (item) => item?.summary === 'TrimSalon' && item.id,
+    );
+
+    if (existing?.id) {
+      return existing.id;
+    }
+
+    const created = await calendarClient.calendars.insert({
+      requestBody: { summary: 'TrimSalon' },
+    });
+
+    return created.data.id || null;
+  } catch (error) {
+    const errorType = categorizeCalendarError(error);
+
+    if (errorType === CalendarErrorType.AUTH_EXPIRED) {
+      await removeUserTokens(userId);
+      await markSyncNeedsReauth(userId);
+    }
+
+    console.error('Failed to ensure TrimSalon calendar:', error);
+    return null;
+  }
 }
 
 /**
@@ -279,8 +519,36 @@ export async function deleteCalendarEvent(
     return;
   }
 
-  await calendarClient.events.delete({
-    calendarId: calendarId,
-    eventId,
-  });
+  try {
+    // Safety check: Verify ownership before deletion
+    // We fetch the event first to check the 'source' property
+    const existingEvent = await calendarClient.events.get({
+      calendarId,
+      eventId,
+    });
+
+    const source = existingEvent.data.extendedProperties?.private?.['source'];
+
+    // Only delete if it was created by our app
+    if (source === 'trimsalon-app') {
+      await calendarClient.events.delete({
+        calendarId: calendarId,
+        eventId,
+      });
+      console.log(`Deleted app-owned event ${eventId}`);
+    } else {
+      console.warn(
+        `Blocked deletion of external event ${eventId} (Source: ${source})`,
+      );
+    }
+  } catch (error) {
+    // If event is already gone (404), we consider the deletion successful
+    const errorType = categorizeCalendarError(error);
+    if (errorType === CalendarErrorType.NOT_FOUND) {
+      console.log(`Event ${eventId} already deleted or not found.`);
+      return;
+    }
+    // Re-throw other errors to be handled by the caller
+    throw error;
+  }
 }

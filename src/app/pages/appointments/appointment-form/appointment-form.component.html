@@ -1,15 +1,31 @@
 <div class="md:p-4">
   <p-card styleClass="responsive-card mx-auto max-w-4xl">
     <ng-template pTemplate="title">
-      <h2 class="m-0">
-        {{ isEditMode ? "Afspraak Bewerken" : "Nieuwe Afspraak" }}
-      </h2>
+      <div class="flex justify-content-between align-items-center">
+        <h2 class="m-0">
+          {{ isEditMode ? "Afspraak Bewerken" : "Nieuwe Afspraak" }}
+        </h2>
+        <div class="text-sm text-color-secondary" *ngIf="!isEditMode">
+          Stap {{ currentStep + 1 }} van {{ steps.length }}
+        </div>
+      </div>
     </ng-template>
+
+    <div class="mb-5" *ngIf="!isEditMode">
+      <p-steps
+        [model]="steps"
+        [(activeIndex)]="currentStep"
+        [readonly]="true"
+      ></p-steps>
+    </div>
 
     <form [formGroup]="form" class="p-fluid form-content-wrapper">
       <!-- STAP 1: KLANT & HOND SELECTIE -->
-      <div class="mb-4">
-        <h3 class="text-lg font-semibold mb-3 flex align-items-center gap-2">
+      <div *ngIf="currentStep === 0 || isEditMode" class="mb-4">
+        <h3
+          class="text-lg font-semibold mb-3 flex align-items-center gap-2"
+          *ngIf="!isEditMode"
+        >
           <i class="pi pi-user text-primary"></i>
           Klant & Hond
         </h3>
@@ -57,14 +73,14 @@
               <small class="text-color-secondary mt-1 block"
                 >Selecteer eerst een klant</small
               >
-            } @else if (dog.value && dog.value.isAggressive) {
+            } @else if (isSelectedDogAggressive) {
               <p-message
-                styleClass="mt-3"
-                severity="error"
+                styleClass="mt-3 w-full block"
+                severity="warn"
                 icon="pi pi-exclamation-triangle"
-                message="Let op: Dit dier is gemarkeerd als agressief"
-                >Let op: Dit dier is gemarkeerd als agressief</p-message
               >
+                Let op: Deze hond is gemarkeerd als agressief!
+              </p-message>
             } @else if (dog.value && dog.value.breed) {
               <small class="text-color-secondary mt-1 block">
                 <i class="pi pi-info-circle"></i>
@@ -81,11 +97,80 @@
         </div>
       </div>
 
-      <p-divider />
+      <p-divider *ngIf="isEditMode" />
 
-      <!-- STAP 2: WERKZAAMHEDEN -->
-      <div class="mb-4">
-        <h3 class="text-lg font-semibold mb-3 flex align-items-center gap-2">
+      <!-- STAP 2: DATUM & TIJD (Moved up for wizard flow) -->
+      <div *ngIf="currentStep === 1 || isEditMode" class="mb-4">
+        <h3
+          class="text-lg font-semibold mb-3 flex align-items-center gap-2"
+          *ngIf="!isEditMode"
+        >
+          <i class="pi pi-calendar text-primary"></i>
+          Planning
+        </h3>
+        <div class="formgrid grid">
+          <div class="field col-12 md:col-4">
+            <label for="appointmentDate" class="block mb-2 font-medium"
+              >Datum <span class="text-red-500">*</span></label
+            >
+            <p-datepicker
+              id="appointmentDate"
+              formControlName="appointmentDate"
+              dateFormat="dd-mm-yy"
+              [showIcon]="true"
+              placeholder="Kies een datum"
+              styleClass="w-full"
+              appendTo="body"
+            />
+          </div>
+
+          <div class="field col-12 md:col-4">
+            <label for="startTime" class="block mb-2 font-medium"
+              >Starttijd <span class="text-red-500">*</span></label
+            >
+            <p-datepicker
+              id="startTime"
+              formControlName="startTime"
+              [timeOnly]="true"
+              hourFormat="24"
+              [showIcon]="true"
+              placeholder="Kies starttijd"
+              styleClass="w-full"
+              appendTo="body"
+            />
+          </div>
+
+          <div class="field col-12 md:col-4">
+            <label for="calculatedEndTime" class="block mb-2 font-medium"
+              >Verwachte eindtijd</label
+            >
+            <div
+              class="p-inputtext w-full flex align-items-center"
+              style="height: 48px"
+            >
+              @if (calculatedEndTime) {
+                <span class="font-semibold text-primary">
+                  {{ calculatedEndTime | date: "HH:mm" }}
+                </span>
+              } @else {
+                <span class="text-color-secondary">Wordt berekend...</span>
+              }
+            </div>
+            <small class="text-color-secondary mt-1 block"
+              >Automatisch berekend op basis van geschatte duur</small
+            >
+          </div>
+        </div>
+      </div>
+
+      <p-divider *ngIf="isEditMode" />
+
+      <!-- STAP 3: WERKZAAMHEDEN -->
+      <div *ngIf="currentStep === 2 || isEditMode" class="mb-4">
+        <h3
+          class="text-lg font-semibold mb-3 flex align-items-center gap-2"
+          *ngIf="!isEditMode"
+        >
           <i class="pi pi-wrench text-primary"></i>
           Werkzaamheden
         </h3>
@@ -112,14 +197,14 @@
 
           <div class="field col-12 md:col-6">
             <label for="services" class="block mb-2 font-medium"
-              >Extra Services</label
+              >Extra Werkzaamheden</label
             >
             <p-multiSelect
               id="services"
               [options]="services"
               [formControl]="servicesControl"
               optionLabel="name"
-              placeholder="Selecteer extra services"
+              placeholder="Selecteer extra werkzaamheden"
               display="chip"
               [showClear]="true"
               styleClass="w-full"
@@ -224,358 +309,320 @@
         }
       </div>
 
-      <p-divider />
-
-      <!-- STAP 3: DATUM & TIJD -->
-      <div class="mb-4">
-        <h3 class="text-lg font-semibold mb-3 flex align-items-center gap-2">
-          <i class="pi pi-calendar text-primary"></i>
-          Planning
+      <!-- STAP 4: OVERZICHT & NOTITIES -->
+      <div *ngIf="currentStep === 3 || isEditMode" class="mb-4">
+        <h3
+          class="text-lg font-semibold mb-3 flex align-items-center gap-2"
+          *ngIf="!isEditMode"
+        >
+          <i class="pi pi-check-circle text-primary"></i>
+          Overzicht & Notities
         </h3>
-        <div class="formgrid grid">
-          <div class="field col-12 md:col-4">
-            <label for="appointmentDate" class="block mb-2 font-medium"
-              >Datum <span class="text-red-500">*</span></label
-            >
-            <p-datepicker
-              id="appointmentDate"
-              formControlName="appointmentDate"
-              dateFormat="dd-mm-yy"
-              [showIcon]="true"
-              placeholder="Kies een datum"
-              styleClass="w-full"
-              appendTo="body"
-            />
-          </div>
 
-          <div class="field col-12 md:col-4">
-            <label for="startTime" class="block mb-2 font-medium"
-              >Starttijd <span class="text-red-500">*</span></label
-            >
-            <p-datepicker
-              id="startTime"
-              formControlName="startTime"
-              [timeOnly]="true"
-              hourFormat="24"
-              [showIcon]="true"
-              placeholder="Kies starttijd"
-              styleClass="w-full"
-              appendTo="body"
-            />
-          </div>
-
-          <div class="field col-12 md:col-4">
-            <label for="calculatedEndTime" class="block mb-2 font-medium"
-              >Verwachte eindtijd</label
-            >
-            <div
-              class="p-inputtext w-full flex align-items-center"
-              style="height: 48px"
-            >
-              @if (calculatedEndTime) {
-                <span class="font-semibold text-primary">
-                  {{ calculatedEndTime | date: "HH:mm" }}
-                </span>
-              } @else {
-                <span class="text-color-secondary">Wordt berekend...</span>
-              }
-            </div>
-            <small class="text-color-secondary mt-1 block"
-              >Automatisch berekend op basis van geschatte duur</small
-            >
-          </div>
+        <div class="field">
+          <label for="notes" class="block mb-2 font-medium">Notities</label>
+          <textarea
+            id="notes"
+            rows="3"
+            pTextarea
+            formControlName="notes"
+            placeholder="Bijzonderheden voor deze afspraak..."
+            class="w-full"
+          ></textarea>
         </div>
 
-        @if (isEditMode) {
-          <p-divider />
+        <div *ngIf="!isEditMode" class="bg-gray-50 p-3 border-round mt-3">
+          <h4 class="m-0 mb-2">Samenvatting</h4>
+          <ul class="list-none p-0 m-0">
+            <li class="mb-2 flex align-items-center gap-2">
+              <i class="pi pi-user text-color-secondary"></i>
+              <strong>Klant:</strong> {{ client.value?.name || "-" }}
+            </li>
+            <li class="mb-2 flex align-items-center gap-2">
+              <i class="pi pi-github text-color-secondary"></i>
+              <strong>Hond:</strong> {{ dog.value?.name || "-" }}
+              <span
+                *ngIf="isSelectedDogAggressive"
+                class="text-red-500 font-bold ml-2"
+              >
+                <i class="pi pi-exclamation-triangle"></i> AGRESSIEF
+              </span>
+            </li>
+            <li class="mb-2 flex align-items-center gap-2">
+              <i class="pi pi-calendar text-color-secondary"></i>
+              <strong>Datum:</strong>
+              {{ form.get("appointmentDate")?.value | date: "dd-MM-yyyy" }}
+            </li>
+            <li class="mb-2 flex align-items-center gap-2">
+              <i class="pi pi-clock text-color-secondary"></i>
+              <strong>Tijd:</strong>
+              {{ form.get("startTime")?.value | date: "HH:mm" }}
+            </li>
+          </ul>
+        </div>
+      </div>
 
-          <!-- WERKELIJK UITGEVOERD WERK -->
-          <div class="mt-4">
-            <h4
-              class="text-md font-semibold mb-3 flex align-items-center gap-2"
-            >
-              <i class="pi pi-check-square text-green-600"></i>
-              Werkelijk Uitgevoerd Werk (Logboek)
-            </h4>
-            <div class="formgrid grid">
-              <div class="field col-12 md:col-4">
-                <label for="actualEndTime" class="block mb-2 font-medium"
-                  >Werkelijke eindtijd
-                  <span class="text-red-500">*</span></label
-                >
-                <p-datepicker
-                  id="actualEndTime"
-                  formControlName="actualEndTime"
-                  [showTime]="true"
-                  hourFormat="24"
-                  dateFormat="dd-mm-yy"
-                  [showIcon]="true"
-                  placeholder="Werkelijke eindtijd"
-                  styleClass="w-full"
-                  appendTo="body"
-                />
-                <small class="text-color-secondary mt-1 block"
-                  >Pas aan na voltooiing van de afspraak</small
-                >
+      @if (isEditMode) {
+        <p-divider />
+
+        <!-- WERKELIJK UITGEVOERD WERK -->
+        <div class="mt-4">
+          <h4 class="text-md font-semibold mb-3 flex align-items-center gap-2">
+            <i class="pi pi-check-square text-green-600"></i>
+            Werkelijk Uitgevoerd Werk (Logboek)
+          </h4>
+          <div class="formgrid grid">
+            <div class="field col-12 md:col-4">
+              <label for="actualEndTime" class="block mb-2 font-medium"
+                >Werkelijke eindtijd <span class="text-red-500">*</span></label
+              >
+              <p-datepicker
+                id="actualEndTime"
+                formControlName="actualEndTime"
+                [showTime]="true"
+                hourFormat="24"
+                dateFormat="dd-mm-yy"
+                [showIcon]="true"
+                placeholder="Werkelijke eindtijd"
+                styleClass="w-full"
+                appendTo="body"
+              />
+              <small class="text-color-secondary mt-1 block"
+                >Pas aan na voltooiing van de afspraak</small
+              >
+            </div>
+
+            <div class="field col-12 md:col-4">
+              <label for="actualPackages" class="block mb-2 font-medium"
+                >Werkelijk uitgevoerde pakketten</label
+              >
+              <p-multiSelect
+                id="actualPackages"
+                [options]="packages"
+                formControlName="actualPackages"
+                optionLabel="name"
+                placeholder="Selecteer pakketten"
+                display="chip"
+                [showClear]="true"
+                styleClass="w-full"
+                appendTo="body"
+              />
+              <small class="text-color-secondary mt-1 block"
+                >Wijzig indien afwijkend van geschatte</small
+              >
+            </div>
+
+            <div class="field col-12 md:col-4">
+              <label for="actualServices" class="block mb-2 font-medium"
+                >Werkelijk uitgevoerde werkzaamheden</label
+              >
+              <p-multiSelect
+                id="actualServices"
+                [options]="services"
+                formControlName="actualServices"
+                optionLabel="name"
+                placeholder="Selecteer werkzaamheden"
+                display="chip"
+                [showClear]="true"
+                styleClass="w-full"
+                appendTo="body"
+              />
+              <small class="text-color-secondary mt-1 block"
+                >Wijzig indien afwijkend van geschatte</small
+              >
+            </div>
+          </div>
+
+          <!-- Actual Pricing Display -->
+          @if (actualPriceCalculation && actualHourlyRateCalculation) {
+            <div class="mt-3 grid">
+              <div class="col-12 md:col-6">
+                <div class="bg-blue-50 border-round p-3 h-full">
+                  <div class="flex align-items-center gap-2 mb-2">
+                    <i class="pi pi-euro text-blue-600 text-xl"></i>
+                    <div class="font-semibold text-blue-600">
+                      Werkelijke prijs:
+                      {{ actualPriceCalculation.totalPrice | currency: "EUR" }}
+                    </div>
+                  </div>
+                  <small class="text-color-secondary">
+                    Totale duur:
+                    {{
+                      formatDuration(actualHourlyRateCalculation.totalMinutes)
+                    }}
+                  </small>
+                </div>
               </div>
 
-              <div class="field col-12 md:col-4">
-                <label for="actualPackages" class="block mb-2 font-medium"
-                  >Werkelijk uitgevoerde pakketten</label
-                >
-                <p-multiSelect
-                  id="actualPackages"
-                  [options]="packages"
-                  formControlName="actualPackages"
-                  optionLabel="name"
-                  placeholder="Selecteer pakketten"
-                  display="chip"
-                  [showClear]="true"
-                  styleClass="w-full"
-                  appendTo="body"
-                />
-                <small class="text-color-secondary mt-1 block"
-                  >Wijzig indien afwijkend van geschatte</small
-                >
-              </div>
-
-              <div class="field col-12 md:col-4">
-                <label for="actualServices" class="block mb-2 font-medium"
-                  >Werkelijk uitgevoerde services</label
-                >
-                <p-multiSelect
-                  id="actualServices"
-                  [options]="services"
-                  formControlName="actualServices"
-                  optionLabel="name"
-                  placeholder="Selecteer services"
-                  display="chip"
-                  [showClear]="true"
-                  styleClass="w-full"
-                  appendTo="body"
-                />
-                <small class="text-color-secondary mt-1 block"
-                  >Wijzig indien afwijkend van geschatte</small
-                >
+              <div class="col-12 md:col-6">
+                <div class="bg-purple-50 border-round p-3 h-full">
+                  <div class="flex align-items-center gap-2 mb-2">
+                    <i class="pi pi-chart-line text-purple-600 text-xl"></i>
+                    <div class="font-semibold text-purple-600">
+                      Behaald uurtarief:
+                      {{
+                        actualHourlyRateCalculation.effectiveHourlyRate
+                          | number: "1.0-0"
+                      }}
+                      €/uur
+                    </div>
+                  </div>
+                  <small class="text-color-secondary">
+                    @if (actualHourlyRateCalculation.rateComparison >= 95) {
+                      <i class="pi pi-check-circle text-green-600"></i>
+                      Uitstekend!
+                    } @else if (
+                      actualHourlyRateCalculation.rateComparison >= 80
+                    ) {
+                      <i class="pi pi-exclamation-triangle text-orange-500"></i>
+                      Bijna op streefdoel
+                    } @else {
+                      <i class="pi pi-times-circle text-red-500"></i> Onder
+                      streefdoel
+                    }
+                    ({{
+                      actualHourlyRateCalculation.rateComparison
+                        | number: "1.0-0"
+                    }}% van €{{ actualHourlyRateCalculation.targetRate }})
+                  </small>
+                </div>
               </div>
             </div>
 
-            <!-- Actual Pricing Display -->
-            @if (actualPriceCalculation && actualHourlyRateCalculation) {
-              <div class="mt-3 grid">
-                <div class="col-12 md:col-6">
-                  <div class="bg-blue-50 border-round p-3 h-full">
-                    <div class="flex align-items-center gap-2 mb-2">
-                      <i class="pi pi-euro text-blue-600 text-xl"></i>
-                      <div class="font-semibold text-blue-600">
-                        Werkelijke prijs:
+            <!-- Comparison -->
+            @if (priceCalculation && hourlyRateCalculation) {
+              <div class="mt-3">
+                <div class="bg-gray-50 border-round p-3">
+                  <div class="font-semibold mb-2 flex align-items-center gap-2">
+                    <i class="pi pi-arrows-h text-gray-600"></i>
+                    Vergelijking Geschat vs Werkelijk
+                  </div>
+                  <div class="grid">
+                    <div class="col-12 md:col-4">
+                      <small class="text-color-secondary"
+                        >Prijs verschil:</small
+                      >
+                      <div
+                        class="font-semibold"
+                        [class.text-green-600]="
+                          actualPriceCalculation.totalPrice >=
+                          priceCalculation.totalPrice
+                        "
+                        [class.text-red-500]="
+                          actualPriceCalculation.totalPrice <
+                          priceCalculation.totalPrice
+                        "
+                      >
                         {{
-                          actualPriceCalculation.totalPrice | currency: "EUR"
+                          actualPriceCalculation.totalPrice -
+                            priceCalculation.totalPrice | currency: "EUR"
                         }}
                       </div>
                     </div>
-                    <small class="text-color-secondary">
-                      Totale duur:
-                      {{
-                        formatDuration(actualHourlyRateCalculation.totalMinutes)
-                      }}
-                    </small>
-                  </div>
-                </div>
-
-                <div class="col-12 md:col-6">
-                  <div class="bg-purple-50 border-round p-3 h-full">
-                    <div class="flex align-items-center gap-2 mb-2">
-                      <i class="pi pi-chart-line text-purple-600 text-xl"></i>
-                      <div class="font-semibold text-purple-600">
-                        Behaald uurtarief:
+                    <div class="col-12 md:col-4">
+                      <small class="text-color-secondary">Tijd verschil:</small>
+                      <div
+                        class="font-semibold"
+                        [class.text-green-600]="
+                          actualHourlyRateCalculation.totalMinutes <=
+                          estimatedDurationMinutes
+                        "
+                        [class.text-orange-500]="
+                          actualHourlyRateCalculation.totalMinutes >
+                          estimatedDurationMinutes
+                        "
+                      >
                         {{
-                          actualHourlyRateCalculation.effectiveHourlyRate
+                          formatDurationDifference(
+                            actualHourlyRateCalculation.totalMinutes,
+                            estimatedDurationMinutes
+                          )
+                        }}
+                      </div>
+                    </div>
+                    <div class="col-12 md:col-4">
+                      <small class="text-color-secondary"
+                        >Uurtarief verschil:</small
+                      >
+                      <div
+                        class="font-semibold"
+                        [class.text-green-600]="
+                          actualHourlyRateCalculation.effectiveHourlyRate >=
+                          hourlyRateCalculation.effectiveHourlyRate
+                        "
+                        [class.text-red-500]="
+                          actualHourlyRateCalculation.effectiveHourlyRate <
+                          hourlyRateCalculation.effectiveHourlyRate
+                        "
+                      >
+                        {{
+                          actualHourlyRateCalculation.effectiveHourlyRate -
+                            hourlyRateCalculation.effectiveHourlyRate >
+                          0
+                            ? "+"
+                            : ""
+                        }}{{
+                          actualHourlyRateCalculation.effectiveHourlyRate -
+                            hourlyRateCalculation.effectiveHourlyRate
                             | number: "1.0-0"
                         }}
                         €/uur
                       </div>
                     </div>
-                    <small class="text-color-secondary">
-                      @if (actualHourlyRateCalculation.rateComparison >= 95) {
-                        <i class="pi pi-check-circle text-green-600"></i>
-                        Uitstekend!
-                      } @else if (
-                        actualHourlyRateCalculation.rateComparison >= 80
-                      ) {
-                        <i
-                          class="pi pi-exclamation-triangle text-orange-500"
-                        ></i>
-                        Bijna op streefdoel
-                      } @else {
-                        <i class="pi pi-times-circle text-red-500"></i> Onder
-                        streefdoel
-                      }
-                      ({{
-                        actualHourlyRateCalculation.rateComparison
-                          | number: "1.0-0"
-                      }}% van €{{ actualHourlyRateCalculation.targetRate }})
-                    </small>
                   </div>
                 </div>
               </div>
-
-              <!-- Comparison -->
-              @if (priceCalculation && hourlyRateCalculation) {
-                <div class="mt-3">
-                  <div class="bg-gray-50 border-round p-3">
-                    <div
-                      class="font-semibold mb-2 flex align-items-center gap-2"
-                    >
-                      <i class="pi pi-arrows-h text-gray-600"></i>
-                      Vergelijking Geschat vs Werkelijk
-                    </div>
-                    <div class="grid">
-                      <div class="col-12 md:col-4">
-                        <small class="text-color-secondary"
-                          >Prijs verschil:</small
-                        >
-                        <div
-                          class="font-semibold"
-                          [class.text-green-600]="
-                            actualPriceCalculation.totalPrice >=
-                            priceCalculation.totalPrice
-                          "
-                          [class.text-red-500]="
-                            actualPriceCalculation.totalPrice <
-                            priceCalculation.totalPrice
-                          "
-                        >
-                          {{
-                            actualPriceCalculation.totalPrice -
-                              priceCalculation.totalPrice | currency: "EUR"
-                          }}
-                        </div>
-                      </div>
-                      <div class="col-12 md:col-4">
-                        <small class="text-color-secondary"
-                          >Tijd verschil:</small
-                        >
-                        <div
-                          class="font-semibold"
-                          [class.text-green-600]="
-                            actualHourlyRateCalculation.totalMinutes <=
-                            estimatedDurationMinutes
-                          "
-                          [class.text-orange-500]="
-                            actualHourlyRateCalculation.totalMinutes >
-                            estimatedDurationMinutes
-                          "
-                        >
-                          {{
-                            formatDurationDifference(
-                              actualHourlyRateCalculation.totalMinutes,
-                              estimatedDurationMinutes
-                            )
-                          }}
-                        </div>
-                      </div>
-                      <div class="col-12 md:col-4">
-                        <small class="text-color-secondary"
-                          >Uurtarief verschil:</small
-                        >
-                        <div
-                          class="font-semibold"
-                          [class.text-green-600]="
-                            actualHourlyRateCalculation.effectiveHourlyRate >=
-                            hourlyRateCalculation.effectiveHourlyRate
-                          "
-                          [class.text-red-500]="
-                            actualHourlyRateCalculation.effectiveHourlyRate <
-                            hourlyRateCalculation.effectiveHourlyRate
-                          "
-                        >
-                          {{
-                            actualHourlyRateCalculation.effectiveHourlyRate -
-                              hourlyRateCalculation.effectiveHourlyRate >
-                            0
-                              ? "+"
-                              : ""
-                          }}{{
-                            actualHourlyRateCalculation.effectiveHourlyRate -
-                              hourlyRateCalculation.effectiveHourlyRate
-                              | number: "1.0-0"
-                          }}
-                          €/uur
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              }
             }
-          </div>
-        }
-      </div>
-
-      <p-divider />
-
-      <!-- STAP 4: NOTITIES -->
-      <div class="mb-3">
-        <h3 class="text-lg font-semibold mb-3 flex align-items-center gap-2">
-          <i class="pi pi-file-edit text-primary"></i>
-          Notities
-        </h3>
-        <div class="field">
-          <label for="notes" class="block mb-2 font-medium">Opmerkingen</label>
-          <textarea
-            id="notes"
-            pTextarea
-            formControlName="notes"
-            rows="4"
-            placeholder="Voeg hier eventuele opmerkingen of bijzonderheden toe..."
-            class="w-full"
-          ></textarea>
-          <small class="text-color-secondary mt-1 block"
-            >Optioneel - bijv. speciale wensen van de klant</small
-          >
+          }
         </div>
-      </div>
-    </form>
+      }
 
-    <ng-template pTemplate="footer">
+      <!-- NAVIGATION BUTTONS -->
       <div
-        class="flex justify-content-between align-items-center sticky-footer-actions"
+        class="flex justify-content-between mt-5 pt-3 border-top-1 border-gray-200"
       >
-        <!-- Samenvatting -->
-        @if (client.value && dog.value) {
-          <div class="text-sm text-color-secondary">
-            <i class="pi pi-check-circle text-green-500"></i>
-            {{ client.value.name }} - {{ dog.value.name }}
-            @if (estimatedDurationMinutes > 0) {
-              <span class="ml-2">
-                • {{ formatDuration(estimatedDurationMinutes) }}
-              </span>
-            }
-          </div>
-        } @else {
-          <div></div>
-        }
+        <div *ngIf="!isEditMode">
+          <p-button
+            *ngIf="currentStep > 0"
+            label="Vorige"
+            icon="pi pi-arrow-left"
+            styleClass="p-button-secondary"
+            (onClick)="prevStep()"
+          ></p-button>
+        </div>
 
-        <!-- Acties -->
-        <div class="flex gap-2">
+        <div class="flex gap-2 ml-auto sticky-footer-actions">
+          <p-button
+            *ngIf="!isEditMode && currentStep < steps.length - 1"
+            label="Volgende"
+            icon="pi pi-arrow-right"
+            iconPos="right"
+            (onClick)="nextStep()"
+            [disabled]="
+              (currentStep === 0 && (!client.valid || !dog.valid)) ||
+              (currentStep === 1 &&
+                (!form.get('appointmentDate')?.valid ||
+                  !form.get('startTime')?.valid))
+            "
+          ></p-button>
+
+          <p-button
+            *ngIf="isEditMode || currentStep === steps.length - 1"
+            label="Opslaan"
+            icon="pi pi-check"
+            (onClick)="submit()"
+            [loading]="isLoading"
+            [disabled]="form.invalid"
+          ></p-button>
+
           <p-button
             label="Annuleren"
             icon="pi pi-times"
             styleClass="p-button-text"
-            (click)="cancel()"
-            type="button"
-          />
-          <p-button
-            label="Opslaan"
-            icon="pi pi-check"
-            (click)="submit()"
-            [disabled]="form.invalid || isSaving"
-            [loading]="isSaving"
-            type="button"
-          />
+            (onClick)="cancel()"
+          ></p-button>
         </div>
       </div>
-    </ng-template>
+    </form>
   </p-card>
 </div>

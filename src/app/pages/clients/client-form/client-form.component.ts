@@ -16,12 +16,14 @@ import {
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DividerModule } from 'primeng/divider';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { SelectModule } from 'primeng/select';
+import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { FormBaseComponent } from '../../../core/components/form-base/form-base.component';
 import { ValidationMessageComponent } from '../../../core/components/validation-message/validation-message.component';
@@ -50,6 +52,8 @@ import { ClientService } from '../../../core/services/client.service';
     CardModule,
     MessageModule,
     ValidationMessageComponent,
+    DatePickerModule,
+    TagModule,
   ],
   templateUrl: './client-form.component.html',
   styleUrls: ['./client-form.component.css'],
@@ -64,6 +68,7 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
       FormGroup<{
         name: FormControl<string | null>;
         breed: FormControl<Breed | null>;
+        dateOfBirth: FormControl<Date | null>;
         age: FormControl<number | null>;
         gender: FormControl<'male' | 'female' | null>;
         isNeutered: FormControl<boolean | null>;
@@ -102,14 +107,16 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
 
   override afterValidityEnsured(): Promise<void> {
     return new Promise((resolve, reject) => {
+      const formValue = this.form.getRawValue();
       const clientData: Client = {
-        id: this.form.value.id,
-        name: this.form.value.name,
-        email: this.form.value.email,
-        phone: this.form.value.phone,
-        dogs: this.form.value.dogs.map((dog) => ({
+        id: formValue.id,
+        name: formValue.name,
+        email: formValue.email,
+        phone: formValue.phone,
+        dogs: formValue.dogs.map((dog) => ({
           name: dog.name,
           breed: dog.breed,
+          dateOfBirth: dog.dateOfBirth,
           age: dog.age,
           gender: dog.gender,
           isNeutered: dog.isNeutered,
@@ -128,7 +135,9 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
             'Succes',
             `Klant ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
           );
-          this.router.navigate(['/clients']);
+          this.router.navigate(['/clients'], {
+            queryParamsHandling: 'preserve',
+          });
           resolve();
         },
         error: (err) => {
@@ -144,12 +153,13 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
       this.form = this.formBuilder.group({
         id: new FormControl(null),
         name: new FormControl(null, Validators.required),
-        email: new FormControl(null, [Validators.required, Validators.email]),
+        email: new FormControl(null, [Validators.email]),
         phone: new FormControl(null, Validators.required),
         dogs: this.formBuilder.array<
           FormGroup<{
             name: FormControl<string | null>;
             breed: FormControl<Breed | null>;
+            dateOfBirth: FormControl<Date | null>;
             age: FormControl<number | null>;
             gender: FormControl<'male' | 'female' | null>;
             isNeutered: FormControl<boolean | null>;
@@ -213,7 +223,12 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
           return;
         }
 
-        this.form.patchValue(client);
+        this.form.patchValue({
+          id: client.id,
+          name: client.name,
+          email: client.email,
+          phone: client.phone,
+        });
         this.dogsArray.clear();
         client.dogs.forEach((dog) =>
           this.dogsArray.push(this.newDogGroup(dog)),
@@ -234,14 +249,39 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   }
 
   newDogGroup(dog?: Dog): FormGroup {
-    return this.formBuilder.group({
+    const dob = dog?.dateOfBirth ? new Date(dog.dateOfBirth) : null;
+    const group = this.formBuilder.group({
       name: [dog?.name || '', Validators.required],
       breed: [dog?.breed, Validators.required],
-      age: [dog?.age || null],
+      dateOfBirth: [dob],
+      age: [{ value: dog?.age || null, disabled: true }],
       gender: [dog?.gender || null],
       isNeutered: [dog?.isNeutered || false],
       isAggressive: [dog?.isAggressive || false],
     });
+
+    group.controls.dateOfBirth.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((date: Date | null) => {
+        if (date) {
+          const age = this.calculateAge(date);
+          group.controls.age.setValue(age);
+        } else {
+          group.controls.age.setValue(null);
+        }
+      });
+
+    return group;
+  }
+
+  calculateAge(birthDate: Date): number {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
   }
 
   addDog(): void {
@@ -255,7 +295,9 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   override cancel() {
     return super.cancel().then((confirmed) => {
       if (confirmed) {
-        this.router.navigate(['/clients']);
+        this.router.navigate(['/clients'], {
+          queryParamsHandling: 'preserve',
+        });
       }
       return confirmed;
     });

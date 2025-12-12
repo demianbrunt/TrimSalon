@@ -163,7 +163,9 @@ export class ExpenseFormComponent extends FormBaseComponent implements OnInit {
         'Succes',
         `Uitgave ${this.isEditMode ? 'bijgewerkt' : 'toegevoegd'}`,
       );
-      this.router.navigate(['/expenses']);
+      this.router.navigate(['/expenses'], {
+        queryParamsHandling: 'preserve',
+      });
     } catch (err) {
       this.toastr.error('Fout', (err as Error).message);
     }
@@ -172,7 +174,9 @@ export class ExpenseFormComponent extends FormBaseComponent implements OnInit {
   override cancel() {
     return super.cancel().then((confirmed) => {
       if (confirmed) {
-        this.router.navigate(['/expenses']);
+        this.router.navigate(['/expenses'], {
+          queryParamsHandling: 'preserve',
+        });
       }
       return confirmed;
     });

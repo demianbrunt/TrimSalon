@@ -26,23 +26,118 @@
   margin-bottom: 0.5rem;
 }
 
-.view-toggle-fixed {
+/* View Toggle Container Positioning */
+.view-toggle-container {
   position: fixed;
-  top: 4.5rem;
-  right: 1rem;
   z-index: 1100;
-  background: var(--p-surface-card);
-  border-radius: 0.5rem;
-  padding: 0.5rem;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* Allow clicking through container */
+  flex-shrink: 0;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .view-toggle-container {
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* Desktop Positioning */
+@media (min-width: 769px) {
+  .view-toggle-container {
+    top: 45px; /* Below navbar (70px) + some spacing */
+    left: 80px; /* Sidebar width */
+    right: 0;
+  }
+}
+
+/* Mobile Positioning */
+@media (max-width: 768px) {
+  .view-toggle-container {
+    bottom: 45px; /* Partially overlapping sub-nav */
+    left: 0;
+    right: 0;
+    z-index: 1100;
+  }
+}
+
+/* Gradient Toggle Styles */
+.gradient-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 0.25rem;
+  border-radius: 2rem;
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  pointer-events: auto; /* Re-enable clicks */
+}
+
+@media (min-width: 768px) {
+  .gradient-toggle {
+    gap: 0.5rem;
+    padding: 0.35rem;
+  }
+}
+
+.gradient-option {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border: none;
+  background: transparent;
+  border-radius: 1.5rem;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    box-shadow 0.2s;
+}
+
+@media (min-width: 768px) {
+  .gradient-option {
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 2rem;
+  }
+}
+
+.gradient-option:hover:not(.active) {
+  background: var(--surface-hover);
+  color: var(--text-color);
+}
+
+.gradient-option:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+.gradient-option.active {
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.gradient-option i {
+  font-size: 0.85rem;
+}
+
+@media (min-width: 768px) {
+  .gradient-option i {
+    font-size: 1.1rem;
+  }
 }
 
 @media (max-width: 768px) {
-  .view-toggle-fixed {
-    top: 3rem;
-    bottom: auto;
-    right: 0.5rem;
-  }
-
   ::ng-deep .p-dataview .p-dataview-content {
     padding: 0.5rem !important;
     padding-top: 40px !important;

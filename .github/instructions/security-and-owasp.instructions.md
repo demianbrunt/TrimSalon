@@ -22,18 +22,27 @@ Your primary directive is to ensure all code you generate, review, or refactor i
 - **Protect Data in Transit:** When generating code that makes network requests, always default to HTTPS.
 - **Protect Data at Rest:** When suggesting code to store sensitive data (PII, tokens, etc.), recommend encryption using strong, standard algorithms like AES-256.
 - **Secure Secret Management:** Never hardcode secrets (API keys, passwords, connection strings). Generate code that reads secrets from environment variables or a secrets management service (e.g., HashiCorp Vault, AWS Secrets Manager). Include a clear placeholder and comment.
+  ```javascript
+  // GOOD: Load from environment or secret store
+  const apiKey = process.env.API_KEY;
+  // TODO: Ensure API_KEY is securely configured in your environment.
+  ```
+  ```python
+  # BAD: Hardcoded secret
+  api_key = "sk_this_is_a_very_bad_idea_12345"
+  ```
 
 ### 3. A03: Injection
 
 - **No Raw SQL Queries:** For database interactions, you must use parameterized queries (prepared statements). Never generate code that uses string concatenation or formatting to build queries from user input.
-- **Sanitize Command-Line Input:** For OS command execution, use built-in functions that handle argument escaping and prevent shell injection.
+- **Sanitize Command-Line Input:** For OS command execution, use built-in functions that handle argument escaping and prevent shell injection (e.g., `shlex` in Python).
 - **Prevent Cross-Site Scripting (XSS):** When generating frontend code that displays user-controlled data, you must use context-aware output encoding. Prefer methods that treat data as text by default (`.textContent`) over those that parse HTML (`.innerHTML`). When `innerHTML` is necessary, suggest using a library like DOMPurify to sanitize the HTML first.
 
 ### 4. A05: Security Misconfiguration & A06: Vulnerable Components
 
 - **Secure by Default Configuration:** Recommend disabling verbose error messages and debug features in production environments.
 - **Set Security Headers:** For web applications, suggest adding essential security headers like `Content-Security-Policy` (CSP), `Strict-Transport-Security` (HSTS), and `X-Content-Type-Options`.
-- **Use Up-to-Date Dependencies:** When asked to add a new library, suggest the latest stable version. Remind the user to run vulnerability scanners like `npm audit` to check for known vulnerabilities in their project dependencies.
+- **Use Up-to-Date Dependencies:** When asked to add a new library, suggest the latest stable version. Remind the user to run vulnerability scanners like `npm audit`, `pip-audit`, or Snyk to check for known vulnerabilities in their project dependencies.
 
 ### 5. A07: Identification & Authentication Failures
 
@@ -42,7 +51,7 @@ Your primary directive is to ensure all code you generate, review, or refactor i
 
 ### 6. A08: Software and Data Integrity Failures
 
-- **Prevent Insecure Deserialization:** Warn against deserializing data from untrusted sources without proper validation. If deserialization is necessary, recommend using formats that are less prone to attack and implementing strict type checking.
+- **Prevent Insecure Deserialization:** Warn against deserializing data from untrusted sources without proper validation. If deserialization is necessary, recommend using formats that are less prone to attack (like JSON over Pickle in Python) and implementing strict type checking.
 
 ## General Guidelines
 

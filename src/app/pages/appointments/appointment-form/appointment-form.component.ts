@@ -39,6 +39,9 @@ import {
 } from '../../../core/services/pricing.service';
 import { ServiceService } from '../../../core/services/service.service';
 
+import { MenuItem } from 'primeng/api';
+import { StepsModule } from 'primeng/steps';
+
 @Component({
   selector: 'app-appointment-form',
   standalone: true,
@@ -59,6 +62,7 @@ import { ServiceService } from '../../../core/services/service.service';
     MultiSelectModule,
     DividerModule,
     MessageModule,
+    StepsModule,
   ],
   templateUrl: './appointment-form.component.html',
   styleUrls: ['./appointment-form.component.css'],
@@ -67,6 +71,15 @@ export class AppointmentFormComponent
   extends FormBaseComponent
   implements OnInit
 {
+  // Wizard state
+  currentStep = 0;
+  steps: MenuItem[] = [
+    { label: 'Klant & Hond' },
+    { label: 'Datum & Tijd' },
+    { label: 'Werkzaamheden' },
+    { label: 'Overzicht' },
+  ];
+
   override form: FormGroup<{
     id: FormControl<string | null>;
     client: FormControl<Client | null>;
@@ -106,6 +119,11 @@ export class AppointmentFormComponent
     return this.form.controls.dog;
   }
 
+  get isSelectedDogAggressive(): boolean {
+    const dog = this.form.get('dog')?.value;
+    return dog?.isAggressive || false;
+  }
+
   get servicesControl() {
     return this.form.controls.services;
   }
@@ -124,6 +142,18 @@ export class AppointmentFormComponent
 
   constructor() {
     super();
+  }
+
+  nextStep() {
+    if (this.currentStep < this.steps.length - 1) {
+      this.currentStep++;
+    }
+  }
+
+  prevStep() {
+    if (this.currentStep > 0) {
+      this.currentStep--;
+    }
   }
 
   override afterValidityEnsured(): Promise<void> {
@@ -172,7 +202,9 @@ export class AppointmentFormComponent
             'Succes',
             `Afspraak ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
           );
-          this.router.navigate(['/appointments']);
+          this.router.navigate(['/appointments'], {
+            queryParamsHandling: 'preserve',
+          });
           resolve();
         },
         error: (err) => {
@@ -228,6 +260,11 @@ export class AppointmentFormComponent
       this.form.controls.appointmentDate.setValidators(Validators.required);
       this.form.controls.startTime.setValidators(Validators.required);
 
+      // Set defaults for new appointment
+      const now = new Date();
+      this.form.controls.appointmentDate.setValue(now);
+      this.form.controls.startTime.setValue(now);
+
       // Create mode - form is ready
       this.isInitialized = true;
       this.isLoading = false;
@@ -246,6 +283,10 @@ export class AppointmentFormComponent
         // Enable/disable dog control based on client selection
         if (client) {
           this.form.get('dog')?.enable();
+          // Auto-select if only one dog
+          if (this.dogs.length === 1) {
+            this.form.get('dog')?.setValue(this.dogs[0]);
+          }
         } else {
           this.form.get('dog')?.disable();
         }
@@ -571,7 +612,9 @@ export class AppointmentFormComponent
   override cancel() {
     return super.cancel().then((confirmed) => {
       if (confirmed) {
-        this.router.navigate(['/appointments']);
+        this.router.navigate(['/appointments'], {
+          queryParamsHandling: 'preserve',
+        });
       }
       return confirmed;
     });

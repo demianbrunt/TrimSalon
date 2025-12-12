@@ -20,12 +20,15 @@
   }
 
   .sub-nav-container p-button {
-    flex: 1;
+    display: flex;
+    justify-content: center;
   }
 
   .sub-nav-container ::ng-deep .p-button {
     border-radius: 50% !important;
-    aspect-ratio: 1 / 1;
+    height: 3rem !important;
+    width: 3rem !important;
+    padding: 0 !important;
   }
 
   .active-nav-button ::ng-deep .p-button {
@@ -44,6 +47,10 @@
     left: 0;
     top: 70px; /* Start below top-nav */
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    justify-content: flex-start;
+    gap: 1.5rem;
   }
 
   .sub-nav-container ::ng-deep .p-button {

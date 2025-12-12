@@ -36,27 +36,54 @@
 
             @if (client.dogs?.length) {
               <div class="mb-2">
-                <div class="text-color-secondary text-sm mb-2">
-                  <i class="pi pi-heart mr-1"></i
-                  >{{ client.dogs.length }} hond{{
-                    client.dogs.length > 1 ? "en" : ""
-                  }}
-                </div>
                 <div class="flex flex-wrap gap-2">
                   @for (dog of client.dogs; track dog.name) {
-                    <p-tag
-                      [value]="
-                        dog.name +
-                        ' (' +
-                        (dog.breed?.name || 'Onbekend ras') +
-                        ')'
-                      "
-                      [severity]="dog.isAggressive ? 'danger' : undefined"
-                    >
-                      @if (dog.isAggressive) {
-                        <i class="pi pi-exclamation-triangle mr-1"></i>
-                      }
-                    </p-tag>
+                    <div class="dog-chip mr-2 mb-2">
+                      <div class="dog-chip__header">
+                        <span class="dog-chip__name">{{ dog.name }}</span>
+                        @if (dog.isAggressive) {
+                          <i
+                            class="pi pi-exclamation-triangle text-red-500"
+                            pTooltip="Aggressief"
+                            aria-hidden="true"
+                          ></i>
+                        }
+                      </div>
+                      <div class="dog-chip__meta">
+                        <p-tag
+                          [value]="dog.breed?.name || 'Onbekend'"
+                          severity="info"
+                          styleClass="text-xs"
+                        ></p-tag>
+                        @if (dog.gender) {
+                          <p-tag severity="secondary" styleClass="text-xs">
+                            <div class="flex align-items-center gap-1">
+                              @if (dog.gender === "male") {
+                                <i
+                                  class="pi pi-mars text-blue-600"
+                                  aria-hidden="true"
+                                ></i>
+                                <span>Reu</span>
+                              } @else if (dog.gender === "female") {
+                                <i
+                                  class="pi pi-venus text-pink-600"
+                                  aria-hidden="true"
+                                ></i>
+                                <span>Teefje</span>
+                              }
+                            </div>
+                          </p-tag>
+                        }
+                        @let age = getDogAge(dog);
+                        @if (age) {
+                          <p-tag
+                            [value]="age"
+                            severity="warn"
+                            styleClass="text-xs"
+                          ></p-tag>
+                        }
+                      </div>
+                    </div>
                   }
                 </div>
               </div>
@@ -103,7 +130,7 @@
         [sortField]="sortField"
         [sortOrder]="sortOrder"
         [filterDelay]="0"
-        [globalFilterFields]="['name', 'dogs.name', 'dogs.breed.name']"
+        [globalFilterFields]="['name', 'email', 'dogs.name', 'dogs.breed.name']"
         [tableStyle]="{ 'min-width': '75rem' }"
       >
         <ng-template pTemplate="caption">
@@ -118,6 +145,9 @@
             <th pSortableColumn="name">
               Naam <p-sortIcon field="name"></p-sortIcon>
             </th>
+            <th pSortableColumn="email">
+              Email <p-sortIcon field="email"></p-sortIcon>
+            </th>
             <th pSortableColumn="phone">
               Telefoon <p-sortIcon field="phone"></p-sortIcon>
             </th>
@@ -127,22 +157,76 @@
         </ng-template>
         <ng-template pTemplate="body" let-client>
           <tr>
-            <td>{{ client.name }}</td>
-            <td>{{ client.phone }}</td>
             <td>
-              @for (dog of client.dogs; track dog.name) {
-                <p-tag
-                  [value]="
-                    dog.name + ' (' + (dog.breed?.name || 'Onbekend ras') + ')'
-                  "
-                  [severity]="dog.isAggressive ? 'danger' : undefined"
-                  class="mr-2"
-                >
-                  @if (dog.isAggressive) {
-                    <i class="pi pi-exclamation-triangle mr-1"></i>
-                  }
-                </p-tag>
+              <div class="font-medium">{{ client.name }}</div>
+            </td>
+            <td>
+              @if (client.email) {
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-envelope text-color-secondary"></i>
+                  {{ client.email }}
+                </div>
+              } @else {
+                <span class="text-color-secondary font-italic">-</span>
               }
+            </td>
+            <td>
+              <div class="flex align-items-center gap-2">
+                <i class="pi pi-phone text-color-secondary"></i>
+                {{ client.phone }}
+              </div>
+            </td>
+            <td>
+              <div class="flex flex-wrap gap-2">
+                @for (dog of client.dogs; track dog.name) {
+                  <div class="dog-chip mr-2">
+                    <div class="dog-chip__header">
+                      <span class="dog-chip__name">{{ dog.name }}</span>
+                      @if (dog.isAggressive) {
+                        <i
+                          class="pi pi-exclamation-triangle text-red-500"
+                          pTooltip="Aggressief"
+                          aria-hidden="true"
+                        ></i>
+                      }
+                    </div>
+                    <div class="dog-chip__meta">
+                      <p-tag
+                        [value]="dog.breed?.name || 'Onbekend'"
+                        severity="info"
+                        styleClass="text-xs"
+                      ></p-tag>
+                      @if (dog.gender) {
+                        <p-tag severity="secondary" styleClass="text-xs">
+                          <div class="flex align-items-center gap-1">
+                            @if (dog.gender === "male") {
+                              <i
+                                class="pi pi-mars text-blue-600"
+                                aria-hidden="true"
+                              ></i>
+                              <span>Reu</span>
+                            } @else if (dog.gender === "female") {
+                              <i
+                                class="pi pi-venus text-pink-600"
+                                aria-hidden="true"
+                              ></i>
+                              <span>Teefje</span>
+                            }
+                          </div>
+                        </p-tag>
+                      }
+                      @let age = getDogAge(dog);
+                      @if (age) {
+                        <p-tag
+                          [value]="age"
+                          severity="warn"
+                          styleClass="text-xs"
+                        ></p-tag>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
             </td>
             <td>
               <div class="flex justify-content-end gap-2">

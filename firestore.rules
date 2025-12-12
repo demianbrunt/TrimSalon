@@ -7,44 +7,55 @@ service cloud.firestore {
       return request.auth != null;
     }
     
+    // Helper function to check if user is in the allowed-users list
+    function isAllowedUser() {
+      return request.auth != null && exists(/databases/$(database)/documents/allowed-users/$(request.auth.token.email));
+    }
+    
     // Helper function to check if user owns the resource
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
     
-    // Clients collection - authenticated users only
+    // Clients collection - allowed users only
     match /clients/{clientId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAllowedUser();
     }
     
-    // Appointments collection - authenticated users only
+    // Appointments collection - allowed users only
     match /appointments/{appointmentId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAllowedUser();
     }
     
-    // Services collection - authenticated users only
+    // Services collection - allowed users only
     match /services/{serviceId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAllowedUser();
     }
     
-    // Packages collection - authenticated users only
+    // Packages collection - allowed users only
     match /packages/{packageId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAllowedUser();
     }
     
-    // Invoices collection - authenticated users only
+    // Invoices collection - allowed users only
     match /invoices/{invoiceId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAllowedUser();
     }
     
-    // Expenses collection - authenticated users only
+    // Expenses collection - allowed users only
     match /expenses/{expenseId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAllowedUser();
     }
     
-    // Breeds collection - authenticated users only
+    // Breeds collection - allowed users only
     match /breeds/{breedId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isAllowedUser();
+    }
+    
+    // Allowed users collection - authenticated users can read to verify access
+    match /allowed-users/{email} {
+      allow read: if request.auth != null;
+      allow write: if false; // Prevent writes from client
     }
     
     // Deny all other access by default

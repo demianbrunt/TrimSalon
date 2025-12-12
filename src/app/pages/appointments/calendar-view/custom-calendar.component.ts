@@ -114,6 +114,43 @@ export class CustomCalendarComponent implements AfterViewInit {
     label: `${i.toString().padStart(2, '0')}:00`,
   }));
 
+  getBreedLabel(apt: Appointment): string {
+    return apt.dog?.breed?.name || 'Onbekend';
+  }
+
+  getGenderLabel(apt: Appointment): { icon: string; text: string } | null {
+    const gender = apt.dog?.gender;
+    if (gender === 'male') {
+      return { icon: 'pi pi-mars text-blue-600', text: 'Reu' };
+    }
+    if (gender === 'female') {
+      return { icon: 'pi pi-venus text-pink-600', text: 'Teefje' };
+    }
+    return null;
+  }
+
+  getAgeLabel(apt: Appointment): string | null {
+    const age = apt.dog?.age;
+    if (age === null || age === undefined) {
+      return null;
+    }
+    return `${age} jr`;
+  }
+
+  getServiceNames(apt: Appointment): string | null {
+    if (!apt.services?.length) return null;
+    return apt.services.map((s) => s.name).join(', ');
+  }
+
+  getPackageNames(apt: Appointment): string | null {
+    if (!apt.packages?.length) return null;
+    return apt.packages.map((p) => p.name).join(', ');
+  }
+
+  hasNotes(apt: Appointment): boolean {
+    return !!apt.notes && apt.notes.trim().length > 0;
+  }
+
   get isMobile() {
     return this.mobileService.isMobile;
   }
@@ -333,6 +370,14 @@ export class CustomCalendarComponent implements AfterViewInit {
     }
 
     this.selectedDate.set(date);
+  }
+
+  handleSwipe(direction: 'left' | 'right'): void {
+    if (direction === 'left') {
+      this.nextPeriod();
+    } else {
+      this.previousPeriod();
+    }
   }
 
   goToToday(): void {

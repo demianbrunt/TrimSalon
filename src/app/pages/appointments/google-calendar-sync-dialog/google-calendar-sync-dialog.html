@@ -1,13 +1,8 @@
 <div class="p-fluid">
   <p-card styleClass="mb-4">
-    <ng-template pTemplate="header">
-      <div class="p-3">
-        <h3 class="m-0 mb-2">Google Agenda Synchronisatie</h3>
-        <p class="text-color-secondary text-sm m-0">
-          Synchroniseer je afspraken automatisch met Google Agenda
-        </p>
-      </div>
-    </ng-template>
+    <p class="text-color-secondary text-sm mt-0 mb-3">
+      Synchroniseer je afspraken automatisch met Google Agenda
+    </p>
 
     <!-- Sync Status -->
     <div class="flex align-items-center gap-2 mb-3">
@@ -115,6 +110,23 @@
         ></p-button>
       </div>
     }
+
+    <p-divider></p-divider>
+
+    <!-- Advanced / Debug -->
+    <div class="field mb-3">
+      <h5 class="m-0 mb-2">Geavanceerd / Debug</h5>
+      <div class="flex flex-column gap-2">
+        <p-button
+          label="Trigger Cloud Function (Sync)"
+          icon="pi pi-cloud-upload"
+          (onClick)="startSync()"
+          [disabled]="syncStatus.syncing"
+          styleClass="p-button-warning p-button-outlined w-full"
+          size="small"
+        ></p-button>
+      </div>
+    </div>
 
     <ng-template pTemplate="footer">
       <div class="flex justify-content-end gap-2">

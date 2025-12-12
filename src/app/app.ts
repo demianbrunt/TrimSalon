@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
+import { filter } from 'rxjs';
 import { BreadcrumbComponent } from './core/components/breadcrumb/breadcrumb.component';
 import { SubNavComponent } from './core/components/sub-nav/sub-nav.component';
 import { TopNavComponent } from './core/components/top-nav/top-nav.component';
@@ -47,6 +49,28 @@ import { MobileService } from './core/services/mobile.service';
 export class App {
   readonly authService = inject(AuthenticationService);
   readonly MobileService = inject(MobileService);
+  readonly swUpdate = inject(SwUpdate);
+
+  constructor() {
+    if (this.swUpdate.isEnabled) {
+      // Check for updates every minute
+      setInterval(() => {
+        this.swUpdate
+          .checkForUpdate()
+          .catch((err) => console.error('Error checking for update', err));
+      }, 60 * 1000);
+
+      this.swUpdate.versionUpdates
+        .pipe(
+          filter(
+            (evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY',
+          ),
+        )
+        .subscribe(() => {
+          this.swUpdate.activateUpdate().then(() => document.location.reload());
+        });
+    }
+  }
 
   get isMobile() {
     return this.MobileService.isMobile;

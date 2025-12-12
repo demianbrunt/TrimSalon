@@ -10,9 +10,12 @@ import { TableModule } from 'primeng/table';
 import { Observable } from 'rxjs';
 import { SubscriptionHolder } from '../../core/components/subscription-holder.component';
 import {
+  ActivityBreakdown,
+  BreedPerformance,
   CalendarOccupancy,
   DashboardReport,
   ExpenseReport,
+  HourlyRateKPI,
   PopularPackage,
   PopularService,
   ProfitLossReport,
@@ -53,6 +56,9 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
   popularServices?: PopularService[];
   popularPackages?: PopularPackage[];
   occupancy?: CalendarOccupancy;
+  hourlyRateKPI?: HourlyRateKPI;
+  activityBreakdown?: ActivityBreakdown[];
+  breedPerformance?: BreedPerformance[];
 
   revenueChartData: unknown;
   revenueChartOptions: unknown;
@@ -79,6 +85,9 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         this.popularServices = report.popularServices;
         this.popularPackages = report.popularPackages;
         this.occupancy = report.occupancy;
+        this.hourlyRateKPI = report.hourlyRateKPI;
+        this.activityBreakdown = report.activityBreakdown;
+        this.breedPerformance = report.breedPerformance;
         this.updateCharts();
       }),
     );
