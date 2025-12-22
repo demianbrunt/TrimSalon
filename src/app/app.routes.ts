@@ -21,15 +21,6 @@ export const routes: Routes = [
     component: SignInComponent,
   },
   {
-    path: 'tablet',
-    loadComponent: () =>
-      import('./pages/tablet-mode/tablet-mode.component').then(
-        (m) => m.TabletModeComponent,
-      ),
-    canActivate: [authGuard],
-    data: { breadcrumb: 'Tablet Mode', hideNav: true },
-  },
-  {
     path: 'appointments',
     component: AppointmentsComponent,
     canActivate: [authGuard],

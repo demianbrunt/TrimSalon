@@ -8,7 +8,8 @@ export class MobileService {
   private readonly breakpointObserver = inject(BreakpointObserver);
 
   // Initialize with current window width check
-  private _isMobile = window.innerWidth <= 768;
+  private _isMobile =
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
 
   get isMobile() {
     return this._isMobile;
@@ -21,8 +22,7 @@ export class MobileService {
         '(max-width: 768px) and (orientation: landscape)',
       ])
       .subscribe((result) => {
-        this._isMobile = result.matches || window.innerWidth <= 768;
-        console.log('[MobileService] Mobile state changed:', this._isMobile);
+        this._isMobile = result.matches;
       });
   }
 }

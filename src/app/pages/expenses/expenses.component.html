@@ -54,6 +54,7 @@
         <app-table-header
           placeholder="Zoek uitgave"
           [table]="dv"
+          [showAdd]="false"
           (addClick)="createExpense()"
         ></app-table-header>
       </ng-template>
@@ -116,6 +117,17 @@
         }
       </ng-template>
     </p-dataView>
+
+    <div class="page-fab-container">
+      <p-button
+        icon="pi pi-plus"
+        [rounded]="true"
+        ariaLabel="Nieuwe uitgave"
+        pTooltip="Nieuw"
+        tooltipPosition="left"
+        (click)="createExpense()"
+      ></p-button>
+    </div>
   } @else {
     <p-card>
       <p-table

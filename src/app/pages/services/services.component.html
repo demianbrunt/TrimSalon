@@ -12,6 +12,7 @@
       <app-table-header
         placeholder="Zoek werkzaamheid"
         [table]="dv"
+        [showAdd]="false"
         (addClick)="showServiceForm()"
       ></app-table-header>
     </ng-template>
@@ -90,6 +91,17 @@
       }
     </ng-template>
   </p-dataView>
+
+  <div class="page-fab-container">
+    <p-button
+      icon="pi pi-plus"
+      [rounded]="true"
+      ariaLabel="Nieuwe werkzaamheid"
+      pTooltip="Nieuw"
+      tooltipPosition="left"
+      (click)="showServiceForm()"
+    ></p-button>
+  </div>
 } @else {
   <div class="p-4">
     <p-card>

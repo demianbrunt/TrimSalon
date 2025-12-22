@@ -1,9 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
-import { from, Observable } from 'rxjs';
+import { from, Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Appointment } from '../models/appointment.model';
 import { GoogleCalendar, GoogleCalendarList } from '../models/calendar.model';
+import { isMockGoogleEnabled } from '../utils/dev-flags';
 import { AuthenticationService } from './authentication.service';
 
 @Injectable({
@@ -19,15 +20,24 @@ export class CalendarService {
   }
 
   triggerSync(): Observable<{ success: boolean }> {
+    if (isMockGoogleEnabled()) {
+      return of({ success: true });
+    }
     return this.call<{ success: boolean }>('triggerCalendarSync');
   }
 
   listCalendars(): Observable<GoogleCalendarList> {
+    if (isMockGoogleEnabled()) {
+      return of({ items: [] });
+    }
     const userId = this.authService.getCurrentUserId();
     return this.call<GoogleCalendarList>('listCalendars', { userId });
   }
 
   async ensureTrimSalonCalendar(): Promise<string> {
+    if (isMockGoogleEnabled()) {
+      return 'mock-trimsalon-calendar';
+    }
     const calendars = await this.listCalendars().toPromise();
     if (!calendars?.items) {
       throw new Error('Unable to retrieve calendar list');
@@ -40,6 +50,12 @@ export class CalendarService {
   }
 
   createTrimSalonCalendar(): Promise<GoogleCalendar> {
+    if (isMockGoogleEnabled()) {
+      return Promise.resolve({
+        id: 'mock-trimsalon-calendar',
+        summary: 'TrimSalon',
+      });
+    }
     const userId = this.authService.getCurrentUserId();
     return this.call<GoogleCalendar>('createCalendar', {
       userId,
@@ -48,6 +64,9 @@ export class CalendarService {
   }
 
   getAppointments(calendarId: string): Observable<Appointment[]> {
+    if (isMockGoogleEnabled()) {
+      return of([]);
+    }
     const userId = this.authService.getCurrentUserId();
     return this.call<{ events: Appointment[] }>('getCalendarEvents', {
       userId,
@@ -56,6 +75,9 @@ export class CalendarService {
   }
 
   getRawCalendarEvents(calendarId: string): Observable<any[]> {
+    if (isMockGoogleEnabled()) {
+      return of([]);
+    }
     const userId = this.authService.getCurrentUserId();
     return this.call<{ events: any[] }>('getCalendarEvents', {
       userId,
@@ -67,6 +89,9 @@ export class CalendarService {
     calendarId: string,
     appointment: Appointment,
   ): Observable<Appointment> {
+    if (isMockGoogleEnabled()) {
+      return of(appointment);
+    }
     const userId = this.authService.getCurrentUserId();
     return this.call<{ event: Appointment }>('createCalendarEvent', {
       userId,
@@ -79,6 +104,9 @@ export class CalendarService {
     calendarId: string,
     appointment: Appointment,
   ): Observable<Appointment> {
+    if (isMockGoogleEnabled()) {
+      return of(appointment);
+    }
     const userId = this.authService.getCurrentUserId();
     return this.call<{ event: Appointment }>('updateCalendarEvent', {
       userId,
@@ -92,6 +120,9 @@ export class CalendarService {
     calendarId: string,
     appointmentId: string,
   ): Observable<void> {
+    if (isMockGoogleEnabled()) {
+      return of(void 0);
+    }
     const userId = this.authService.getCurrentUserId();
     return this.call<void>('deleteCalendarEvent', {
       userId,

@@ -38,12 +38,14 @@ import { MobileService } from '../../services/mobile.service';
           class="w-full"
         />
       </p-iconfield>
-      <p-button
-        [label]="addLabel"
-        icon="pi pi-plus"
-        size="small"
-        (click)="addClick.emit()"
-      ></p-button>
+      @if (showAdd) {
+        <p-button
+          [label]="addLabel"
+          icon="pi pi-plus"
+          size="small"
+          (click)="addClick.emit()"
+        ></p-button>
+      }
     </div>
   `,
 })
@@ -57,6 +59,7 @@ export class TableHeaderComponent {
   @Input() title!: string;
   @Input() placeholder = 'Zoeken...';
   @Input() addLabel = 'Nieuw';
+  @Input() showAdd = true;
   @Input({ required: true }) table!: Table | DataView;
   @Output() addClick = new EventEmitter<void>();
 

@@ -2,6 +2,7 @@ import { inject, Injectable, OnDestroy } from '@angular/core';
 import { BehaviorSubject, interval, Subscription } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { Appointment } from '../models/appointment.model';
+import { isMockGoogleEnabled } from '../utils/dev-flags';
 import { AppointmentService } from './appointment.service';
 import { AuthenticationService } from './authentication.service';
 import { CalendarService } from './calendar.service';
@@ -118,6 +119,15 @@ export class GoogleCalendarSync implements OnDestroy {
   }
 
   async startSync(): Promise<void> {
+    if (isMockGoogleEnabled()) {
+      this._syncStatus.next({
+        enabled: true,
+        syncing: false,
+        lastSync: new Date(),
+      });
+      return;
+    }
+
     const status = this._syncStatus.value;
     if (status.syncing) {
       return; // Already syncing
@@ -387,8 +397,8 @@ export class GoogleCalendarSync implements OnDestroy {
 
   requestGoogleAuth(): void {
     const userId = this.authService.getCurrentUserId();
-    if (userId) {
-      this.googleAuthService.getAuthCode(userId);
+    if (userId || isMockGoogleEnabled()) {
+      this.googleAuthService.getAuthCode(userId ?? 'dev-user');
     }
   }
 

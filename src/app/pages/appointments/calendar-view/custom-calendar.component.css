@@ -21,7 +21,6 @@
 .calendar-wrapper ::ng-deep .p-card .p-card-body {
   border: 1px solid color-mix(in srgb, var(--primary-color) 22%, transparent);
   z-index: 4;
-  pointer-events: none;
 }
 
 .swipe-indicator.show {

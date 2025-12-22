@@ -94,6 +94,7 @@ export class AppointmentFormComponent
     actualServices: FormControl<Service[] | null>;
     actualPackages: FormControl<Package[] | null>;
     actualEndTime: FormControl<Date | null>;
+    actualPrice: FormControl<number | null>;
   }>;
 
   clients: Client[] = [];
@@ -130,6 +131,21 @@ export class AppointmentFormComponent
 
   get packagesControl() {
     return this.form.controls.packages;
+  }
+
+  get actualPriceControl() {
+    return this.form.controls.actualPrice;
+  }
+
+  get hasActualPriceOverride(): boolean {
+    return this.actualPriceControl.value !== null;
+  }
+
+  get actualPriceTotal(): number {
+    if (this.hasActualPriceOverride) {
+      return this.actualPriceControl.value ?? 0;
+    }
+    return this.actualPriceCalculation?.totalPrice ?? 0;
   }
 
   private readonly appointmentService = inject(AppointmentService);
@@ -189,6 +205,7 @@ export class AppointmentFormComponent
         actualServices: formValue.actualServices || undefined,
         actualPackages: formValue.actualPackages || undefined,
         actualEndTime: formValue.actualEndTime || undefined,
+        actualPrice: formValue.actualPrice ?? undefined,
       };
 
       const operation = this.isEditMode
@@ -234,6 +251,7 @@ export class AppointmentFormComponent
         actualServices: new FormControl<Service[] | null>([]),
         actualPackages: new FormControl<Package[] | null>([]),
         actualEndTime: new FormControl<Date | null>(null),
+        actualPrice: new FormControl<number | null>(null),
       });
       resolve();
     });
@@ -353,6 +371,14 @@ export class AppointmentFormComponent
       .get('actualEndTime')
       ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
+        this.calculateActualPricing();
+      });
+
+    this.form
+      .get('actualPrice')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => {
+        // Hourly rate / comparison depend on the final (possibly overridden) price
         this.calculateActualPricing();
       });
   }
@@ -496,6 +522,8 @@ export class AppointmentFormComponent
       dog.breed,
     );
 
+    const finalPrice = this.actualPriceTotal;
+
     // Calculate actual duration in minutes
     if (startTime && appointmentDate && actualEndTime) {
       const startDateTime = new Date(appointmentDate);
@@ -509,16 +537,61 @@ export class AppointmentFormComponent
 
       if (actualMinutes > 0) {
         this.actualHourlyRateCalculation =
-          this.pricingService.calculateHourlyRate(
-            this.actualPriceCalculation.totalPrice,
-            actualMinutes,
-          );
+          this.pricingService.calculateHourlyRate(finalPrice, actualMinutes);
       } else {
         this.actualHourlyRateCalculation = null;
       }
     } else {
       this.actualHourlyRateCalculation = null;
     }
+  }
+
+  private normalizeSelections(): void {
+    // PrimeNG MultiSelect renders and compares items by object identity by default.
+    // Appointments loaded from Firestore may contain objects that are not the same
+    // instances as the current option lists, which can lead to labels like
+    // "[object Object]" and inconsistent chip/ARIA output.
+    const serviceById = new Map(
+      this.services.filter((s) => s?.id).map((s) => [s.id!, s]),
+    );
+    const packageById = new Map(
+      this.packages.filter((p) => p?.id).map((p) => [p.id!, p]),
+    );
+
+    const normalizeList = <TItem extends { id?: string }>(
+      items: TItem[] | null | undefined,
+      mapById: Map<string, TItem>,
+    ): TItem[] => {
+      if (!items || items.length === 0) {
+        return [];
+      }
+      return items.map((item) => {
+        const id = item?.id;
+        return id ? (mapById.get(id) ?? item) : item;
+      });
+    };
+
+    const currentServices = this.form.controls.services.value ?? [];
+    const currentPackages = this.form.controls.packages.value ?? [];
+    const currentActualServices = this.form.controls.actualServices.value ?? [];
+    const currentActualPackages = this.form.controls.actualPackages.value ?? [];
+
+    this.form.controls.services.setValue(
+      normalizeList(currentServices, serviceById),
+      { emitEvent: false },
+    );
+    this.form.controls.packages.setValue(
+      normalizeList(currentPackages, packageById),
+      { emitEvent: false },
+    );
+    this.form.controls.actualServices.setValue(
+      normalizeList(currentActualServices, serviceById),
+      { emitEvent: false },
+    );
+    this.form.controls.actualPackages.setValue(
+      normalizeList(currentActualPackages, packageById),
+      { emitEvent: false },
+    );
   }
 
   loadClients(): void {
@@ -534,14 +607,26 @@ export class AppointmentFormComponent
     this.serviceService
       .getData$()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((services) => (this.services = services));
+      .subscribe((services) => {
+        this.services = services;
+        this.normalizeSelections();
+        this.calculateEstimatedDuration();
+        this.calculatePricing();
+        this.calculateActualPricing();
+      });
   }
 
   loadPackages(): void {
     this.packageService
       .getData$()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((packages) => (this.packages = packages));
+      .subscribe((packages) => {
+        this.packages = packages;
+        this.normalizeSelections();
+        this.calculateEstimatedDuration();
+        this.calculatePricing();
+        this.calculateActualPricing();
+      });
   }
 
   loadAppointmentData(id: string): void {
@@ -581,6 +666,7 @@ export class AppointmentFormComponent
           }
 
           // Trigger pricing calculations
+          this.normalizeSelections();
           this.calculatePricing();
           this.calculateActualPricing();
 

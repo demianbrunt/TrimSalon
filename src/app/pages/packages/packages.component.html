@@ -12,6 +12,7 @@
       <app-table-header
         placeholder="Zoek pakket"
         [table]="dv"
+        [showAdd]="false"
         (addClick)="showPackageForm()"
       ></app-table-header>
     </ng-template>
@@ -97,6 +98,17 @@
       }
     </ng-template>
   </p-dataView>
+
+  <div class="page-fab-container">
+    <p-button
+      icon="pi pi-plus"
+      [rounded]="true"
+      ariaLabel="Nieuw pakket"
+      pTooltip="Nieuw"
+      tooltipPosition="left"
+      (click)="showPackageForm()"
+    ></p-button>
+  </div>
 } @else {
   <div class="p-4">
     <p-card>

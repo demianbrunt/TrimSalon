@@ -83,7 +83,7 @@ describe('AppointmentFormComponent', () => {
       'success',
       'error',
     ]);
-    mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockRouter = jasmine.createSpyObj('Router', ['navigate'], { events: of() });
     mockConfirmationDialogService = jasmine.createSpyObj(
       'ConfirmationDialogService',
       ['open'],
@@ -97,6 +97,17 @@ describe('AppointmentFormComponent', () => {
       totalPrice: 100,
       breakdown: [],
     });
+
+    mockPricingService.calculateHourlyRate.and.callFake(
+      (totalPrice: number, totalMinutes: number) => ({
+        effectiveHourlyRate:
+          totalMinutes > 0 ? totalPrice / (totalMinutes / 60) : 0,
+        totalPrice,
+        totalMinutes,
+        targetRate: 60,
+        rateComparison: 0,
+      }),
+    );
 
     mockActivatedRoute = {
       snapshot: {
@@ -196,6 +207,21 @@ describe('AppointmentFormComponent', () => {
       tick(100);
 
       expect(mockAppointmentService.update).toHaveBeenCalled();
+    }));
+
+    it('should persist actualPrice when provided', fakeAsync(() => {
+      mockAppointmentService.update.and.returnValue(of(mockAppointment));
+
+      component.form.patchValue({
+        actualPrice: 50,
+      });
+
+      component.submit();
+      tick(100);
+
+      const updated = mockAppointmentService.update.calls.mostRecent()
+        .args[0] as Appointment;
+      expect(updated.actualPrice).toBe(50);
     }));
   });
 });

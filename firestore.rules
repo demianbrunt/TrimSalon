@@ -6,10 +6,17 @@ service cloud.firestore {
     function isAuthenticated() {
       return request.auth != null;
     }
+
+    function userEmailLower() {
+      return request.auth != null && request.auth.token.email != null
+        ? request.auth.token.email.lower()
+        : null;
+    }
     
     // Helper function to check if user is in the allowed-users list
     function isAllowedUser() {
-      return request.auth != null && exists(/databases/$(database)/documents/allowed-users/$(request.auth.token.email));
+      return userEmailLower() != null &&
+        exists(/databases/$(database)/documents/allowed-users/$(userEmailLower()));
     }
     
     // Helper function to check if user owns the resource
@@ -54,8 +61,12 @@ service cloud.firestore {
     
     // Allowed users collection - authenticated users can read to verify access
     match /allowed-users/{email} {
-      allow read: if request.auth != null;
-      allow write: if false; // Prevent writes from client
+      // Users may only read their own allow-list document.
+      allow get: if userEmailLower() != null && userEmailLower() == email;
+      allow list: if false;
+
+      // Prevent writes from client (manage via Firebase Console / Admin tooling)
+      allow create, update, delete: if false;
     }
     
     // Deny all other access by default

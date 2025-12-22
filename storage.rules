@@ -4,7 +4,8 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Helper function to check if user is in the allowed-users list
     function isAllowedUser() {
-      return request.auth != null && exists(/databases/(default)/documents/allowed-users/$(request.auth.token.email));
+      return request.auth != null && request.auth.token.email != null &&
+        exists(/databases/(default)/documents/allowed-users/$(request.auth.token.email.lower()));
     }
     
     // Only allowed users can read/write files

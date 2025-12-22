@@ -64,13 +64,23 @@ body {
     left: 0;
     width: 100%;
     background: var(--p-surface-0, var(--surface-card, #ffffff));
-    padding: 1rem;
+    padding: 0.5rem;
     border-top: 1px solid var(--surface-border);
     z-index: 900; /* Below sub-nav dropdowns but above content */
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Make sticky form buttons more compact (without killing tap targets) */
+  .sticky-footer-actions .p-button {
+    padding: 0.625rem 0.875rem;
+    line-height: 1.1;
+  }
+
+  .sticky-footer-actions .p-button-label {
+    font-size: 0.95rem;
   }
 
   /* Ensure content isn't hidden behind sticky footer + sub-nav */
@@ -81,7 +91,7 @@ body {
   /* Dialog Footer Mobile */
   .p-dialog-footer {
     padding: 1rem;
-    background: var(--surface-card);
+    background: var(--p-surface-0, var(--surface-card, #ffffff));
     border-top: 1px solid var(--surface-border);
     position: sticky;
     bottom: 0;
@@ -96,9 +106,22 @@ body {
     right: 0 !important;
     width: 100% !important;
     z-index: 900 !important; /* Below sub-nav (1000) */
-    background: var(--p-surface-0) !important;
+    background: var(--p-surface-0, var(--surface-card, #ffffff)) !important;
     border-top: 1px solid var(--surface-border) !important;
     box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.05) !important;
+    padding: 0.25rem 0.5rem !important;
+    min-height: 44px;
+  }
+
+  /* Compact paginator controls */
+  .p-paginator .p-paginator-first,
+  .p-paginator .p-paginator-prev,
+  .p-paginator .p-paginator-next,
+  .p-paginator .p-paginator-last,
+  .p-paginator .p-paginator-page {
+    min-width: 2.5rem;
+    height: 2.5rem;
+    line-height: 2.5rem;
   }
 
   /* Content padding for fixed header and paginator */
@@ -115,12 +138,28 @@ body {
     right: 0 !important;
     width: 100% !important;
     z-index: 499 !important;
-    background: var(--p-surface-0) !important;
+    background: var(--p-surface-0, var(--surface-card, #ffffff)) !important;
     padding: 0.75rem 1rem !important;
     border-bottom: 1px solid var(--surface-border) !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
+  }
+
+  /* Shared mobile FAB (lists) */
+  .page-fab-container {
+    position: fixed;
+    right: 1rem;
+    bottom: calc(
+      3rem + 44px + 1rem + max(0.75rem, env(safe-area-inset-bottom))
+    );
+    z-index: 1050;
+  }
+
+  .page-fab-container .p-button {
+    padding: 0;
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   }
 }
 

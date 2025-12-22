@@ -6,7 +6,11 @@
       </h2>
     </ng-template>
 
-    <form [formGroup]="form" class="p-fluid" (ngSubmit)="submit()">
+    <form
+      [formGroup]="form"
+      class="p-fluid form-content-wrapper"
+      (ngSubmit)="submit()"
+    >
       <div class="field">
         <p-floatlabel variant="on">
           <input

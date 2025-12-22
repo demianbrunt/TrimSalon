@@ -3,6 +3,7 @@ import { inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { Functions, httpsCallable } from '@angular/fire/functions';
 import { BehaviorSubject, from, map, Subject } from 'rxjs';
 import { APP_CONFIG, AppConfig } from '../../app.config.model';
+import { isMockGoogleEnabled } from '../utils/dev-flags';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const google: any;
@@ -35,6 +36,12 @@ export class GoogleAuthService {
 
   constructor() {
     if (isPlatformBrowser(this.platformId)) {
+      if (isMockGoogleEnabled()) {
+        // Dev-only: allow the app to proceed without loading GIS.
+        this._gapiInitialized.next(true);
+        return;
+      }
+
       this.ensureGisLoaded().then(() => {
         this.initializeCodeClient();
       });
@@ -55,6 +62,11 @@ export class GoogleAuthService {
   }
 
   private initializeCodeClient(): void {
+    if (isMockGoogleEnabled()) {
+      this._gapiInitialized.next(true);
+      return;
+    }
+
     this.codeClient = google.accounts.oauth2.initCodeClient({
       client_id: this.config.googleAuth.clientId,
       scope: this.config.googleAuth.scope,
@@ -72,10 +84,28 @@ export class GoogleAuthService {
 
   public getAuthCode(userId: string): void {
     this.userId = userId;
+
+    if (isMockGoogleEnabled()) {
+      // Dev-only: simulate successful authorization.
+      setTimeout(() => this._authorizationComplete.next(), 0);
+      return;
+    }
+
+    if (!this.codeClient) {
+      console.error('Google Identity Services not initialized');
+      return;
+    }
+
     this.codeClient.requestCode();
   }
 
   private sendCodeToBackend(code: string): void {
+    if (isMockGoogleEnabled()) {
+      // Dev-only: no backend token exchange.
+      this._authorizationComplete.next();
+      return;
+    }
+
     if (!this.userId) {
       console.error('User not logged in');
       return;

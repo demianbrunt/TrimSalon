@@ -13,6 +13,7 @@ import { DatePicker } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { Textarea } from 'primeng/textarea';
 import { Appointment } from '../../../core/models/appointment.model';
 import { MobileService } from '../../../core/services/mobile.service';
@@ -27,6 +28,7 @@ import { MobileService } from '../../../core/services/mobile.service';
     ButtonModule,
     CardModule,
     DatePicker,
+    InputNumberModule,
     DividerModule,
     Textarea,
   ],
@@ -56,7 +58,7 @@ import { MobileService } from '../../../core/services/mobile.service';
           </div>
         </div>
         <p-divider />
-        <div class="flex gap-4 text-sm">
+        <div class="flex flex-wrap gap-4 text-sm">
           <div>
             <span class="text-color-secondary">Gepland:</span>
             <span class="font-medium ml-2">
@@ -70,6 +72,14 @@ import { MobileService } from '../../../core/services/mobile.service';
               {{ appointment.startTime | date: 'd MMM yyyy' }}
             </span>
           </div>
+          @if (appointment.estimatedPrice != null) {
+            <div>
+              <span class="text-color-secondary">Geschat:</span>
+              <span class="font-medium ml-2">
+                {{ appointment.estimatedPrice | currency: 'EUR' }}
+              </span>
+            </div>
+          }
         </div>
       </div>
 
@@ -93,6 +103,26 @@ import { MobileService } from '../../../core/services/mobile.service';
           />
           <small class="text-color-secondary mt-1 block">
             Wanneer was de afspraak daadwerkelijk klaar?
+          </small>
+        </div>
+
+        <div class="field mb-4">
+          <label for="actualPrice" class="block mb-2 font-medium">
+            <i class="pi pi-euro mr-2 text-primary"></i>
+            Werkelijke prijs
+          </label>
+          <p-inputNumber
+            inputId="actualPrice"
+            [formControl]="actualPrice"
+            mode="currency"
+            currency="EUR"
+            locale="nl-NL"
+            [min]="0"
+            [style]="{ width: '100%' }"
+            [inputStyleClass]="isMobile ? 'text-center text-xl p-3' : ''"
+          />
+          <small class="text-color-secondary mt-1 block">
+            Optioneel. Laat leeg als je later in “Geavanceerd” wilt invullen.
           </small>
         </div>
 
@@ -219,11 +249,18 @@ export class CompleteAppointmentDialogComponent {
       this.appointment.actualEndTime || this.appointment.endTime || new Date(),
       Validators.required,
     ),
+    actualPrice: new FormControl<number | null>(
+      this.appointment.actualPrice ?? this.appointment.estimatedPrice ?? null,
+    ),
     notes: new FormControl<string>(this.appointment.notes || ''),
   });
 
   get actualEndTime() {
     return this.form.get('actualEndTime') as FormControl;
+  }
+
+  get actualPrice() {
+    return this.form.get('actualPrice') as FormControl;
   }
 
   get notes() {
@@ -234,6 +271,7 @@ export class CompleteAppointmentDialogComponent {
     if (this.form.valid) {
       this.ref.close({
         actualEndTime: this.actualEndTime.value,
+        actualPrice: this.actualPrice.value,
         notes: this.notes.value,
         completed: true,
       });

@@ -1,5 +1,7 @@
-<div class="md:p-4">
-  <p-card styleClass="responsive-card mx-auto max-w-4xl">
+<div class="appointment-form md:p-4">
+  <p-card
+    styleClass="responsive-card mx-auto w-full max-w-3xl md:max-w-4xl xl:max-w-5xl"
+  >
     <ng-template pTemplate="title">
       <div class="flex justify-content-between align-items-center">
         <h2 class="m-0">
@@ -29,19 +31,19 @@
           <i class="pi pi-user text-primary"></i>
           Klant & Hond
         </h3>
-        <div class="formgrid grid">
+        <div class="formgrid grid gap-3">
           <div class="field col-12 md:col-6">
             <label for="client" class="block mb-2 font-medium"
               >Klant <span class="text-red-500">*</span></label
             >
             <p-select
-              id="client"
+              inputId="client"
               [formControl]="client"
               [options]="clients"
               optionLabel="name"
               [filter]="true"
               filterBy="name"
-              placeholder="Selecteer een klant"
+              placeholder="Kies klant"
               [showClear]="true"
               styleClass="w-full"
               appendTo="body"
@@ -58,13 +60,13 @@
               >Hond <span class="text-red-500">*</span></label
             >
             <p-select
-              id="dog"
+              inputId="dog"
               [formControl]="dog"
               [options]="dogs"
               optionLabel="name"
               [filter]="true"
               filterBy="name"
-              placeholder="Selecteer een hond"
+              placeholder="Kies hond"
               [showClear]="true"
               styleClass="w-full"
               appendTo="body"
@@ -97,8 +99,6 @@
         </div>
       </div>
 
-      <p-divider *ngIf="isEditMode" />
-
       <!-- STAP 2: DATUM & TIJD (Moved up for wizard flow) -->
       <div *ngIf="currentStep === 1 || isEditMode" class="mb-4">
         <h3
@@ -108,28 +108,28 @@
           <i class="pi pi-calendar text-primary"></i>
           Planning
         </h3>
-        <div class="formgrid grid">
-          <div class="field col-12 md:col-4">
+        <div class="formgrid grid gap-3">
+          <div class="field col-12 md:col-6 lg:col-4">
             <label for="appointmentDate" class="block mb-2 font-medium"
               >Datum <span class="text-red-500">*</span></label
             >
             <p-datepicker
-              id="appointmentDate"
+              inputId="appointmentDate"
               formControlName="appointmentDate"
               dateFormat="dd-mm-yy"
               [showIcon]="true"
-              placeholder="Kies een datum"
+              placeholder="Kies datum"
               styleClass="w-full"
               appendTo="body"
             />
           </div>
 
-          <div class="field col-12 md:col-4">
+          <div class="field col-12 md:col-6 lg:col-4">
             <label for="startTime" class="block mb-2 font-medium"
               >Starttijd <span class="text-red-500">*</span></label
             >
             <p-datepicker
-              id="startTime"
+              inputId="startTime"
               formControlName="startTime"
               [timeOnly]="true"
               hourFormat="24"
@@ -140,13 +140,15 @@
             />
           </div>
 
-          <div class="field col-12 md:col-4">
-            <label for="calculatedEndTime" class="block mb-2 font-medium"
-              >Verwachte eindtijd</label
-            >
+          <div class="field col-12 md:col-12 lg:col-4">
+            <div id="calculatedEndTimeLabel" class="block mb-2 font-medium">
+              Verwachte eindtijd
+            </div>
             <div
-              class="p-inputtext w-full flex align-items-center"
-              style="height: 48px"
+              class="appointment-form__readonly-input p-inputtext w-full flex align-items-center"
+              role="status"
+              aria-live="polite"
+              aria-labelledby="calculatedEndTimeLabel"
             >
               @if (calculatedEndTime) {
                 <span class="font-semibold text-primary">
@@ -156,14 +158,14 @@
                 <span class="text-color-secondary">Wordt berekend...</span>
               }
             </div>
-            <small class="text-color-secondary mt-1 block"
-              >Automatisch berekend op basis van geschatte duur</small
-            >
+            @if (!calculatedEndTime) {
+              <small class="text-color-secondary mt-1 block field-help">
+                Automatisch berekend op basis van geschatte duur
+              </small>
+            }
           </div>
         </div>
       </div>
-
-      <p-divider *ngIf="isEditMode" />
 
       <!-- STAP 3: WERKZAAMHEDEN -->
       <div *ngIf="currentStep === 2 || isEditMode" class="mb-4">
@@ -174,25 +176,28 @@
           <i class="pi pi-wrench text-primary"></i>
           Werkzaamheden
         </h3>
-        <div class="formgrid grid">
+        <div class="formgrid grid gap-3">
           <div class="field col-12 md:col-6">
             <label for="packages" class="block mb-2 font-medium"
               >Pakketten</label
             >
             <p-multiSelect
-              id="packages"
+              inputId="packages"
               [options]="packages"
               [formControl]="packagesControl"
               optionLabel="name"
-              placeholder="Selecteer pakketten"
+              dataKey="id"
+              placeholder="Pakketten (optioneel)"
               display="chip"
               [showClear]="true"
               styleClass="w-full"
               appendTo="body"
             />
-            <small class="text-color-secondary mt-1 block"
-              >Voorgedefinieerde pakketten (optioneel)</small
-            >
+            @if (!packagesControl.value || packagesControl.value.length === 0) {
+              <small class="text-color-secondary mt-1 block field-help">
+                Voorgedefinieerde pakketten
+              </small>
+            }
           </div>
 
           <div class="field col-12 md:col-6">
@@ -200,19 +205,22 @@
               >Extra Werkzaamheden</label
             >
             <p-multiSelect
-              id="services"
+              inputId="services"
               [options]="services"
               [formControl]="servicesControl"
               optionLabel="name"
-              placeholder="Selecteer extra werkzaamheden"
+              dataKey="id"
+              placeholder="Extra werkzaamheden (optioneel)"
               display="chip"
               [showClear]="true"
               styleClass="w-full"
               appendTo="body"
             />
-            <small class="text-color-secondary mt-1 block"
-              >Aanvullende werkzaamheden (optioneel)</small
-            >
+            @if (!servicesControl.value || servicesControl.value.length === 0) {
+              <small class="text-color-secondary mt-1 block field-help">
+                Aanvullende werkzaamheden
+              </small>
+            }
           </div>
         </div>
 
@@ -280,9 +288,10 @@
 
         <!-- Price Breakdown -->
         @if (priceCalculation && priceCalculation.breakdown.length > 0) {
-          <div class="mt-3">
-            <div class="text-sm font-semibold mb-2">Prijsopbouw:</div>
-            <div class="grid gap-2">
+          <details class="mt-3">
+            <summary class="text-sm font-semibold">Prijsopbouw</summary>
+
+            <div class="mt-2 grid gap-2">
               @for (item of priceCalculation.breakdown; track item.name) {
                 <div class="col-12">
                   <div
@@ -305,7 +314,7 @@
                 </div>
               }
             </div>
-          </div>
+          </details>
         }
       </div>
 
@@ -326,7 +335,7 @@
             rows="3"
             pTextarea
             formControlName="notes"
-            placeholder="Bijzonderheden voor deze afspraak..."
+            placeholder="Notities (optioneel)"
             class="w-full"
           ></textarea>
         </div>
@@ -371,65 +380,85 @@
             <i class="pi pi-check-square text-green-600"></i>
             Werkelijk Uitgevoerd Werk (Logboek)
           </h4>
-          <div class="formgrid grid">
-            <div class="field col-12 md:col-4">
+          <div class="formgrid grid gap-3">
+            <div class="field col-12 md:col-6">
               <label for="actualEndTime" class="block mb-2 font-medium"
                 >Werkelijke eindtijd <span class="text-red-500">*</span></label
               >
               <p-datepicker
-                id="actualEndTime"
+                inputId="actualEndTime"
                 formControlName="actualEndTime"
                 [showTime]="true"
                 hourFormat="24"
                 dateFormat="dd-mm-yy"
                 [showIcon]="true"
-                placeholder="Werkelijke eindtijd"
+                placeholder="Eindtijd"
                 styleClass="w-full"
                 appendTo="body"
               />
-              <small class="text-color-secondary mt-1 block"
-                >Pas aan na voltooiing van de afspraak</small
-              >
+              <small class="text-color-secondary mt-1 block field-help">
+                Na afloop invullen
+              </small>
             </div>
 
-            <div class="field col-12 md:col-4">
+            <div class="field col-12 md:col-6">
+              <label for="actualPrice" class="block mb-2 font-medium">
+                Werkelijke prijs
+              </label>
+              <p-inputNumber
+                inputId="actualPrice"
+                formControlName="actualPrice"
+                mode="currency"
+                currency="EUR"
+                locale="nl-NL"
+                [min]="0"
+                styleClass="w-full"
+              />
+              <small class="text-color-secondary mt-1 block field-help">
+                Optioneel (overschrijft berekend)
+              </small>
+            </div>
+
+            <div class="field col-12 md:col-6">
               <label for="actualPackages" class="block mb-2 font-medium"
                 >Werkelijk uitgevoerde pakketten</label
               >
               <p-multiSelect
-                id="actualPackages"
+                inputId="actualPackages"
                 [options]="packages"
                 formControlName="actualPackages"
                 optionLabel="name"
-                placeholder="Selecteer pakketten"
+                dataKey="id"
+                placeholder="Pakketten"
                 display="chip"
                 [showClear]="true"
                 styleClass="w-full"
                 appendTo="body"
               />
-              <small class="text-color-secondary mt-1 block"
-                >Wijzig indien afwijkend van geschatte</small
-              >
+              <small class="text-color-secondary mt-1 block field-help">
+                Alleen aanpassen bij afwijking
+              </small>
             </div>
 
-            <div class="field col-12 md:col-4">
+            <div class="field col-12 md:col-6">
               <label for="actualServices" class="block mb-2 font-medium"
                 >Werkelijk uitgevoerde werkzaamheden</label
               >
               <p-multiSelect
-                id="actualServices"
+                inputId="actualServices"
                 [options]="services"
                 formControlName="actualServices"
                 optionLabel="name"
-                placeholder="Selecteer werkzaamheden"
+                dataKey="id"
+                placeholder="Werkzaamheden"
                 display="chip"
                 [showClear]="true"
                 styleClass="w-full"
                 appendTo="body"
               />
-              <small class="text-color-secondary mt-1 block"
-                >Wijzig indien afwijkend van geschatte</small
-              >
+              <small class="text-color-secondary mt-1 block field-help">
+                Alleen aanpassen bij afwijking
+              </small>
             </div>
           </div>
 
@@ -442,7 +471,12 @@
                     <i class="pi pi-euro text-blue-600 text-xl"></i>
                     <div class="font-semibold text-blue-600">
                       Werkelijke prijs:
-                      {{ actualPriceCalculation.totalPrice | currency: "EUR" }}
+                      {{ actualPriceTotal | currency: "EUR" }}
+                      @if (hasActualPriceOverride) {
+                        <span class="text-xs text-color-secondary ml-2">
+                          (handmatig)
+                        </span>
+                      }
                     </div>
                   </div>
                   <small class="text-color-secondary">
@@ -491,12 +525,12 @@
 
             <!-- Comparison -->
             @if (priceCalculation && hourlyRateCalculation) {
-              <div class="mt-3">
-                <div class="bg-gray-50 border-round p-3">
-                  <div class="font-semibold mb-2 flex align-items-center gap-2">
-                    <i class="pi pi-arrows-h text-gray-600"></i>
-                    Vergelijking Geschat vs Werkelijk
-                  </div>
+              <details class="mt-3">
+                <summary class="text-sm font-semibold">
+                  Vergelijking geschat vs werkelijk
+                </summary>
+
+                <div class="mt-2 bg-gray-50 border-round p-3">
                   <div class="grid">
                     <div class="col-12 md:col-4">
                       <small class="text-color-secondary"
@@ -505,17 +539,15 @@
                       <div
                         class="font-semibold"
                         [class.text-green-600]="
-                          actualPriceCalculation.totalPrice >=
-                          priceCalculation.totalPrice
+                          actualPriceTotal >= priceCalculation.totalPrice
                         "
                         [class.text-red-500]="
-                          actualPriceCalculation.totalPrice <
-                          priceCalculation.totalPrice
+                          actualPriceTotal < priceCalculation.totalPrice
                         "
                       >
                         {{
-                          actualPriceCalculation.totalPrice -
-                            priceCalculation.totalPrice | currency: "EUR"
+                          actualPriceTotal - priceCalculation.totalPrice
+                            | currency: "EUR"
                         }}
                       </div>
                     </div>
@@ -571,7 +603,7 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </details>
             }
           }
         </div>
@@ -591,7 +623,7 @@
           ></p-button>
         </div>
 
-        <div class="flex gap-2 ml-auto sticky-footer-actions">
+        <div class="flex gap-2 ml-auto sticky-footer-actions flex-wrap">
           <p-button
             *ngIf="!isEditMode && currentStep < steps.length - 1"
             label="Volgende"

@@ -12,6 +12,7 @@
       <app-table-header
         placeholder="Zoek factuur"
         [table]="dv"
+        [showAdd]="false"
         (addClick)="showInvoiceForm()"
       ></app-table-header>
     </ng-template>
@@ -95,6 +96,17 @@
       }
     </ng-template>
   </p-dataView>
+
+  <div class="page-fab-container">
+    <p-button
+      icon="pi pi-plus"
+      [rounded]="true"
+      ariaLabel="Nieuwe factuur"
+      pTooltip="Nieuw"
+      tooltipPosition="left"
+      (click)="showInvoiceForm()"
+    ></p-button>
+  </div>
 } @else {
   <div class="p-4">
     <p-card>

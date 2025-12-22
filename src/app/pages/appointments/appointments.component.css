@@ -56,7 +56,7 @@
 /* Mobile Positioning */
 @media (max-width: 768px) {
   .view-toggle-container {
-    bottom: 45px; /* Partially overlapping sub-nav */
+    bottom: 110px; /* Partially overlapping sub-nav */
     left: 0;
     right: 0;
     z-index: 1100;
@@ -138,10 +138,17 @@
 }
 
 @media (max-width: 768px) {
+  :host ::ng-deep .p-dataview .p-dataview-header {
+    position: sticky;
+    top: max(0px, env(safe-area-inset-top));
+    z-index: 1000;
+    background-color: var(--p-surface-0, var(--surface-card, #fff));
+    border-bottom: 1px solid var(--surface-border);
+  }
+
   ::ng-deep .p-dataview .p-dataview-content {
     padding: 0.5rem !important;
-    padding-top: 40px !important;
-    padding-bottom: 80px !important;
+    padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
   }
 
   .col-12.p-2 {
@@ -161,5 +168,97 @@
 
   ::ng-deep .p-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+}
+
+.mobile-list-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--p-surface-0, var(--surface-card, #fff));
+}
+
+.mobile-list-header__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mobile-list-header__search {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-filters-toggle {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 9999px;
+  background-color: var(--p-surface-0, var(--surface-card, #fff));
+  color: var(--text-color);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mobile-filters-toggle:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+.mobile-filters {
+  border: 1px solid var(--surface-border);
+  border-radius: 0.75rem;
+  background-color: var(--p-surface-0, var(--surface-card, #fff));
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.mobile-filters-panel {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-0.25rem);
+  transition:
+    max-height 320ms ease,
+    opacity 320ms ease,
+    transform 320ms ease;
+}
+
+.mobile-filters-panel.is-open {
+  max-height: 160px;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Full-width select button with evenly distributed options */
+:host ::ng-deep .mobile-filters .p-selectbutton {
+  width: 100%;
+  display: flex;
+}
+
+:host ::ng-deep .mobile-filters .p-selectbutton .p-button {
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
+}
+
+.appointments-fab-container {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(3rem + 44px + 1rem + max(0.75rem, env(safe-area-inset-bottom)));
+  z-index: 1050;
+}
+
+:host ::ng-deep .appointments-fab-container .p-button {
+  padding: 0;
+  border-radius: 9999px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+@media (min-width: 769px) {
+  .appointments-fab-container {
+    display: none;
   }
 }

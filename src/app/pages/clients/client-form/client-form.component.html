@@ -1,7 +1,7 @@
 <div class="md:p-4">
   <p-card styleClass="responsive-card mx-auto max-w-2xl">
     <ng-template pTemplate="title">
-      <h2 class="m-0 mb-5">
+      <h2 class="m-0 mb-3">
         {{ isEditMode ? "Klant Bewerken" : "Nieuwe Klant" }}
       </h2>
     </ng-template>
@@ -24,6 +24,28 @@
         </p-floatlabel>
         <app-validation-message [control]="form.controls.name" label="Naam" />
       </div>
+
+      <div class="field">
+        <p-floatlabel variant="on">
+          <p-inputmask
+            inputId="telefoon"
+            styleClass="w-full"
+            mask="0999999999"
+            placeholder="0612345678"
+            [unmask]="true"
+            [formControl]="form.controls.phone"
+            [showClear]="true"
+            autocomplete="tel"
+            inputmode="tel"
+            aria-required="true"
+          />
+          <label for="telefoon">Telefoon *</label>
+        </p-floatlabel>
+        <app-validation-message
+          [control]="form.controls.phone"
+          label="Telefoon"
+        />
+      </div>
       <div class="field">
         <p-floatlabel variant="on">
           <input
@@ -38,23 +60,6 @@
         <app-validation-message
           [control]="form.controls.email"
           label="E-mail"
-        />
-      </div>
-      <div class="field">
-        <p-floatlabel variant="on">
-          <input
-            pInputText
-            id="telefoon"
-            class="w-full"
-            placeholder="+31 6 12345678"
-            [formControl]="form.controls.phone"
-            autocomplete="off"
-          />
-          <label for="telefoon">Telefoon</label>
-        </p-floatlabel>
-        <app-validation-message
-          [control]="form.controls.phone"
-          label="Telefoon"
         />
       </div>
       <p-divider />
@@ -114,33 +119,33 @@
             </div>
             <div class="field mt-2 col-12 md:col-6">
               <div class="flex align-items-end gap-2 flex-wrap md:flex-nowrap">
-                <div class="flex-1 min-w-12rem">
+                <div class="flex-1 min-w-0">
                   <p-floatlabel variant="on" class="w-full">
                     <p-datepicker
-                      inputId="geboortedatum"
-                      class="w-full"
+                      [inputId]="'geboortedatum-' + $index"
+                      styleClass="w-full"
+                      inputStyleClass="w-full"
                       [formControl]="dogGroup.controls.dateOfBirth"
                       dateFormat="dd-mm-yy"
                       appendTo="body"
                     />
-                    <label for="geboortedatum">Geboortedatum</label>
+                    <label [for]="'geboortedatum-' + $index"
+                      >Geboortedatum</label
+                    >
                   </p-floatlabel>
                 </div>
-                <div class="flex flex-column w-8rem min-w-7rem shrink-0">
-                  <label
-                    class="text-sm text-color-secondary mb-1 block"
-                    [for]="'leeftijd-' + $index"
-                  >
-                    Leeftijd
-                  </label>
-                  <p-inputnumber
-                    [inputId]="'leeftijd-' + $index"
-                    class="w-full"
-                    [formControl]="dogGroup.controls.age"
-                    [disabled]="true"
-                    suffix=" jaar"
-                    inputStyleClass="w-full text-sm"
-                  ></p-inputnumber>
+                <div class="w-9rem min-w-8rem shrink-0">
+                  <p-floatlabel variant="on" class="w-full">
+                    <p-inputnumber
+                      [inputId]="'leeftijd-' + $index"
+                      class="w-full"
+                      [formControl]="dogGroup.controls.age"
+                      [disabled]="true"
+                      suffix=" jaar"
+                      inputStyleClass="w-full"
+                    ></p-inputnumber>
+                    <label [for]="'leeftijd-' + $index">Leeftijd</label>
+                  </p-floatlabel>
                 </div>
               </div>
             </div>

@@ -2,11 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
+  AbstractControl,
   FormArray,
   FormControl,
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
+  ValidationErrors,
   Validators,
 } from '@angular/forms';
 import {
@@ -19,6 +21,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DividerModule } from 'primeng/divider';
 import { FloatLabelModule } from 'primeng/floatlabel';
+import { InputMaskModule } from 'primeng/inputmask';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -42,6 +45,7 @@ import { ClientService } from '../../../core/services/client.service';
     ReactiveFormsModule,
     ButtonModule,
     InputTextModule,
+    InputMaskModule,
     InputNumberModule,
     CheckboxModule,
     SelectModule,
@@ -101,6 +105,53 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
     return this.form.controls.phone;
   }
 
+  private normalizeDutchPhoneToNational(phone: string | null): string | null {
+    if (phone == null) {
+      return null;
+    }
+
+    const digitsOnly = phone.replace(/\D/g, '');
+    if (digitsOnly.length === 0) {
+      return null;
+    }
+
+    // Already a Dutch national number (0 + 9 digits)
+    if (/^0\d{9}$/.test(digitsOnly)) {
+      return digitsOnly;
+    }
+
+    // Handle missing leading 0 (e.g. user pastes 6XXXXXXXX)
+    if (/^\d{9}$/.test(digitsOnly)) {
+      return `0${digitsOnly}`;
+    }
+
+    // International variants -> convert back to national
+    // 0031XXXXXXXXX (0031 + 9 digits)
+    if (/^0031\d{9}$/.test(digitsOnly)) {
+      return `0${digitsOnly.slice(4)}`;
+    }
+
+    // 31XXXXXXXXX (31 + 9 digits)
+    if (/^31\d{9}$/.test(digitsOnly)) {
+      return `0${digitsOnly.slice(2)}`;
+    }
+
+    return null;
+  }
+
+  private readonly dutchPhoneValidator = (
+    control: AbstractControl<string | null>,
+  ): ValidationErrors | null => {
+    const value = control.value;
+    if (value == null || value.trim().length === 0) {
+      return null;
+    }
+
+    return this.normalizeDutchPhoneToNational(value) == null
+      ? { phone: true }
+      : null;
+  };
+
   constructor() {
     super();
   }
@@ -108,11 +159,14 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
   override afterValidityEnsured(): Promise<void> {
     return new Promise((resolve, reject) => {
       const formValue = this.form.getRawValue();
+      const normalizedPhone = this.normalizeDutchPhoneToNational(
+        formValue.phone,
+      );
       const clientData: Client = {
         id: formValue.id,
         name: formValue.name,
         email: formValue.email,
-        phone: formValue.phone,
+        phone: normalizedPhone ?? formValue.phone,
         dogs: formValue.dogs.map((dog) => ({
           name: dog.name,
           breed: dog.breed,
@@ -154,7 +208,10 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
         id: new FormControl(null),
         name: new FormControl(null, Validators.required),
         email: new FormControl(null, [Validators.email]),
-        phone: new FormControl(null, Validators.required),
+        phone: new FormControl(null, [
+          Validators.required,
+          this.dutchPhoneValidator,
+        ]),
         dogs: this.formBuilder.array<
           FormGroup<{
             name: FormControl<string | null>;
@@ -227,7 +284,8 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
           id: client.id,
           name: client.name,
           email: client.email,
-          phone: client.phone,
+          phone:
+            this.normalizeDutchPhoneToNational(client.phone) ?? client.phone,
         });
         this.dogsArray.clear();
         client.dogs.forEach((dog) =>

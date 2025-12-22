@@ -63,9 +63,31 @@ import { AppDialogService } from '../../core/services/app-dialog.service';
 })
 export class AppointmentsComponent implements OnInit {
   appointments: Appointment[] = [];
+  // PrimeNG sorting is still available in the desktop table, but we apply a
+  // sensible default ordering for the initial render (and for mobile DataView).
   sortField = 'startTime';
   sortOrder = 1;
   isInitialized = false;
+
+  mobileFiltersOpen = false;
+
+  statusFilter: 'all' | 'open' | 'completed' = 'all';
+
+  readonly statusFilterOptions: {
+    label: string;
+    value: 'all' | 'open' | 'completed';
+  }[] = [
+    { label: 'Alles', value: 'all' },
+    { label: 'Open', value: 'open' },
+    { label: 'Afgerond', value: 'completed' },
+  ];
+
+  get statusFilterLabel(): string {
+    return (
+      this.statusFilterOptions.find((o) => o.value === this.statusFilter)
+        ?.label ?? 'Open'
+    );
+  }
 
   viewModeOptions: ViewModeOption[] = [
     { label: 'Lijst', value: 'list', icon: 'pi pi-list' },
@@ -154,8 +176,8 @@ export class AppointmentsComponent implements OnInit {
         const updatedAppointment: Appointment = {
           ...appointment,
           actualEndTime: result.actualEndTime,
-          actualServices: result.actualServices,
-          actualPackages: result.actualPackages,
+          actualPrice: result.actualPrice ?? appointment.actualPrice,
+          notes: result.notes ?? appointment.notes,
           completed: true,
         };
 
@@ -193,5 +215,64 @@ export class AppointmentsComponent implements OnInit {
       width: '600px',
       modal: true,
     });
+  }
+
+  get visibleAppointments(): Appointment[] {
+    const items = Array.isArray(this.appointments) ? this.appointments : [];
+
+    const filtered =
+      this.statusFilter === 'open'
+        ? items.filter((a) => !a.completed)
+        : this.statusFilter === 'completed'
+          ? items.filter((a) => !!a.completed)
+          : items;
+
+    // Always return a new array so PrimeNG change detection stays predictable.
+    return [...filtered].sort((a, b) => this.compareAppointments(a, b));
+  }
+
+  setStatusFilter(value: unknown): void {
+    // PrimeNG SelectButton can allow unselecting the current value.
+    // We enforce a non-empty selection here.
+    if (value === 'all' || value === 'open' || value === 'completed') {
+      this.statusFilter = value;
+      return;
+    }
+  }
+
+  private compareAppointments(a: Appointment, b: Appointment): number {
+    // Default list ordering goal:
+    // - Upcoming appointments first, nearest on top
+    // - Past appointments afterwards, most recent past on top
+    const now = Date.now();
+    const aStart = a.startTime ? new Date(a.startTime).getTime() : null;
+    const bStart = b.startTime ? new Date(b.startTime).getTime() : null;
+
+    const aUpcoming = aStart != null ? aStart >= now : false;
+    const bUpcoming = bStart != null ? bStart >= now : false;
+
+    if (aUpcoming !== bUpcoming) {
+      return aUpcoming ? -1 : 1;
+    }
+
+    // Both upcoming => ascending by start
+    if (aUpcoming && bUpcoming) {
+      return this.compareDateAsc(a.startTime, b.startTime);
+    }
+
+    // Both past => descending by start
+    return this.compareDateDesc(a.startTime, b.startTime);
+  }
+
+  private compareDateAsc(a?: Date, b?: Date): number {
+    const at = a ? new Date(a).getTime() : Number.POSITIVE_INFINITY;
+    const bt = b ? new Date(b).getTime() : Number.POSITIVE_INFINITY;
+    return at - bt;
+  }
+
+  private compareDateDesc(a?: Date, b?: Date): number {
+    const at = a ? new Date(a).getTime() : Number.NEGATIVE_INFINITY;
+    const bt = b ? new Date(b).getTime() : Number.NEGATIVE_INFINITY;
+    return bt - at;
   }
 }

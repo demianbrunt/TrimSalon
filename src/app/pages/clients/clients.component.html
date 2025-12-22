@@ -12,6 +12,7 @@
       <app-table-header
         placeholder="Zoek klant of hond"
         [table]="dv"
+        [showAdd]="false"
         (addClick)="showClientForm()"
       ></app-table-header>
     </ng-template>
@@ -119,6 +120,17 @@
       }
     </ng-template>
   </p-dataView>
+
+  <div class="page-fab-container">
+    <p-button
+      icon="pi pi-plus"
+      [rounded]="true"
+      ariaLabel="Nieuwe klant"
+      pTooltip="Nieuw"
+      tooltipPosition="left"
+      (click)="showClientForm()"
+    ></p-button>
+  </div>
 } @else {
   <div class="p-4">
     <p-card>

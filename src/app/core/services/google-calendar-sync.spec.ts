@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { NEVER, of } from 'rxjs';
 import { Appointment } from '../models/appointment.model';
 import { AppointmentService } from './appointment.service';
 import { AuthenticationService } from './authentication.service';
@@ -73,6 +73,7 @@ describe('GoogleCalendarSync', () => {
   beforeEach(() => {
     const calendarSpy = jasmine.createSpyObj('CalendarService', [
       'ensureTrimSalonCalendar',
+      'triggerSync',
       'getAppointments',
       'getRawCalendarEvents',
       'addAppointment',
@@ -94,8 +95,12 @@ describe('GoogleCalendarSync', () => {
     ]);
 
     // Setup default spy behaviors
-    googleAuthSpy.authorizationComplete$ = of(void 0);
+    // Prevent the service constructor from auto-starting sync (it schedules a setTimeout)
+    // which can keep Karma alive and cause disconnects.
+    googleAuthSpy.authorizationComplete$ = NEVER;
     authSpy.getCurrentUserId.and.returnValue('testUser123');
+
+    calendarSpy.triggerSync.and.returnValue(of({ success: true }));
 
     TestBed.configureTestingModule({
       providers: [
