@@ -39,19 +39,9 @@ export interface HourlyRateKPI {
   totalRevenue: number;
   totalExpenses: number;
   totalHoursWorked: number;
-  totalActiveMinutes: number; // From time logs
+  totalActiveMinutes: number;
   percentageOfTarget: number;
   status: 'BELOW' | 'APPROACHING' | 'TARGET' | 'EXCEEDING';
-}
-
-/**
- * Activity breakdown from time logs.
- */
-export interface ActivityBreakdown {
-  activity: string;
-  totalMinutes: number;
-  averageMinutesPerAppointment: number;
-  percentageOfTotal: number;
 }
 
 /**
@@ -103,6 +93,5 @@ export interface DashboardReport {
   popularPackages: PopularPackage[];
   occupancy: CalendarOccupancy;
   hourlyRateKPI?: HourlyRateKPI;
-  activityBreakdown?: ActivityBreakdown[];
   breedPerformance?: BreedPerformance[];
 }

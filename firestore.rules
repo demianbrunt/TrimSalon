@@ -48,6 +48,11 @@ service cloud.firestore {
     match /invoices/{invoiceId} {
       allow read, write: if isAllowedUser();
     }
+
+    // Settings collection - allowed users only
+    match /settings/{settingsId} {
+      allow read, write: if isAllowedUser();
+    }
     
     // Expenses collection - allowed users only
     match /expenses/{expenseId} {

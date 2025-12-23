@@ -43,4 +43,17 @@ Thumbs.db
 
 .firebase/*
 firebase-debug.log
-firebase-debug.*.logfunctions/.env.trimsalon-9b823
+firebase-debug.*.log
+
+# Environment files (never commit real secrets)
+.env
+.env.*
+!.env.example
+
+functions/.env
+functions/.env.*
+!functions/.env.example
+!functions/.env.trimsalon.example
+
+# Generated runtime config (generated from .env)
+public/runtime-config.json

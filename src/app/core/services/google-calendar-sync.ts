@@ -77,28 +77,63 @@ export class GoogleCalendarSync implements OnDestroy {
           this.startSync();
         }, 2000);
       });
+
+    this.googleAuthService.authorizationError$.subscribe((message) => {
+      this._syncStatus.next({
+        ...this._syncStatus.value,
+        syncing: false,
+        error: message,
+      });
+    });
+  }
+
+  private getSyncSettingsStorageKey(userId?: string | null): string {
+    const uid = userId ?? this.authService.getCurrentUserId();
+    return uid
+      ? `googleCalendarSyncSettings:${uid}`
+      : 'googleCalendarSyncSettings';
   }
 
   private loadSyncSettings(): void {
-    const settingsStr = localStorage.getItem('googleCalendarSyncSettings');
-    if (settingsStr) {
-      try {
-        const settings = JSON.parse(settingsStr);
-        this._syncSettings.next(settings);
-        if (settings.autoSync) {
-          this.startAutoSync();
-        }
-      } catch (error) {
-        console.error('Error loading sync settings:', error);
+    const userId = this.authService.getCurrentUserId();
+    const perUserKey = this.getSyncSettingsStorageKey(userId);
+    const legacyKey = 'googleCalendarSyncSettings';
+
+    const perUserSettingsStr = localStorage.getItem(perUserKey);
+    const legacySettingsStr = localStorage.getItem(legacyKey);
+
+    // Prefer per-user settings.
+    const settingsStr = perUserSettingsStr ?? legacySettingsStr;
+    if (!settingsStr) return;
+
+    try {
+      const settings = JSON.parse(settingsStr) as SyncSettings;
+      this._syncSettings.next(settings);
+
+      // One-time migration: move legacy global settings into the user's key.
+      if (userId && !perUserSettingsStr && legacySettingsStr) {
+        localStorage.setItem(perUserKey, legacySettingsStr);
+        localStorage.removeItem(legacyKey);
       }
+
+      if (settings.autoSync) {
+        this.startAutoSync();
+      }
+    } catch (error) {
+      console.error('Error loading sync settings:', error);
     }
   }
 
   private saveSyncSettings(settings: SyncSettings): void {
-    localStorage.setItem(
-      'googleCalendarSyncSettings',
-      JSON.stringify(settings),
-    );
+    const key = this.getSyncSettingsStorageKey();
+    localStorage.setItem(key, JSON.stringify(settings));
+
+    // Ensure we don't keep a legacy global key around that would leak settings across accounts.
+    try {
+      localStorage.removeItem('googleCalendarSyncSettings');
+    } catch {
+      // ignore
+    }
     this._syncSettings.next(settings);
   }
 
@@ -151,24 +186,47 @@ export class GoogleCalendarSync implements OnDestroy {
     } catch (error) {
       console.error('Sync error:', error);
 
-      // Check if this is an authentication error
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const { code, message } = this.getErrorInfo(error);
       const isAuthError =
-        errorMessage.includes('unauthenticated') ||
-        errorMessage.includes('authorization has expired') ||
-        errorMessage.includes('re-authorize');
+        (code?.includes('unauthenticated') ?? false) ||
+        /unauthenticated/i.test(message) ||
+        /not authenticated/i.test(message) ||
+        /authorization has expired/i.test(message) ||
+        /re-?authori[sz]e/i.test(message);
 
       this._syncStatus.next({
         enabled: false,
         syncing: false,
         error: isAuthError
           ? 'Google Agenda autorisatie is verlopen. Klik op "Sync instellingen" om opnieuw te autoriseren.'
-          : error instanceof Error
-            ? error.message
-            : 'Unknown error',
+          : message || 'Unknown error',
       });
     }
+  }
+
+  private getErrorInfo(error: unknown): { code?: string; message: string } {
+    if (error instanceof Error) {
+      const code = (error as { code?: unknown })?.code;
+      return {
+        code: typeof code === 'string' ? code : undefined,
+        message: error.message,
+      };
+    }
+
+    if (error && typeof error === 'object') {
+      const maybe = error as { code?: unknown; message?: unknown };
+      const code = typeof maybe.code === 'string' ? maybe.code : undefined;
+      const message =
+        typeof maybe.message === 'string'
+          ? maybe.message
+          : JSON.stringify(error);
+      return { code, message };
+    }
+
+    return {
+      code: undefined,
+      message: String(error),
+    };
   }
 
   private async performSync(): Promise<void> {
@@ -351,11 +409,6 @@ export class GoogleCalendarSync implements OnDestroy {
     this.syncSubscription = interval(intervalMs).subscribe(() => {
       this.startSync();
     });
-
-    this._syncStatus.next({
-      ...this._syncStatus.value,
-      enabled: true,
-    });
   }
 
   stopAutoSync(): void {
@@ -363,11 +416,6 @@ export class GoogleCalendarSync implements OnDestroy {
       this.syncSubscription.unsubscribe();
       this.syncSubscription = undefined;
     }
-
-    this._syncStatus.next({
-      ...this._syncStatus.value,
-      enabled: false,
-    });
   }
 
   async clearCalendar(): Promise<void> {
@@ -398,7 +446,7 @@ export class GoogleCalendarSync implements OnDestroy {
   requestGoogleAuth(): void {
     const userId = this.authService.getCurrentUserId();
     if (userId || isMockGoogleEnabled()) {
-      this.googleAuthService.getAuthCode(userId ?? 'dev-user');
+      this.googleAuthService.getAuthCode();
     }
   }
 

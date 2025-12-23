@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { FIRESTORE_COLLECTION } from '../constants/firestore-collections';
 import { Appointment } from '../models/appointment.model';
 import { BaseService } from './base.service';
 import { CalendarService } from './calendar.service';
@@ -12,7 +13,7 @@ export class AppointmentService extends BaseService<Appointment> {
   private readonly calendarService = inject(CalendarService);
 
   constructor() {
-    super('appointments');
+    super(FIRESTORE_COLLECTION.appointments);
   }
 
   override add(item: Appointment): Observable<Appointment> {

@@ -22,6 +22,7 @@ export class SubNavComponent {
     { icon: 'pi pi-wallet', link: '/expenses' },
     { icon: 'pi pi-file-edit', link: '/invoices' },
     { icon: 'pi pi-chart-bar', link: '/reports' },
+    { icon: 'pi pi-cog', link: '/settings' },
   ];
 
   openGoogleCalendar(): void {

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { PricingService } from './pricing.service';
 import { TestDataFactory } from '../../../test-helpers/test-data-factory';
+import { Service } from '../models/service.model';
+import { PricingService } from './pricing.service';
 
 describe('PricingService', () => {
   let service: PricingService;
@@ -168,9 +169,10 @@ describe('PricingService', () => {
 
   describe('getTimeBasedServicePrice', () => {
     it('should return 0 for non-time-based services', () => {
-      const testService = {
-        ...TestDataFactory.createService(),
-        pricingType: 'FIXED' as any,
+      const baseService = TestDataFactory.createService() as unknown as Service;
+      const testService: Service = {
+        ...baseService,
+        pricingType: 'FIXED',
       };
 
       const result = service.getTimeBasedServicePrice(testService, 60);
@@ -179,12 +181,13 @@ describe('PricingService', () => {
     });
 
     it('should calculate time-based price', () => {
-      const testService = {
-        ...TestDataFactory.createService(),
-        pricingType: 'TIME_BASED' as any,
+      const baseService = TestDataFactory.createService() as unknown as Service;
+      const testService: Service = {
+        ...baseService,
+        pricingType: 'TIME_BASED',
         timeRates: [
           {
-            breed: null,
+            breed: undefined,
             rates: [{ amount: 1, fromDate: new Date() }],
           },
         ],

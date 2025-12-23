@@ -7,7 +7,7 @@ import { Observable, of } from 'rxjs';
  * all the properties Firebase expects on a Firestore instance.
  */
 export function createMockFirestore() {
-  const mockFirestore: any = {
+  const mockFirestore: Record<string, unknown> = {
     // Required Firestore properties that Firebase checks for
     type: 'firestore',
     _databaseId: {
@@ -59,7 +59,7 @@ export class MockFirestore {
     automaticDataCollectionEnabled: false,
   };
 
-  _delegate: any = {
+  _delegate: Record<string, unknown> = {
     type: 'firestore',
     _databaseId: {
       projectId: 'test-project',
@@ -90,7 +90,7 @@ export class MockFirestore {
  * Mock Auth implementation for testing
  */
 export class MockAuth {
-  currentUser: any = null;
+  currentUser: unknown = null;
   authState$ = of(null);
 
   signInWithPopup = jasmine.createSpy('signInWithPopup').and.returnValue(

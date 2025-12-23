@@ -1,6 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CalendarErrorType = void 0;
+exports.CalendarErrorType =
+  exports.googleClientSecret =
+  exports.googleClientId =
+    void 0;
 exports.appointmentToCalendarEvent = appointmentToCalendarEvent;
 exports.categorizeCalendarError = categorizeCalendarError;
 exports.markSyncNeedsReauth = markSyncNeedsReauth;
@@ -20,9 +23,9 @@ exports.deleteCalendarEvent = deleteCalendarEvent;
 const admin = require("firebase-admin");
 const params_1 = require("firebase-functions/params");
 const googleapis_1 = require("googleapis");
-// Use Firebase's secret management for client ID and secret
-const googleClientId = (0, params_1.defineString)("GOOGLE_CLIENT_ID");
-const googleClientSecret = (0, params_1.defineString)("GOOGLE_CLIENT_SECRET");
+// Use Firebase Secret Manager for Google OAuth credentials.
+exports.googleClientId = (0, params_1.defineSecret)("GOOGLE_CLIENT_ID");
+exports.googleClientSecret = (0, params_1.defineSecret)("GOOGLE_CLIENT_SECRET");
 // App configuration
 const APP_BASE_URL = "https://trimsalon-9b823.web.app";
 const SALON_NAME = "Marlie's Trimsalon";
@@ -49,9 +52,23 @@ function appointmentToCalendarEvent(appointment, includeId = false) {
   const dogName = appointment.dog?.name || "Onbekende Hond";
   const clientName = appointment.client?.name || "Onbekende Klant";
   const breed = appointment.dog?.breed?.name || "";
+  const gender =
+    appointment.dog?.gender === "male"
+      ? "Reu"
+      : appointment.dog?.gender === "female"
+        ? "Teefje"
+        : "";
   const services =
     appointment.services?.map((s) => s.name).join(", ") || "Geen services";
   const packages = appointment.packages?.map((p) => p.name).join(", ") || "";
+  const phone = appointment.client?.phone || "";
+  const email = appointment.client?.email || "";
+  const timeRange =
+    appointment.startTime && appointment.endTime
+      ? `${appointment.startTime} → ${appointment.endTime}`
+      : appointment.startTime
+        ? `${appointment.startTime}`
+        : "";
   // Professional title format
   const summary = `🐕 ${dogName} - ${clientName}`;
   // Build rich description with deep link
@@ -59,9 +76,13 @@ function appointmentToCalendarEvent(appointment, includeId = false) {
     appointment.dog?.isAggressive
       ? "⚠️ WAARSCHUWING: HOND IS AGRESSIEF ⚠️"
       : "",
+    gender ? `⚧ Geslacht: ${gender}` : "",
     `📋 Services: ${services}`,
     packages ? `📦 Pakketten: ${packages}` : "",
     breed ? `🐾 Ras: ${breed}` : "",
+    phone ? `📞 Telefoon: ${phone}` : "",
+    email ? `✉️ Email: ${email}` : "",
+    timeRange ? `⏰ Tijd: ${timeRange}` : "",
     appointment.notes ? `📝 Notities: ${appointment.notes}` : "",
     "",
     `━━━━━━━━━━━━━━━━━━━━━━`,
@@ -209,11 +230,13 @@ function isSignificantChange(before, after) {
  * @param {string} code The authorization code from the client.
  * @return {Promise<Credentials>} A promise that resolves with the tokens.
  */
-async function exchangeCodeForTokens(code) {
+async function exchangeCodeForTokens(code, redirectUri) {
+  const clientId = exports.googleClientId.value().trim();
+  const clientSecret = exports.googleClientSecret.value().trim();
   const oAuth2Client = new googleapis_1.google.auth.OAuth2(
-    googleClientId.value(),
-    googleClientSecret.value(),
-    "postmessage",
+    clientId,
+    clientSecret,
+    redirectUri,
   );
   const { tokens } = await oAuth2Client.getToken(code);
   return tokens;
@@ -227,7 +250,19 @@ async function exchangeCodeForTokens(code) {
 async function saveUserTokens(userId, tokens) {
   const firestore = admin.firestore();
   const userRef = firestore.collection("users").doc(userId);
-  await userRef.set({ tokens }, { merge: true });
+  // Firestore does not accept `undefined` values. Google may omit fields like
+  // `refresh_token` on subsequent authorizations, so we remove undefined fields
+  // before persisting.
+  const safeTokens = Object.fromEntries(
+    Object.entries(tokens).filter(([, value]) => value !== undefined),
+  );
+  // Preserve an existing refresh token if Google doesn't return it again.
+  const existingTokens = (await userRef.get()).data()?.tokens ?? {};
+  const mergedTokens = {
+    ...existingTokens,
+    ...safeTokens,
+  };
+  await userRef.set({ tokens: mergedTokens }, { merge: true });
 }
 /**
  * Remove the user's tokens from Firestore (for expired/invalid tokens).
@@ -273,9 +308,11 @@ async function getCalendarClient(userId) {
     );
     return null;
   }
+  const clientId = exports.googleClientId.value().trim();
+  const clientSecret = exports.googleClientSecret.value().trim();
   const oAuth2Client = new googleapis_1.google.auth.OAuth2(
-    googleClientId.value(),
-    googleClientSecret.value(),
+    clientId,
+    clientSecret,
   );
   oAuth2Client.setCredentials(tokens);
   // Listen for token refresh events and save the new tokens

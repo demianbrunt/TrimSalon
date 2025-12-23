@@ -1,9 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, combineLatest, map } from 'rxjs';
-import { ACTIVITY_LABELS, ActivityType } from '../models/appointment.model';
 import { PaymentStatus } from '../models/invoice.model';
 import {
-  ActivityBreakdown,
   BreedPerformance,
   CalendarOccupancy,
   DashboardReport,
@@ -16,12 +14,10 @@ import {
   RevenueReport,
   TopClient,
 } from '../models/report.model';
+import { AppSettingsService } from './app-settings.service';
 import { AppointmentService } from './appointment.service';
 import { ExpenseService } from './expense.service';
 import { InvoiceService } from './invoice.service';
-
-// Target hourly rate (configurable)
-const TARGET_HOURLY_RATE = 60;
 
 @Injectable({
   providedIn: 'root',
@@ -30,6 +26,7 @@ export class ReportService {
   private appointmentService = inject(AppointmentService);
   private invoiceService = inject(InvoiceService);
   private expenseService = inject(ExpenseService);
+  private appSettingsService = inject(AppSettingsService);
 
   /**
    * Generate revenue report for a given period
@@ -160,6 +157,8 @@ export class ReportService {
           const clientInvoices = invoices.filter(
             (inv) =>
               inv.client.id === clientId &&
+              inv.issueDate >= period.startDate &&
+              inv.issueDate <= period.endDate &&
               inv.paymentStatus === PaymentStatus.PAID,
           );
           client.totalRevenue = clientInvoices.reduce(
@@ -330,7 +329,6 @@ export class ReportService {
       this.getPopularPackages(period, 5),
       this.getCalendarOccupancy(period),
       this.getHourlyRateKPI(period),
-      this.getActivityBreakdown(period),
       this.getBreedPerformance(period),
     ]).pipe(
       map(
@@ -343,7 +341,6 @@ export class ReportService {
           popularPackages,
           occupancy,
           hourlyRateKPI,
-          activityBreakdown,
           breedPerformance,
         ]) => ({
           revenueReport,
@@ -354,7 +351,6 @@ export class ReportService {
           popularPackages,
           occupancy,
           hourlyRateKPI,
-          activityBreakdown,
           breedPerformance,
         }),
       ),
@@ -369,8 +365,11 @@ export class ReportService {
       this.appointmentService.getData$(),
       this.invoiceService.getData$(),
       this.expenseService.getData$(),
+      this.appSettingsService.settings$,
     ]).pipe(
-      map(([appointments, invoices, expenses]) => {
+      map(([appointments, invoices, expenses, settings]) => {
+        const targetHourlyRate = settings.targetHourlyRate;
+
         // Filter appointments in period
         const filteredAppointments = appointments.filter(
           (apt) =>
@@ -380,25 +379,25 @@ export class ReportService {
             apt.completed,
         );
 
-        // Calculate total active minutes from time logs
+        // Derive worked minutes from actual (or planned) appointment durations.
         let totalActiveMinutes = 0;
         filteredAppointments.forEach((apt) => {
-          if (apt.totalActiveMinutes) {
-            totalActiveMinutes += apt.totalActiveMinutes;
-          } else if (apt.timeLogs) {
-            // Calculate from time logs if totalActiveMinutes not set
-            totalActiveMinutes += apt.timeLogs
-              .filter((log) => log.activity !== 'BREAK' && log.durationMinutes)
-              .reduce((sum, log) => sum + (log.durationMinutes || 0), 0);
-          } else if (apt.startTime && apt.actualEndTime) {
-            // Fallback to appointment duration
-            totalActiveMinutes += Math.round(
-              (apt.actualEndTime.getTime() - apt.startTime.getTime()) / 60000,
+          if (apt.startTime && apt.actualEndTime) {
+            totalActiveMinutes += Math.max(
+              0,
+              Math.round(
+                (apt.actualEndTime.getTime() - apt.startTime.getTime()) / 60000,
+              ),
             );
-          } else if (apt.startTime && apt.endTime) {
-            // Fallback to estimated duration
-            totalActiveMinutes += Math.round(
-              (apt.endTime.getTime() - apt.startTime.getTime()) / 60000,
+            return;
+          }
+
+          if (apt.startTime && apt.endTime) {
+            totalActiveMinutes += Math.max(
+              0,
+              Math.round(
+                (apt.endTime.getTime() - apt.startTime.getTime()) / 60000,
+              ),
             );
           }
         });
@@ -433,8 +432,8 @@ export class ReportService {
             ? (totalRevenue - totalExpenses) / totalHoursWorked
             : 0;
         const percentageOfTarget =
-          TARGET_HOURLY_RATE > 0
-            ? (actualHourlyRate / TARGET_HOURLY_RATE) * 100
+          targetHourlyRate > 0
+            ? (actualHourlyRate / targetHourlyRate) * 100
             : 0;
 
         // Determine status
@@ -451,7 +450,7 @@ export class ReportService {
 
         return {
           period,
-          targetHourlyRate: TARGET_HOURLY_RATE,
+          targetHourlyRate,
           actualHourlyRate,
           netHourlyRate,
           totalRevenue,
@@ -461,63 +460,6 @@ export class ReportService {
           percentageOfTarget,
           status,
         };
-      }),
-    );
-  }
-
-  /**
-   * Get breakdown of time spent on each activity type.
-   */
-  getActivityBreakdown(period: ReportPeriod): Observable<ActivityBreakdown[]> {
-    return this.appointmentService.getData$().pipe(
-      map((appointments) => {
-        const filteredAppointments = appointments.filter(
-          (apt) =>
-            apt.startTime &&
-            apt.startTime >= period.startDate &&
-            apt.startTime <= period.endDate &&
-            apt.timeLogs &&
-            apt.timeLogs.length > 0,
-        );
-
-        // Aggregate by activity
-        const activityMap = new Map<
-          ActivityType,
-          { totalMinutes: number; count: number }
-        >();
-
-        filteredAppointments.forEach((apt) => {
-          apt.timeLogs?.forEach((log) => {
-            if (!activityMap.has(log.activity)) {
-              activityMap.set(log.activity, { totalMinutes: 0, count: 0 });
-            }
-            const data = activityMap.get(log.activity)!;
-            data.totalMinutes += log.durationMinutes || 0;
-            data.count++;
-          });
-        });
-
-        // Calculate totals
-        let grandTotal = 0;
-        activityMap.forEach((data) => {
-          grandTotal += data.totalMinutes;
-        });
-
-        // Build breakdown
-        const breakdown: ActivityBreakdown[] = [];
-        activityMap.forEach((data, activity) => {
-          breakdown.push({
-            activity: ACTIVITY_LABELS[activity] || activity,
-            totalMinutes: data.totalMinutes,
-            averageMinutesPerAppointment:
-              data.count > 0 ? data.totalMinutes / data.count : 0,
-            percentageOfTotal:
-              grandTotal > 0 ? (data.totalMinutes / grandTotal) * 100 : 0,
-          });
-        });
-
-        // Sort by total minutes descending
-        return breakdown.sort((a, b) => b.totalMinutes - a.totalMinutes);
       }),
     );
   }
@@ -566,7 +508,7 @@ export class ReportService {
           // Get revenue from invoice
           const relatedInvoice = invoices.find(
             (inv) =>
-              inv.appointment?.id === apt.id &&
+              (inv.appointmentId ?? inv.appointment?.id) === apt.id &&
               inv.paymentStatus === PaymentStatus.PAID,
           );
           if (relatedInvoice) {
@@ -574,11 +516,13 @@ export class ReportService {
           }
 
           // Get minutes worked
-          if (apt.totalActiveMinutes) {
-            data.totalMinutes += apt.totalActiveMinutes;
-          } else if (apt.startTime && apt.actualEndTime) {
+          if (apt.startTime && apt.actualEndTime) {
             data.totalMinutes += Math.round(
               (apt.actualEndTime.getTime() - apt.startTime.getTime()) / 60000,
+            );
+          } else if (apt.startTime && apt.endTime) {
+            data.totalMinutes += Math.round(
+              (apt.endTime.getTime() - apt.startTime.getTime()) / 60000,
             );
           }
         });

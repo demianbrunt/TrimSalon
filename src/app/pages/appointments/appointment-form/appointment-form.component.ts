@@ -23,6 +23,8 @@ import { ToastModule } from 'primeng/toast';
 
 import { MessageModule } from 'primeng/message';
 import { FormBaseComponent } from '../../../core/components/form-base/form-base.component';
+import { APP_ROUTE } from '../../../core/constants/app-routes';
+import { TOAST_TITLE } from '../../../core/constants/toast-titles';
 import { Appointment } from '../../../core/models/appointment.model';
 import { Client } from '../../../core/models/client.model';
 import { Dog } from '../../../core/models/dog.model';
@@ -71,6 +73,55 @@ export class AppointmentFormComponent
   extends FormBaseComponent
   implements OnInit
 {
+  private isDogInactive(dog: Dog | null | undefined): boolean {
+    if (!dog) {
+      return false;
+    }
+
+    return dog.isInactive ?? false;
+  }
+
+  private isSameDog(
+    a: Dog | null | undefined,
+    b: Dog | null | undefined,
+  ): boolean {
+    if (!a || !b) {
+      return false;
+    }
+
+    const aBreedId = a.breed?.id ?? null;
+    const bBreedId = b.breed?.id ?? null;
+
+    return a.name === b.name && aBreedId === bBreedId;
+  }
+
+  private getSelectableDogs(client: Client, selectedDog: Dog | null): Dog[] {
+    const activeDogs = (client.dogs ?? []).filter(
+      (d) => !this.isDogInactive(d),
+    );
+    if (selectedDog && this.isDogInactive(selectedDog)) {
+      const alreadyIncluded = activeDogs.some((d) =>
+        this.isSameDog(d, selectedDog),
+      );
+      return alreadyIncluded ? activeDogs : [selectedDog, ...activeDogs];
+    }
+    return activeDogs;
+  }
+
+  private combineDateAndTime(
+    date: Date | null | undefined,
+    time: Date | null | undefined,
+  ): Date | null {
+    if (!date || !time) {
+      return null;
+    }
+
+    const combined = new Date(date);
+    const timeDate = new Date(time);
+    combined.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+    return combined;
+  }
+
   // Wizard state
   currentStep = 0;
   steps: MenuItem[] = [
@@ -123,6 +174,11 @@ export class AppointmentFormComponent
   get isSelectedDogAggressive(): boolean {
     const dog = this.form.get('dog')?.value;
     return dog?.isAggressive || false;
+  }
+
+  get isSelectedDogInactive(): boolean {
+    const dog = this.form.get('dog')?.value;
+    return this.isDogInactive(dog);
   }
 
   get servicesControl() {
@@ -178,18 +234,10 @@ export class AppointmentFormComponent
       const appointmentDate = formValue.appointmentDate;
       const startTime = formValue.startTime;
 
-      // Combine date and time into startTime
-      let combinedStartTime: Date | null = null;
-      if (appointmentDate && startTime) {
-        combinedStartTime = new Date(appointmentDate);
-        const timeDate = new Date(startTime);
-        combinedStartTime.setHours(
-          timeDate.getHours(),
-          timeDate.getMinutes(),
-          0,
-          0,
-        );
-      }
+      const combinedStartTime = this.combineDateAndTime(
+        appointmentDate,
+        startTime,
+      );
 
       const appointmentData: Appointment = {
         id: formValue.id || undefined,
@@ -216,16 +264,16 @@ export class AppointmentFormComponent
         next: () => {
           this.finalizeSaveSuccess();
           this.toastr.success(
-            'Succes',
+            TOAST_TITLE.success,
             `Afspraak ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
           );
-          this.router.navigate(['/appointments'], {
+          this.router.navigate([APP_ROUTE.appointments], {
             queryParamsHandling: 'preserve',
           });
           resolve();
         },
         error: (err) => {
-          this.toastr.error('Fout', err.message);
+          this.toastr.error(TOAST_TITLE.error, err.message);
           reject(err);
         },
       });
@@ -272,7 +320,7 @@ export class AppointmentFormComponent
       this.form.controls.endTime.setValidators(Validators.required);
     } else {
       this.breadcrumbService.setItems([
-        { label: 'Afspraken', routerLink: '/appointments' },
+        { label: 'Afspraken', routerLink: APP_ROUTE.appointments },
         { label: 'Nieuwe Afspraak' },
       ]);
       this.form.controls.appointmentDate.setValidators(Validators.required);
@@ -295,8 +343,20 @@ export class AppointmentFormComponent
       .get('client')
       ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((client) => {
-        this.dogs = client ? client.dogs : [];
-        this.form.get('dog')?.setValue(null);
+        const selectedDog = this.form.get('dog')?.value ?? null;
+
+        this.dogs = client ? this.getSelectableDogs(client, selectedDog) : [];
+
+        const selectedDogStillValid =
+          client != null &&
+          selectedDog != null &&
+          this.dogs.some((d) => this.isSameDog(d, selectedDog));
+
+        this.form
+          .get('dog')
+          ?.setValue(selectedDogStillValid ? selectedDog : null, {
+            emitEvent: false,
+          });
 
         // Enable/disable dog control based on client selection
         if (client) {
@@ -431,10 +491,11 @@ export class AppointmentFormComponent
       return;
     }
 
-    // Combine date and time
-    const startDateTime = new Date(appointmentDate);
-    const timeDate = new Date(startTime);
-    startDateTime.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+    const startDateTime = this.combineDateAndTime(appointmentDate, startTime);
+    if (!startDateTime) {
+      this.calculatedEndTime = null;
+      return;
+    }
 
     // Add estimated duration
     const endDateTime = new Date(startDateTime);
@@ -526,9 +587,11 @@ export class AppointmentFormComponent
 
     // Calculate actual duration in minutes
     if (startTime && appointmentDate && actualEndTime) {
-      const startDateTime = new Date(appointmentDate);
-      const timeDate = new Date(startTime);
-      startDateTime.setHours(timeDate.getHours(), timeDate.getMinutes(), 0, 0);
+      const startDateTime = this.combineDateAndTime(appointmentDate, startTime);
+      if (!startDateTime) {
+        this.actualHourlyRateCalculation = null;
+        return;
+      }
 
       const endDateTime = new Date(actualEndTime);
       const actualMinutes = Math.round(
@@ -671,7 +734,7 @@ export class AppointmentFormComponent
           this.calculateActualPricing();
 
           this.breadcrumbService.setItems([
-            { label: 'Afspraken', routerLink: '/appointments' },
+            { label: 'Afspraken', routerLink: APP_ROUTE.appointments },
             { label: `Afspraak van ${appointment.client.name}` },
           ]);
 
@@ -679,7 +742,7 @@ export class AppointmentFormComponent
           this.isInitialized = true;
           this.isLoading = false;
         } else {
-          this.router.navigate(['/not-found']);
+          this.router.navigate([APP_ROUTE.notFound]);
         }
       });
   }
@@ -698,7 +761,7 @@ export class AppointmentFormComponent
   override cancel() {
     return super.cancel().then((confirmed) => {
       if (confirmed) {
-        this.router.navigate(['/appointments'], {
+        this.router.navigate([APP_ROUTE.appointments], {
           queryParamsHandling: 'preserve',
         });
       }

@@ -14,15 +14,44 @@ exports.sendAppointmentReminderEmail =
     void 0;
 const admin = require("firebase-admin");
 const https_1 = require("firebase-functions/v2/https");
-const identity_1 = require("firebase-functions/v2/identity");
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const calendar = require("./calendar");
 const calendar_1 = require("./calendar");
 const email = require("./email");
+const oauth_redirect_uri_1 = require("./oauth-redirect-uri");
 // Background calendar sync settings (cost-aware)
 const SYNC_LOOKAHEAD_DAYS = 30; // how far ahead we sync
 const SYNC_LOOKBACK_DAYS = 7; // sync a limited window of past events
 const SYNC_MAX_APPOINTMENTS = 150; // per run per user to cap API usage
+function isHttpsErrorLike(error) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+  const candidate = error;
+  return (
+    typeof candidate.code === "string" &&
+    // Present on Firebase Functions HttpsError objects; helps avoid false positives.
+    typeof candidate.httpErrorCode === "object"
+  );
+}
+function getGoogleOauthTokenError(error) {
+  const candidate = error;
+  const responseData = candidate?.response?.data;
+  const responseError = responseData?.error;
+  if (
+    responseError === "invalid_client" ||
+    responseError === "invalid_grant" ||
+    responseError === "redirect_uri_mismatch"
+  ) {
+    return responseError;
+  }
+  const message =
+    typeof candidate?.message === "string" ? candidate.message : "";
+  if (message.includes("invalid_client")) return "invalid_client";
+  if (message.includes("invalid_grant")) return "invalid_grant";
+  if (message.includes("redirect_uri_mismatch")) return "redirect_uri_mismatch";
+  return null;
+}
 function toDate(value) {
   if (!value) return null;
   if (typeof value === "string") return new Date(value);
@@ -196,26 +225,104 @@ export const beforeusercreate = beforeUserCreated(
 */
 // Calendar functions
 exports.exchangeAuthCode = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { code, userId } = request.data;
-    if (!code || !userId) {
-      console.error("exchangeAuthCode: Missing code or userId");
-      throw new identity_1.HttpsError(
+    const allowedOrigins = new Set([
+      "https://trimsalon-9b823.web.app",
+      "https://trimsalon-9b823.firebaseapp.com",
+      "https://trim.demianbrunt.nl",
+      "http://localhost:4200",
+    ]);
+    const originHeader = request.rawRequest?.headers?.origin;
+    const origin = typeof originHeader === "string" ? originHeader : "";
+    // Google Identity Services (code flow) can result in different redirect_uri values
+    // depending on UX mode and deployment domains. To reduce brittleness across
+    // hosting domains (and avoid breaking users after domain changes), we retry the
+    // token exchange for known-safe redirect_uri candidates.
+    const redirectUriCandidates = (0,
+    oauth_redirect_uri_1.buildRedirectUriCandidates)({
+      origin,
+      allowedOrigins,
+      customDomain: "https://trim.demianbrunt.nl",
+      firebaseHostingDomain: "https://trimsalon-9b823.web.app",
+      firebaseAppDomain: "https://trimsalon-9b823.firebaseapp.com",
+    });
+    if (!request.auth) {
+      throw new https_1.HttpsError(
+        "unauthenticated",
+        "User must be logged in.",
+      );
+    }
+    const userId = request.auth.uid;
+    const { code, clientId: clientClientId } = request.data;
+    if (!code) {
+      console.error("exchangeAuthCode: Missing code");
+      throw new https_1.HttpsError(
         "invalid-argument",
-        'The function must be called with arguments "code" and "userId".',
+        'The function must be called with argument "code".',
+      );
+    }
+    const serverClientId = calendar.googleClientId.value().trim();
+    const serverClientSecret = calendar.googleClientSecret.value().trim();
+    if (!serverClientId || !serverClientSecret) {
+      throw new https_1.HttpsError(
+        "failed-precondition",
+        "Google Calendar integration is not configured (missing server OAuth credentials).",
+      );
+    }
+    if (
+      typeof clientClientId === "string" &&
+      clientClientId.trim().length > 0 &&
+      clientClientId.trim() !== serverClientId
+    ) {
+      throw new https_1.HttpsError(
+        "failed-precondition",
+        "Google Calendar integration is misconfigured (client ID mismatch between app and server).",
       );
     }
     try {
       console.log(`Attempting to exchange code for tokens for user ${userId}`);
-      const tokens = await calendar.exchangeCodeForTokens(code);
+      const tokens = await (0,
+      oauth_redirect_uri_1.exchangeCodeWithRedirectUriFallback)({
+        code,
+        redirectUris: redirectUriCandidates,
+        exchange: (c, redirectUri) =>
+          calendar.exchangeCodeForTokens(c, redirectUri),
+        getOauthError: getGoogleOauthTokenError,
+      });
+      console.log(
+        `Token exchange succeeded for user ${userId}. refresh_token present: ${!!tokens.refresh_token}`,
+      );
       console.log(`Tokens exchanged for user ${userId}. Saving tokens...`);
       await calendar.saveUserTokens(userId, tokens);
+      await calendar.clearSyncStatus(userId);
       console.log(`Tokens saved for user ${userId}.`);
       return { success: true };
     } catch (error) {
       console.error("Error exchanging auth code or saving tokens:", error);
-      throw new identity_1.HttpsError(
+      const oauthError = getGoogleOauthTokenError(error);
+      if (oauthError === "invalid_client") {
+        throw new https_1.HttpsError(
+          "failed-precondition",
+          "Google Calendar integration is not configured correctly (invalid OAuth client credentials).",
+        );
+      }
+      if (oauthError === "redirect_uri_mismatch") {
+        throw new https_1.HttpsError(
+          "failed-precondition",
+          "Google Calendar redirect URI is not configured correctly. Please contact support.",
+        );
+      }
+      if (oauthError === "invalid_grant") {
+        throw new https_1.HttpsError(
+          "invalid-argument",
+          "Authorization code is invalid or expired. Please try again.",
+        );
+      }
+      throw new https_1.HttpsError(
         "internal",
         "Failed to process calendar authorization.",
       );
@@ -223,13 +330,23 @@ exports.exchangeAuthCode = (0, https_1.onCall)(
   },
 );
 exports.getCalendarEvents = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, calendarId, timeMin, timeMax } = request.data;
-    if (!userId || !calendarId) {
-      throw new identity_1.HttpsError(
+    if (!request.auth) {
+      throw new https_1.HttpsError(
+        "unauthenticated",
+        "User must be logged in.",
+      );
+    }
+    const userId = request.auth.uid;
+    const { calendarId, timeMin, timeMax } = request.data;
+    if (!calendarId) {
+      throw new https_1.HttpsError(
         "invalid-argument",
-        'The function must be called with the arguments "userId" and "calendarId".',
+        'The function must be called with the argument "calendarId".',
       );
     }
     try {
@@ -245,18 +362,18 @@ exports.getCalendarEvents = (0, https_1.onCall)(
         // Remove invalid tokens and mark for re-auth
         await calendar.removeUserTokens(userId);
         await calendar.markSyncNeedsReauth(userId);
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "unauthenticated",
           "Calendar authorization has expired. Please re-authorize calendar access.",
         );
       }
       if (errorType === calendar_1.CalendarErrorType.RATE_LIMITED) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "resource-exhausted",
           "Google Calendar rate limit exceeded. Please try again later.",
         );
       }
-      throw new identity_1.HttpsError(
+      throw new https_1.HttpsError(
         "internal",
         "Failed to retrieve calendar events.",
       );
@@ -264,21 +381,24 @@ exports.getCalendarEvents = (0, https_1.onCall)(
   },
 );
 exports.hasCalendarAccess = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId } = request.data;
-    if (!userId) {
-      throw new identity_1.HttpsError(
-        "invalid-argument",
-        'The function must be called with the argument "userId".',
+    if (!request.auth) {
+      throw new https_1.HttpsError(
+        "unauthenticated",
+        "User must be logged in.",
       );
     }
+    const userId = request.auth.uid;
     try {
       const hasAccess = await calendar.hasCalendarAccess(userId);
       return { hasAccess };
     } catch (error) {
       console.error("Error checking for calendar access:", error);
-      throw new identity_1.HttpsError(
+      throw new https_1.HttpsError(
         "internal",
         "Failed to check for calendar access.",
       );
@@ -286,13 +406,23 @@ exports.hasCalendarAccess = (0, https_1.onCall)(
   },
 );
 exports.createCalendarEvent = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, calendarId, event } = request.data;
-    if (!userId || !calendarId || !event) {
-      throw new identity_1.HttpsError(
+    if (!request.auth) {
+      throw new https_1.HttpsError(
+        "unauthenticated",
+        "User must be logged in.",
+      );
+    }
+    const userId = request.auth.uid;
+    const { calendarId, event } = request.data;
+    if (!calendarId || !event) {
+      throw new https_1.HttpsError(
         "invalid-argument",
-        'The function must be called with arguments "userId", "calendarId", and "event".',
+        'The function must be called with arguments "calendarId" and "event".',
       );
     }
     try {
@@ -312,18 +442,18 @@ exports.createCalendarEvent = (0, https_1.onCall)(
       if (errorType === calendar_1.CalendarErrorType.AUTH_EXPIRED) {
         await calendar.removeUserTokens(userId);
         await calendar.markSyncNeedsReauth(userId);
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "unauthenticated",
           "Calendar authorization has expired. Please re-authorize calendar access.",
         );
       }
       if (errorType === calendar_1.CalendarErrorType.RATE_LIMITED) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "resource-exhausted",
           "Google Calendar rate limit exceeded. Please try again later.",
         );
       }
-      throw new identity_1.HttpsError(
+      throw new https_1.HttpsError(
         "internal",
         "Failed to create calendar event.",
       );
@@ -331,13 +461,23 @@ exports.createCalendarEvent = (0, https_1.onCall)(
   },
 );
 exports.updateCalendarEvent = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, calendarId, eventId, event } = request.data;
-    if (!userId || !calendarId || !eventId || !event) {
-      throw new identity_1.HttpsError(
+    if (!request.auth) {
+      throw new https_1.HttpsError(
+        "unauthenticated",
+        "User must be logged in.",
+      );
+    }
+    const userId = request.auth.uid;
+    const { calendarId, eventId, event } = request.data;
+    if (!calendarId || !eventId || !event) {
+      throw new https_1.HttpsError(
         "invalid-argument",
-        'The function must be called with arguments "userId", "calendarId", "eventId", and "event".',
+        'The function must be called with arguments "calendarId", "eventId", and "event".',
       );
     }
     try {
@@ -358,13 +498,13 @@ exports.updateCalendarEvent = (0, https_1.onCall)(
       if (errorType === calendar_1.CalendarErrorType.AUTH_EXPIRED) {
         await calendar.removeUserTokens(userId);
         await calendar.markSyncNeedsReauth(userId);
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "unauthenticated",
           "Calendar authorization has expired. Please re-authorize calendar access.",
         );
       }
       if (errorType === calendar_1.CalendarErrorType.RATE_LIMITED) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "resource-exhausted",
           "Google Calendar rate limit exceeded. Please try again later.",
         );
@@ -374,7 +514,7 @@ exports.updateCalendarEvent = (0, https_1.onCall)(
         console.warn(`Calendar event ${eventId} not found, skipping update.`);
         return { event: null, warning: "Event not found in calendar" };
       }
-      throw new identity_1.HttpsError(
+      throw new https_1.HttpsError(
         "internal",
         "Failed to update calendar event.",
       );
@@ -382,13 +522,23 @@ exports.updateCalendarEvent = (0, https_1.onCall)(
   },
 );
 exports.deleteCalendarEvent = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, calendarId, eventId } = request.data;
-    if (!userId || !calendarId || !eventId) {
-      throw new identity_1.HttpsError(
+    if (!request.auth) {
+      throw new https_1.HttpsError(
+        "unauthenticated",
+        "User must be logged in.",
+      );
+    }
+    const userId = request.auth.uid;
+    const { calendarId, eventId } = request.data;
+    if (!calendarId || !eventId) {
+      throw new https_1.HttpsError(
         "invalid-argument",
-        'The function must be called with arguments "userId", "calendarId", and "eventId".',
+        'The function must be called with arguments "calendarId" and "eventId".',
       );
     }
     try {
@@ -400,13 +550,13 @@ exports.deleteCalendarEvent = (0, https_1.onCall)(
       if (errorType === calendar_1.CalendarErrorType.AUTH_EXPIRED) {
         await calendar.removeUserTokens(userId);
         await calendar.markSyncNeedsReauth(userId);
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "unauthenticated",
           "Calendar authorization has expired. Please re-authorize calendar access.",
         );
       }
       if (errorType === calendar_1.CalendarErrorType.RATE_LIMITED) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "resource-exhausted",
           "Google Calendar rate limit exceeded. Please try again later.",
         );
@@ -416,7 +566,7 @@ exports.deleteCalendarEvent = (0, https_1.onCall)(
         console.warn(`Calendar event ${eventId} not found, already deleted.`);
         return { success: true, warning: "Event was already deleted" };
       }
-      throw new identity_1.HttpsError(
+      throw new https_1.HttpsError(
         "internal",
         "Failed to delete calendar event.",
       );
@@ -424,19 +574,22 @@ exports.deleteCalendarEvent = (0, https_1.onCall)(
   },
 );
 exports.listCalendars = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId } = request.data;
-    if (!userId) {
-      throw new identity_1.HttpsError(
-        "invalid-argument",
-        'The function must be called with the argument "userId".',
+    if (!request.auth) {
+      throw new https_1.HttpsError(
+        "unauthenticated",
+        "User must be logged in.",
       );
     }
+    const userId = request.auth.uid;
     try {
       const calendarClient = await calendar.getCalendarClient(userId);
       if (!calendarClient) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "unauthenticated",
           "User is not authenticated.",
         );
@@ -445,39 +598,53 @@ exports.listCalendars = (0, https_1.onCall)(
       return { items: calendars.data.items };
     } catch (error) {
       console.error("Error listing calendars:", error);
+      // If we intentionally threw an HttpsError (e.g. unauthenticated), do not wrap it.
+      if (error instanceof https_1.HttpsError || isHttpsErrorLike(error)) {
+        throw error;
+      }
       const errorType = calendar.categorizeCalendarError(error);
       if (errorType === calendar_1.CalendarErrorType.AUTH_EXPIRED) {
         await calendar.removeUserTokens(userId);
         await calendar.markSyncNeedsReauth(userId);
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "unauthenticated",
           "Calendar authorization has expired. Please re-authorize calendar access.",
         );
       }
       if (errorType === calendar_1.CalendarErrorType.RATE_LIMITED) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "resource-exhausted",
           "Google Calendar rate limit exceeded. Please try again later.",
         );
       }
-      throw new identity_1.HttpsError("internal", "Failed to list calendars.");
+      throw new https_1.HttpsError("internal", "Failed to list calendars.");
     }
   },
 );
 exports.createCalendar = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, summary } = request.data;
-    if (!userId || !summary) {
-      throw new identity_1.HttpsError(
+    if (!request.auth) {
+      throw new https_1.HttpsError(
+        "unauthenticated",
+        "User must be logged in.",
+      );
+    }
+    const userId = request.auth.uid;
+    const { summary } = request.data;
+    if (!summary) {
+      throw new https_1.HttpsError(
         "invalid-argument",
-        'The function must be called with arguments "userId" and "summary".',
+        'The function must be called with the argument "summary".',
       );
     }
     try {
       const calendarClient = await calendar.getCalendarClient(userId);
       if (!calendarClient) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "unauthenticated",
           "User is not authenticated.",
         );
@@ -490,16 +657,23 @@ exports.createCalendar = (0, https_1.onCall)(
       return newCalendar.data;
     } catch (error) {
       console.error("Error creating calendar:", error);
-      throw new identity_1.HttpsError("internal", "Failed to create calendar.");
+      // If we intentionally threw an HttpsError (e.g. unauthenticated), do not wrap it.
+      if (error instanceof https_1.HttpsError || isHttpsErrorLike(error)) {
+        throw error;
+      }
+      throw new https_1.HttpsError("internal", "Failed to create calendar.");
     }
   },
 );
 // Manual trigger for calendar sync
 exports.triggerCalendarSync = (0, https_1.onCall)(
-  { region: "europe-west1" },
+  {
+    region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
     if (!request.auth) {
-      throw new identity_1.HttpsError(
+      throw new https_1.HttpsError(
         "unauthenticated",
         "User must be logged in.",
       );
@@ -515,14 +689,14 @@ exports.triggerCalendarSync = (0, https_1.onCall)(
     try {
       const hasAccess = await calendar.hasCalendarAccess(userId);
       if (!hasAccess) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "failed-precondition",
           "No calendar access. Please link your account first.",
         );
       }
       const calendarId = await calendar.ensureTrimSalonCalendar(userId);
       if (!calendarId) {
-        throw new identity_1.HttpsError(
+        throw new https_1.HttpsError(
           "internal",
           "TrimSalon calendar unavailable. Please try again.",
         );
@@ -532,10 +706,10 @@ exports.triggerCalendarSync = (0, https_1.onCall)(
     } catch (error) {
       console.error("Manual sync failed:", error);
       // Re-throw HttpsErrors, wrap others
-      if (error instanceof identity_1.HttpsError) {
+      if (error instanceof https_1.HttpsError) {
         throw error;
       }
-      throw new identity_1.HttpsError("internal", "Sync failed.");
+      throw new https_1.HttpsError("internal", "Sync failed.");
     }
   },
 );
@@ -543,6 +717,7 @@ exports.triggerCalendarSync = (0, https_1.onCall)(
 exports.scheduledCalendarSync = (0, scheduler_1.onSchedule)(
   {
     region: "europe-west1",
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
     schedule: "every 2 hours",
     timeZone: "Europe/Amsterdam",
     timeoutSeconds: 300,
@@ -593,7 +768,7 @@ exports.sendAppointmentReminderEmail = (0, https_1.onCall)(
   async (request) => {
     const { to, appointment } = request.data;
     if (!to || !appointment) {
-      throw new identity_1.HttpsError(
+      throw new https_1.HttpsError(
         "invalid-argument",
         'The function must be called with arguments "to" and "appointment".',
       );
@@ -603,7 +778,7 @@ exports.sendAppointmentReminderEmail = (0, https_1.onCall)(
       return { success: true };
     } catch (error) {
       console.error("Error sending appointment reminder:", error);
-      throw new identity_1.HttpsError(
+      throw new https_1.HttpsError(
         "internal",
         "Failed to send appointment reminder email.",
       );

@@ -1,4 +1,3 @@
-import { MessageService } from 'primeng/api';
 import { of } from 'rxjs';
 
 /**
@@ -51,10 +50,16 @@ export class MockActivatedRoute {
     data: {},
     url: [],
     paramMap: {
-      get: (key: string) => null as any,
+      get: (key: string) => {
+        void key;
+        return null;
+      },
     },
     queryParamMap: {
-      get: (key: string) => null as any,
+      get: (key: string) => {
+        void key;
+        return null;
+      },
     },
   };
   params = of({});

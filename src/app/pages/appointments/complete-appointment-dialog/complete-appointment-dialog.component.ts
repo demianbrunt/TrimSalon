@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   FormControl,
   FormGroup,
@@ -9,6 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
+import { CheckboxModule } from 'primeng/checkbox';
 import { DatePicker } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
@@ -17,6 +19,14 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { Textarea } from 'primeng/textarea';
 import { Appointment } from '../../../core/models/appointment.model';
 import { MobileService } from '../../../core/services/mobile.service';
+
+interface CompleteAppointmentFormControls {
+  actualEndTime: FormControl<Date | null>;
+  actualPrice: FormControl<number | null>;
+  notes: FormControl<string>;
+  isPaid: FormControl<boolean>;
+  paidDate: FormControl<Date | null>;
+}
 
 @Component({
   selector: 'app-complete-appointment-dialog',
@@ -27,6 +37,7 @@ import { MobileService } from '../../../core/services/mobile.service';
     DialogModule,
     ButtonModule,
     CardModule,
+    CheckboxModule,
     DatePicker,
     InputNumberModule,
     DividerModule,
@@ -72,7 +83,10 @@ import { MobileService } from '../../../core/services/mobile.service';
               {{ appointment.startTime | date: 'd MMM yyyy' }}
             </span>
           </div>
-          @if (appointment.estimatedPrice != null) {
+          @if (
+            appointment.estimatedPrice !== null &&
+            appointment.estimatedPrice !== undefined
+          ) {
             <div>
               <span class="text-color-secondary">Geschat:</span>
               <span class="font-medium ml-2">
@@ -125,6 +139,43 @@ import { MobileService } from '../../../core/services/mobile.service';
             Optioneel. Laat leeg als je later in “Geavanceerd” wilt invullen.
           </small>
         </div>
+
+        <div class="field mb-4">
+          <div class="flex align-items-center gap-2">
+            <p-checkbox
+              inputId="isPaid"
+              [formControl]="isPaid"
+              [binary]="true"
+            ></p-checkbox>
+            <label for="isPaid" class="m-0 font-medium">Al betaald</label>
+          </div>
+          <small id="isPaidHelp" class="text-color-secondary mt-1 block">
+            Als je dit aanvinkt, wordt de factuur direct als betaald aangemaakt.
+          </small>
+        </div>
+
+        @if (isPaid.value) {
+          <div class="field mb-4">
+            <label for="paidDate" class="block mb-2 font-medium">
+              <i class="pi pi-calendar mr-2 text-primary"></i>
+              Betaaldatum <span class="text-red-500">*</span>
+            </label>
+            <p-datepicker
+              id="paidDate"
+              [formControl]="paidDate"
+              placeholder="Selecteer betaaldatum"
+              dateFormat="dd-mm-yy"
+              [showTime]="false"
+              [showSeconds]="false"
+              [style]="{ width: '100%' }"
+              [inputStyleClass]="isMobile ? 'text-center text-xl p-3' : ''"
+              aria-describedby="paidDateHelp"
+            />
+            <small id="paidDateHelp" class="text-color-secondary mt-1 block">
+              Datum waarop de betaling is ontvangen.
+            </small>
+          </div>
+        }
 
         <div class="field mb-4">
           <label for="notes" class="block mb-2 font-medium">
@@ -232,11 +283,12 @@ import { MobileService } from '../../../core/services/mobile.service';
     `,
   ],
 })
-export class CompleteAppointmentDialogComponent {
+export class CompleteAppointmentDialogComponent implements OnInit {
   private readonly config = inject(DynamicDialogConfig);
   private readonly ref = inject(DynamicDialogRef);
   private readonly router = inject(Router);
   private readonly mobileService = inject(MobileService);
+  private readonly destroyRef = inject(DestroyRef);
 
   appointment: Appointment = this.config.data.appointment;
 
@@ -244,7 +296,7 @@ export class CompleteAppointmentDialogComponent {
     return this.mobileService.isMobile;
   }
 
-  form = new FormGroup({
+  form = new FormGroup<CompleteAppointmentFormControls>({
     actualEndTime: new FormControl<Date | null>(
       this.appointment.actualEndTime || this.appointment.endTime || new Date(),
       Validators.required,
@@ -252,19 +304,51 @@ export class CompleteAppointmentDialogComponent {
     actualPrice: new FormControl<number | null>(
       this.appointment.actualPrice ?? this.appointment.estimatedPrice ?? null,
     ),
-    notes: new FormControl<string>(this.appointment.notes || ''),
+    notes: new FormControl<string>(this.appointment.notes || '', {
+      nonNullable: true,
+    }),
+    isPaid: new FormControl<boolean>(false, { nonNullable: true }),
+    paidDate: new FormControl<Date | null>({ value: null, disabled: true }),
   });
 
-  get actualEndTime() {
-    return this.form.get('actualEndTime') as FormControl;
+  get actualEndTime(): FormControl<Date | null> {
+    return this.form.controls.actualEndTime;
   }
 
-  get actualPrice() {
-    return this.form.get('actualPrice') as FormControl;
+  get actualPrice(): FormControl<number | null> {
+    return this.form.controls.actualPrice;
   }
 
-  get notes() {
-    return this.form.get('notes') as FormControl;
+  get notes(): FormControl<string> {
+    return this.form.controls.notes;
+  }
+
+  get isPaid(): FormControl<boolean> {
+    return this.form.controls.isPaid;
+  }
+
+  get paidDate(): FormControl<Date | null> {
+    return this.form.controls.paidDate;
+  }
+
+  ngOnInit(): void {
+    this.isPaid.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((isPaid) => {
+        if (isPaid) {
+          this.paidDate.enable({ emitEvent: false });
+          this.paidDate.setValidators([Validators.required]);
+
+          if (!this.paidDate.value) {
+            this.paidDate.setValue(new Date(), { emitEvent: false });
+          }
+        } else {
+          this.paidDate.clearValidators();
+          this.paidDate.setValue(null, { emitEvent: false });
+          this.paidDate.disable({ emitEvent: false });
+        }
+        this.paidDate.updateValueAndValidity({ emitEvent: false });
+      });
   }
 
   complete(): void {
@@ -273,6 +357,8 @@ export class CompleteAppointmentDialogComponent {
         actualEndTime: this.actualEndTime.value,
         actualPrice: this.actualPrice.value,
         notes: this.notes.value,
+        isPaid: this.isPaid.value,
+        paidDate: this.isPaid.value ? this.paidDate.value : null,
         completed: true,
       });
     }

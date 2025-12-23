@@ -42,6 +42,13 @@
                     <div class="dog-chip mr-2 mb-2">
                       <div class="dog-chip__header">
                         <span class="dog-chip__name">{{ dog.name }}</span>
+                        @if (dog.isInactive) {
+                          <p-tag
+                            value="Niet actief"
+                            severity="warn"
+                            styleClass="ml-2 text-xs"
+                          ></p-tag>
+                        }
                         @if (dog.isAggressive) {
                           <i
                             class="pi pi-exclamation-triangle text-red-500"
@@ -194,6 +201,13 @@
                   <div class="dog-chip mr-2">
                     <div class="dog-chip__header">
                       <span class="dog-chip__name">{{ dog.name }}</span>
+                      @if (dog.isInactive) {
+                        <p-tag
+                          value="Niet actief"
+                          severity="warn"
+                          styleClass="ml-2 text-xs"
+                        ></p-tag>
+                      }
                       @if (dog.isAggressive) {
                         <i
                           class="pi pi-exclamation-triangle text-red-500"

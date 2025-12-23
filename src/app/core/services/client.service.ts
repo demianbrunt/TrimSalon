@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
+import { FIRESTORE_COLLECTION } from '../constants/firestore-collections';
 import { Client } from '../models/client.model';
 import { BaseService } from './base.service';
 
@@ -9,7 +10,7 @@ import { BaseService } from './base.service';
 })
 export class ClientService extends BaseService<Client> {
   constructor() {
-    super('clients');
+    super(FIRESTORE_COLLECTION.clients);
   }
 
   override getData$(): Observable<Client[]> {

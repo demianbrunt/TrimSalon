@@ -3,12 +3,6 @@ import { FormMode } from './core/enums/form-mode.enum';
 import { authGuard } from './core/guards/auth.guard';
 
 import { CanDeactivateComponentGuard } from './core/guards/can-deactivate.guard';
-import { AppointmentFormComponent } from './pages/appointments/appointment-form/appointment-form.component';
-import { AppointmentsComponent } from './pages/appointments/appointments.component';
-import { ForbiddenComponent } from './pages/forbidden/forbidden.component';
-import { NotFoundComponent } from './pages/not-found/not-found.component';
-import { SignInComponent } from './pages/signin/signin.component';
-import { SignoutComponent } from './pages/signout/signout.component';
 
 export const routes: Routes = [
   {
@@ -18,24 +12,34 @@ export const routes: Routes = [
   },
   {
     path: 'signin',
-    component: SignInComponent,
+    loadComponent: () =>
+      import('./pages/signin/signin.component').then((m) => m.SignInComponent),
   },
   {
     path: 'appointments',
-    component: AppointmentsComponent,
+    loadComponent: () =>
+      import('./pages/appointments/appointments.component').then(
+        (m) => m.AppointmentsComponent,
+      ),
     canActivate: [authGuard],
     data: { breadcrumb: 'Afspraken' },
   },
   {
     path: 'appointments/new',
-    component: AppointmentFormComponent,
+    loadComponent: () =>
+      import(
+        './pages/appointments/appointment-form/appointment-form.component'
+      ).then((m) => m.AppointmentFormComponent),
     canActivate: [authGuard],
     canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Nieuwe Afspraak' },
   },
   {
     path: 'appointments/:id',
-    component: AppointmentFormComponent,
+    loadComponent: () =>
+      import(
+        './pages/appointments/appointment-form/appointment-form.component'
+      ).then((m) => m.AppointmentFormComponent),
     canActivate: [authGuard],
     canDeactivate: [CanDeactivateComponentGuard],
     data: { breadcrumb: 'Afspraak Bewerken', formMode: FormMode.Edit },
@@ -138,6 +142,15 @@ export const routes: Routes = [
     data: { breadcrumb: 'Rapportages' },
   },
   {
+    path: 'settings',
+    loadComponent: () =>
+      import('./pages/settings/settings.component').then(
+        (m) => m.SettingsComponent,
+      ),
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Instellingen' },
+  },
+  {
     path: 'expenses',
     loadComponent: () =>
       import('./pages/expenses/expenses.component').then(
@@ -197,18 +210,30 @@ export const routes: Routes = [
   },
   {
     path: 'signedout',
-    component: SignoutComponent,
+    loadComponent: () =>
+      import('./pages/signout/signout.component').then(
+        (m) => m.SignoutComponent,
+      ),
   },
   {
     path: 'forbidden',
-    component: ForbiddenComponent,
+    loadComponent: () =>
+      import('./pages/forbidden/forbidden.component').then(
+        (m) => m.ForbiddenComponent,
+      ),
   },
   {
     path: 'not-found',
-    component: NotFoundComponent,
+    loadComponent: () =>
+      import('./pages/not-found/not-found.component').then(
+        (m) => m.NotFoundComponent,
+      ),
   },
   {
     path: '**',
-    component: NotFoundComponent,
+    loadComponent: () =>
+      import('./pages/not-found/not-found.component').then(
+        (m) => m.NotFoundComponent,
+      ),
   },
 ];

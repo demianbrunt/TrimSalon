@@ -77,6 +77,8 @@
               <div class="mobile-filters">
                 <p-selectButton
                   [options]="statusFilterOptions"
+                  optionLabel="label"
+                  optionValue="value"
                   [ngModel]="statusFilter"
                   (ngModelChange)="setStatusFilter($event)"
                   [allowEmpty]="false"
@@ -103,6 +105,13 @@
                       <div class="font-bold text-lg">
                         {{ appointment.client.name }} -
                         {{ appointment.dog.name }}
+                        @if (appointment.dog.isInactive) {
+                          <p-tag
+                            value="Niet actief"
+                            severity="warn"
+                            styleClass="ml-2"
+                          ></p-tag>
+                        }
                         @if (appointment.dog.isAggressive) {
                           <i
                             class="pi pi-exclamation-triangle text-red-600 ml-2"
@@ -234,6 +243,8 @@
                 <div class="flex flex-wrap gap-2 align-items-center">
                   <p-selectButton
                     [options]="statusFilterOptions"
+                    optionLabel="label"
+                    optionValue="value"
                     [ngModel]="statusFilter"
                     (ngModelChange)="setStatusFilter($event)"
                     [allowEmpty]="false"
@@ -265,6 +276,13 @@
                 <td>{{ appointment.client.name }}</td>
                 <td>
                   {{ appointment.dog.name }}
+                  @if (appointment.dog.isInactive) {
+                    <p-tag
+                      value="Niet actief"
+                      severity="warn"
+                      styleClass="ml-2"
+                    ></p-tag>
+                  }
                   @if (appointment.dog.isAggressive) {
                     <i
                       class="pi pi-exclamation-triangle text-red-600 ml-2"

@@ -1,59 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { NEVER, of } from 'rxjs';
-import { Appointment } from '../models/appointment.model';
 import { AppointmentService } from './appointment.service';
 import { AuthenticationService } from './authentication.service';
 import { CalendarService } from './calendar.service';
 import { GoogleAuthService } from './google-auth.service';
-import { GoogleCalendarSync } from './google-calendar-sync';
+import { GoogleCalendarSync, type SyncStatus } from './google-calendar-sync';
 import { ToastrService } from './toastr.service';
 
 describe('GoogleCalendarSync', () => {
   let service: GoogleCalendarSync;
   let calendarService: jasmine.SpyObj<CalendarService>;
-  let appointmentService: jasmine.SpyObj<AppointmentService>;
-  let googleAuthService: jasmine.SpyObj<GoogleAuthService>;
-  let authService: jasmine.SpyObj<AuthenticationService>;
-  let toastrService: jasmine.SpyObj<ToastrService>;
-
-  const mockAppointments: Appointment[] = [
-    {
-      id: 'apt1',
-      startTime: new Date('2025-11-15T10:00:00.000Z'),
-      endTime: new Date('2025-11-15T11:00:00.000Z'),
-      dog: {
-        name: 'Bella',
-        breed: { id: 'b1', name: 'Labrador', size: 'large' },
-      },
-      client: {
-        name: 'Jan Jansen',
-        email: 'jan@example.com',
-        phone: '0612345678',
-        dogs: [],
-      },
-      services: [{ id: 's1', name: 'Wassen', description: 'Hond wassen' }],
-      packages: [],
-      notes: 'Test appointment',
-    },
-    {
-      id: 'apt2',
-      startTime: new Date('2025-11-15T14:00:00.000Z'),
-      endTime: new Date('2025-11-15T15:00:00.000Z'),
-      dog: {
-        name: 'Max',
-        breed: { id: 'b2', name: 'Poedel', size: 'medium' },
-      },
-      client: {
-        name: 'Piet Pieters',
-        email: 'piet@example.com',
-        phone: '0687654321',
-        dogs: [],
-      },
-      services: [{ id: 's2', name: 'Knippen', description: 'Hond knippen' }],
-      packages: [],
-      notes: '',
-    },
-  ];
 
   const mockCalendarEvents = [
     {
@@ -71,6 +27,14 @@ describe('GoogleCalendarSync', () => {
   ];
 
   beforeEach(() => {
+    try {
+      localStorage.removeItem('trimSalon_mockGoogle');
+      localStorage.removeItem('googleCalendarSyncSettings');
+      localStorage.removeItem('googleCalendarSyncSettings:testUser123');
+    } catch {
+      // ignore
+    }
+
     const calendarSpy = jasmine.createSpyObj('CalendarService', [
       'ensureTrimSalonCalendar',
       'triggerSync',
@@ -98,6 +62,7 @@ describe('GoogleCalendarSync', () => {
     // Prevent the service constructor from auto-starting sync (it schedules a setTimeout)
     // which can keep Karma alive and cause disconnects.
     googleAuthSpy.authorizationComplete$ = NEVER;
+    googleAuthSpy.authorizationError$ = NEVER;
     authSpy.getCurrentUserId.and.returnValue('testUser123');
 
     calendarSpy.triggerSync.and.returnValue(of({ success: true }));
@@ -117,22 +82,61 @@ describe('GoogleCalendarSync', () => {
     calendarService = TestBed.inject(
       CalendarService,
     ) as jasmine.SpyObj<CalendarService>;
-    appointmentService = TestBed.inject(
-      AppointmentService,
-    ) as jasmine.SpyObj<AppointmentService>;
-    googleAuthService = TestBed.inject(
-      GoogleAuthService,
-    ) as jasmine.SpyObj<GoogleAuthService>;
-    authService = TestBed.inject(
-      AuthenticationService,
-    ) as jasmine.SpyObj<AuthenticationService>;
-    toastrService = TestBed.inject(
-      ToastrService,
-    ) as jasmine.SpyObj<ToastrService>;
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
+  });
+
+  it('should surface authorization errors in sync status', (done) => {
+    TestBed.resetTestingModule();
+
+    const calendarSpy = jasmine.createSpyObj('CalendarService', [
+      'ensureTrimSalonCalendar',
+      'triggerSync',
+      'getAppointments',
+      'getRawCalendarEvents',
+      'addAppointment',
+      'updateAppointment',
+      'deleteAppointment',
+    ]);
+    const appointmentSpy = jasmine.createSpyObj('AppointmentService', [], {
+      getData$: of([]),
+    });
+    const googleAuthSpy = jasmine.createSpyObj('GoogleAuthService', [
+      'getAuthCode',
+    ]);
+    const authSpy = jasmine.createSpyObj('AuthenticationService', [
+      'getCurrentUserId',
+    ]);
+    const toastrSpy = jasmine.createSpyObj('ToastrService', [
+      'success',
+      'error',
+    ]);
+
+    googleAuthSpy.authorizationComplete$ = NEVER;
+    googleAuthSpy.authorizationError$ = of('Backend OAuth misconfigured');
+    authSpy.getCurrentUserId.and.returnValue('testUser123');
+
+    TestBed.configureTestingModule({
+      providers: [
+        GoogleCalendarSync,
+        { provide: CalendarService, useValue: calendarSpy },
+        { provide: AppointmentService, useValue: appointmentSpy },
+        { provide: GoogleAuthService, useValue: googleAuthSpy },
+        { provide: AuthenticationService, useValue: authSpy },
+        { provide: ToastrService, useValue: toastrSpy },
+      ],
+    });
+
+    const fresh = TestBed.inject(GoogleCalendarSync);
+
+    fresh.syncStatus$.subscribe((status: SyncStatus) => {
+      if (status.error) {
+        expect(status.error).toContain('Backend OAuth misconfigured');
+        done();
+      }
+    });
   });
 
   describe('clearCalendar', () => {
@@ -202,6 +206,50 @@ describe('GoogleCalendarSync', () => {
       service.syncSettings$.subscribe((settings) => {
         expect(settings).toEqual(newSettings);
       });
+    });
+  });
+
+  describe('startSync', () => {
+    it('should mark auth errors as re-authorization needed (unauthenticated)', async () => {
+      let lastStatus: SyncStatus | undefined;
+      const sub = service.syncStatus$.subscribe((s) => (lastStatus = s));
+
+      calendarService.ensureTrimSalonCalendar.and.returnValue(
+        Promise.reject({
+          code: 'unauthenticated',
+          message: 'User is not authenticated.',
+        }),
+      );
+
+      await service.startSync();
+
+      expect(lastStatus?.enabled).toBeFalse();
+      expect(lastStatus?.syncing).toBeFalse();
+      expect(String(lastStatus?.error)).toContain(
+        'Google Agenda autorisatie is verlopen',
+      );
+
+      sub.unsubscribe();
+    });
+
+    it('should expose non-auth errors directly', async () => {
+      let lastStatus: SyncStatus | undefined;
+      const sub = service.syncStatus$.subscribe((s) => (lastStatus = s));
+
+      calendarService.ensureTrimSalonCalendar.and.returnValue(
+        Promise.reject({
+          code: 'internal',
+          message: 'Failed to list calendars.',
+        }),
+      );
+
+      await service.startSync();
+
+      expect(lastStatus?.enabled).toBeFalse();
+      expect(lastStatus?.syncing).toBeFalse();
+      expect(lastStatus?.error).toBe('Failed to list calendars.');
+
+      sub.unsubscribe();
     });
   });
 });

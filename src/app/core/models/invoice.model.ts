@@ -19,6 +19,7 @@ export interface Invoice {
   id?: string;
   invoiceNumber: string;
   client: Client;
+  appointmentId?: string;
   appointment?: Appointment;
   items: InvoiceItem[];
   subtotal: number;

@@ -1,10 +1,13 @@
 import * as admin from 'firebase-admin';
-import { onCall } from 'firebase-functions/v2/https';
-import { HttpsError } from 'firebase-functions/v2/identity';
+import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as calendar from './calendar';
 import { CalendarErrorType } from './calendar';
 import * as email from './email';
+import {
+  buildRedirectUriCandidates,
+  exchangeCodeWithRedirectUriFallback,
+} from './oauth-redirect-uri';
 
 // Background calendar sync settings (cost-aware)
 const SYNC_LOOKAHEAD_DAYS = 30; // how far ahead we sync
@@ -24,6 +27,49 @@ interface AppointmentDoc {
   deletedAt?: FirebaseFirestore.Timestamp | null;
   googleCalendarEventId?: string;
   lastModified?: FirebaseFirestore.Timestamp | string;
+}
+
+function isHttpsErrorLike(
+  error: unknown,
+): error is { code: string; message?: string } {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const candidate = error as { code?: unknown; httpErrorCode?: unknown };
+  return (
+    typeof candidate.code === 'string' &&
+    // Present on Firebase Functions HttpsError objects; helps avoid false positives.
+    typeof candidate.httpErrorCode === 'object'
+  );
+}
+
+function getGoogleOauthTokenError(
+  error: unknown,
+): 'invalid_client' | 'invalid_grant' | 'redirect_uri_mismatch' | null {
+  const candidate = error as {
+    message?: unknown;
+    response?: { data?: unknown };
+  };
+
+  const responseData = candidate?.response?.data as
+    | { error?: unknown }
+    | undefined;
+  const responseError = responseData?.error;
+  if (
+    responseError === 'invalid_client' ||
+    responseError === 'invalid_grant' ||
+    responseError === 'redirect_uri_mismatch'
+  ) {
+    return responseError;
+  }
+
+  const message =
+    typeof candidate?.message === 'string' ? candidate.message : '';
+  if (message.includes('invalid_client')) return 'invalid_client';
+  if (message.includes('invalid_grant')) return 'invalid_grant';
+  if (message.includes('redirect_uri_mismatch')) return 'redirect_uri_mismatch';
+  return null;
 }
 
 function toDate(value?: FirebaseFirestore.Timestamp | string): Date | null {
@@ -224,27 +270,115 @@ export const beforeusercreate = beforeUserCreated(
 
 // Calendar functions
 export const exchangeAuthCode = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { code, userId } = request.data;
+    const allowedOrigins = new Set([
+      'https://trimsalon-9b823.web.app',
+      'https://trimsalon-9b823.firebaseapp.com',
+      'https://trim.demianbrunt.nl',
+      'http://localhost:4200',
+    ]);
 
-    if (!code || !userId) {
-      console.error('exchangeAuthCode: Missing code or userId');
+    const originHeader = request.rawRequest?.headers?.origin;
+    const origin = typeof originHeader === 'string' ? originHeader : '';
+
+    // Google Identity Services (code flow) can result in different redirect_uri values
+    // depending on UX mode and deployment domains. To reduce brittleness across
+    // hosting domains (and avoid breaking users after domain changes), we retry the
+    // token exchange for known-safe redirect_uri candidates.
+    const redirectUriCandidates = buildRedirectUriCandidates({
+      origin,
+      allowedOrigins,
+      customDomain: 'https://trim.demianbrunt.nl',
+      firebaseHostingDomain: 'https://trimsalon-9b823.web.app',
+      firebaseAppDomain: 'https://trimsalon-9b823.firebaseapp.com',
+    });
+
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    const userId = request.auth.uid;
+
+    const { code, clientId: clientClientId } = request.data as {
+      code?: string;
+      clientId?: string;
+    };
+
+    if (!code) {
+      console.error('exchangeAuthCode: Missing code');
       throw new HttpsError(
         'invalid-argument',
-        'The function must be called with arguments "code" and "userId".',
+        'The function must be called with argument "code".',
+      );
+    }
+
+    const serverClientId = calendar.googleClientId.value().trim();
+    const serverClientSecret = calendar.googleClientSecret.value().trim();
+
+    if (!serverClientId || !serverClientSecret) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Google Calendar integration is not configured (missing server OAuth credentials).',
+      );
+    }
+
+    if (
+      typeof clientClientId === 'string' &&
+      clientClientId.trim().length > 0 &&
+      clientClientId.trim() !== serverClientId
+    ) {
+      throw new HttpsError(
+        'failed-precondition',
+        'Google Calendar integration is misconfigured (client ID mismatch between app and server).',
       );
     }
 
     try {
       console.log(`Attempting to exchange code for tokens for user ${userId}`);
-      const tokens = await calendar.exchangeCodeForTokens(code);
+      const tokens = (await exchangeCodeWithRedirectUriFallback({
+        code,
+        redirectUris: redirectUriCandidates,
+        exchange: (c, redirectUri) =>
+          calendar.exchangeCodeForTokens(c, redirectUri),
+        getOauthError: getGoogleOauthTokenError,
+      })) as Awaited<ReturnType<typeof calendar.exchangeCodeForTokens>>;
+
+      console.log(
+        `Token exchange succeeded for user ${userId}. refresh_token present: ${!!tokens.refresh_token}`,
+      );
       console.log(`Tokens exchanged for user ${userId}. Saving tokens...`);
       await calendar.saveUserTokens(userId, tokens);
+      await calendar.clearSyncStatus(userId);
       console.log(`Tokens saved for user ${userId}.`);
       return { success: true };
     } catch (error) {
       console.error('Error exchanging auth code or saving tokens:', error);
+
+      const oauthError = getGoogleOauthTokenError(error);
+      if (oauthError === 'invalid_client') {
+        throw new HttpsError(
+          'failed-precondition',
+          'Google Calendar integration is not configured correctly (invalid OAuth client credentials).',
+        );
+      }
+
+      if (oauthError === 'redirect_uri_mismatch') {
+        throw new HttpsError(
+          'failed-precondition',
+          'Google Calendar redirect URI is not configured correctly. Please contact support.',
+        );
+      }
+
+      if (oauthError === 'invalid_grant') {
+        throw new HttpsError(
+          'invalid-argument',
+          'Authorization code is invalid or expired. Please try again.',
+        );
+      }
+
       throw new HttpsError(
         'internal',
         'Failed to process calendar authorization.',
@@ -254,14 +388,22 @@ export const exchangeAuthCode = onCall(
 );
 
 export const getCalendarEvents = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, calendarId, timeMin, timeMax } = request.data;
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    const userId = request.auth.uid;
 
-    if (!userId || !calendarId) {
+    const { calendarId, timeMin, timeMax } = request.data;
+
+    if (!calendarId) {
       throw new HttpsError(
         'invalid-argument',
-        'The function must be called with the arguments "userId" and "calendarId".',
+        'The function must be called with the argument "calendarId".',
       );
     }
 
@@ -299,16 +441,15 @@ export const getCalendarEvents = onCall(
 );
 
 export const hasCalendarAccess = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId } = request.data;
-
-    if (!userId) {
-      throw new HttpsError(
-        'invalid-argument',
-        'The function must be called with the argument "userId".',
-      );
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
+    const userId = request.auth.uid;
 
     try {
       const hasAccess = await calendar.hasCalendarAccess(userId);
@@ -321,14 +462,22 @@ export const hasCalendarAccess = onCall(
 );
 
 export const createCalendarEvent = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, calendarId, event } = request.data;
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    const userId = request.auth.uid;
 
-    if (!userId || !calendarId || !event) {
+    const { calendarId, event } = request.data;
+
+    if (!calendarId || !event) {
       throw new HttpsError(
         'invalid-argument',
-        'The function must be called with arguments "userId", "calendarId", and "event".',
+        'The function must be called with arguments "calendarId" and "event".',
       );
     }
 
@@ -370,14 +519,22 @@ export const createCalendarEvent = onCall(
 );
 
 export const updateCalendarEvent = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, calendarId, eventId, event } = request.data;
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    const userId = request.auth.uid;
 
-    if (!userId || !calendarId || !eventId || !event) {
+    const { calendarId, eventId, event } = request.data;
+
+    if (!calendarId || !eventId || !event) {
       throw new HttpsError(
         'invalid-argument',
-        'The function must be called with arguments "userId", "calendarId", "eventId", and "event".',
+        'The function must be called with arguments "calendarId", "eventId", and "event".',
       );
     }
 
@@ -426,14 +583,22 @@ export const updateCalendarEvent = onCall(
 );
 
 export const deleteCalendarEvent = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, calendarId, eventId } = request.data;
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    const userId = request.auth.uid;
 
-    if (!userId || !calendarId || !eventId) {
+    const { calendarId, eventId } = request.data;
+
+    if (!calendarId || !eventId) {
       throw new HttpsError(
         'invalid-argument',
-        'The function must be called with arguments "userId", "calendarId", and "eventId".',
+        'The function must be called with arguments "calendarId" and "eventId".',
       );
     }
 
@@ -473,16 +638,15 @@ export const deleteCalendarEvent = onCall(
 );
 
 export const listCalendars = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId } = request.data;
-
-    if (!userId) {
-      throw new HttpsError(
-        'invalid-argument',
-        'The function must be called with the argument "userId".',
-      );
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
     }
+    const userId = request.auth.uid;
 
     try {
       const calendarClient = await calendar.getCalendarClient(userId);
@@ -493,6 +657,11 @@ export const listCalendars = onCall(
       return { items: calendars.data.items };
     } catch (error: unknown) {
       console.error('Error listing calendars:', error);
+
+      // If we intentionally threw an HttpsError (e.g. unauthenticated), do not wrap it.
+      if (error instanceof HttpsError || isHttpsErrorLike(error)) {
+        throw error;
+      }
 
       const errorType = calendar.categorizeCalendarError(error);
 
@@ -517,14 +686,22 @@ export const listCalendars = onCall(
   },
 );
 export const createCalendar = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
-    const { userId, summary } = request.data;
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'User must be logged in.');
+    }
+    const userId = request.auth.uid;
 
-    if (!userId || !summary) {
+    const { summary } = request.data;
+
+    if (!summary) {
       throw new HttpsError(
         'invalid-argument',
-        'The function must be called with arguments "userId" and "summary".',
+        'The function must be called with the argument "summary".',
       );
     }
 
@@ -539,8 +716,14 @@ export const createCalendar = onCall(
         },
       });
       return newCalendar.data;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating calendar:', error);
+
+      // If we intentionally threw an HttpsError (e.g. unauthenticated), do not wrap it.
+      if (error instanceof HttpsError || isHttpsErrorLike(error)) {
+        throw error;
+      }
+
       throw new HttpsError('internal', 'Failed to create calendar.');
     }
   },
@@ -548,7 +731,10 @@ export const createCalendar = onCall(
 
 // Manual trigger for calendar sync
 export const triggerCalendarSync = onCall(
-  { region: 'europe-west1' },
+  {
+    region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
+  },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError('unauthenticated', 'User must be logged in.');
@@ -597,6 +783,7 @@ export const triggerCalendarSync = onCall(
 export const scheduledCalendarSync = onSchedule(
   {
     region: 'europe-west1',
+    secrets: [calendar.googleClientId, calendar.googleClientSecret],
     schedule: 'every 2 hours',
     timeZone: 'Europe/Amsterdam',
     timeoutSeconds: 300,

@@ -5,19 +5,14 @@ import {
   GoogleAuthProvider,
   UserCredential,
   authState,
-  browserLocalPersistence,
-  getRedirectResult,
-  setPersistence,
-  signInWithPopup,
-  signInWithRedirect,
-  signOut,
 } from '@angular/fire/auth';
 import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 import { Router } from '@angular/router';
 import { from, lastValueFrom, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { APP_CONFIG, AppConfig } from '../../app.config.model';
-import { GoogleAuthService } from './google-auth.service';
+import { FirebaseAuthService } from './firebase-auth.service';
+import { SessionService } from './session.service';
 import { ToastrService } from './toastr.service';
 
 /**
@@ -56,16 +51,12 @@ export class AuthenticationService {
   private readonly firestore: Firestore = inject(Firestore);
   private readonly config: AppConfig = inject(APP_CONFIG);
   private readonly router: Router = inject(Router);
-  private readonly googleAuthService = inject(GoogleAuthService);
+  private readonly firebaseAuth = inject(FirebaseAuthService);
+  private readonly sessionService = inject(SessionService);
   private readonly toastr = inject(ToastrService);
-
-  private readonly SESSION_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 24h inactivity logout
-  private sessionCheckInterval?: ReturnType<typeof setInterval>;
-  private tokenRefreshInterval?: ReturnType<typeof setInterval>;
 
   private readonly _isSigningIn = signal(false);
   private readonly _isSigningOut = signal(false);
-  private readonly _lastActivity = signal<number>(Date.now());
 
   isSigningIn = this._isSigningIn.asReadonly();
   isSigningOut = this._isSigningOut.asReadonly();
@@ -77,15 +68,15 @@ export class AuthenticationService {
     switchMap((user) => {
       // DEV MODE: Bypass authentication check
       if (this.config.devMode) {
-        this.startSessionManagement();
+        this.sessionService.start({ onTimeout: () => this.signOut() });
         return of(true);
       }
 
       if (!user?.email) {
-        this.clearSessionTimers();
+        this.sessionService.stop();
         return of(false);
       }
-      this.startSessionManagement();
+      this.sessionService.start({ onTimeout: () => this.signOut() });
       return this.checkIfUserIsAllowed(user.email);
     }),
   );
@@ -101,21 +92,13 @@ export class AuthenticationService {
 
   constructor() {
     // Set persistence to LOCAL for better auth state management
-    setPersistence(this.auth, browserLocalPersistence).catch((err) => {
+    this.firebaseAuth.setLocalPersistence(this.auth).catch((err) => {
       console.error('Failed to set auth persistence:', err);
     });
 
-    if (typeof window !== 'undefined') {
-      ['mousedown', 'keydown', 'scroll', 'touchstart'].forEach((evt) => {
-        window.addEventListener(evt, () => this.updateActivity(), {
-          passive: true,
-        });
-      });
-
-      // Check for redirect result on app load (only for production)
-      if (!this.isLocalhost()) {
-        this.handleRedirectResult();
-      }
+    // Check for redirect result on app load (only for production)
+    if (typeof window !== 'undefined' && !this.isLocalhost()) {
+      this.handleRedirectResult();
     }
   }
 
@@ -128,59 +111,10 @@ export class AuthenticationService {
     );
   }
 
-  // --- Activity & Session Management --------------------------------------------------
-  private updateActivity(): void {
-    this._lastActivity.set(Date.now());
-  }
-
-  private startSessionManagement(): void {
-    if (!this.sessionCheckInterval) {
-      this.sessionCheckInterval = setInterval(() => {
-        const inactive = Date.now() - this._lastActivity();
-        if (inactive > this.SESSION_TIMEOUT_MS) {
-          this.toastr.warning(
-            'Sessie verlopen door inactiviteit',
-            'Automatisch uitgelogd',
-          );
-          void this.signOut();
-        }
-      }, 60_000);
-    }
-    if (!this.tokenRefreshInterval) {
-      this.tokenRefreshInterval = setInterval(() => {
-        void this.refreshToken();
-      }, 50 * 60_000); // ~50m
-    }
-  }
-
-  private clearSessionTimers(): void {
-    if (this.sessionCheckInterval) {
-      clearInterval(this.sessionCheckInterval);
-      this.sessionCheckInterval = undefined;
-    }
-    if (this.tokenRefreshInterval) {
-      clearInterval(this.tokenRefreshInterval);
-      this.tokenRefreshInterval = undefined;
-    }
-  }
-
-  private async refreshToken(): Promise<void> {
-    try {
-      const user = this.auth.currentUser;
-      if (user) {
-        await user.getIdToken(true);
-      }
-    } catch (err) {
-      console.error('Token refresh failed', err);
-      this.toastr.error('Kon sessie niet vernieuwen', 'Authenticatie');
-      await this.signOut();
-    }
-  }
-
   // --- Sign In / Out ------------------------------------------------------------------
   private async handleRedirectResult(): Promise<void> {
     try {
-      const result = await getRedirectResult(this.auth);
+      const result = await this.firebaseAuth.getRedirectResult(this.auth);
       if (!result) return; // No redirect happened
 
       await this.handleAuthResult(result);
@@ -188,6 +122,12 @@ export class AuthenticationService {
       console.error('Redirect result error:', error);
       const code = (error as { code?: string })?.code;
       switch (code) {
+        case 'auth/api-key-expired':
+          this.toastr.error(
+            'Firebase API key is verlopen. Update je FIREBASE_API_KEY en genereer runtime-config opnieuw.',
+            'Inloggen mislukt',
+          );
+          break;
         case 'auth/network-request-failed':
           this.toastr.error('Netwerkfout', 'Geen verbinding');
           break;
@@ -197,7 +137,7 @@ export class AuthenticationService {
             'Inloggen mislukt',
           );
       }
-      if (this.auth.currentUser) await signOut(this.auth);
+      if (this.auth.currentUser) await this.firebaseAuth.signOut(this.auth);
     }
   }
 
@@ -216,11 +156,14 @@ export class AuthenticationService {
 
       if (isLocal) {
         // POPUP flow for localhost
-        const userCredential = await signInWithPopup(this.auth, provider);
+        const userCredential = await this.firebaseAuth.signInWithPopup(
+          this.auth,
+          provider,
+        );
         return await this.handleAuthResult(userCredential);
       } else {
         // REDIRECT flow for production
-        await signInWithRedirect(this.auth, provider);
+        await this.firebaseAuth.signInWithRedirect(this.auth, provider);
         // Result handled in handleRedirectResult() after redirect back
         return true;
       }
@@ -228,6 +171,12 @@ export class AuthenticationService {
       console.error('Sign-in error:', error);
       const code = (error as { code?: string })?.code;
       switch (code) {
+        case 'auth/api-key-expired':
+          this.toastr.error(
+            'Firebase API key is verlopen. Update je FIREBASE_API_KEY en genereer runtime-config opnieuw.',
+            'Inloggen mislukt',
+          );
+          break;
         case 'auth/popup-closed-by-user':
           this.toastr.info('Inloggen geannuleerd', 'Authenticatie');
           break;
@@ -246,7 +195,7 @@ export class AuthenticationService {
             'Inloggen mislukt',
           );
       }
-      if (this.auth.currentUser) await signOut(this.auth);
+      if (this.auth.currentUser) await this.firebaseAuth.signOut(this.auth);
       return false;
     } finally {
       this._isSigningIn.set(false);
@@ -263,7 +212,7 @@ export class AuthenticationService {
 
     const isAllowed = await lastValueFrom(this.checkIfUserIsAllowed(email));
     if (!isAllowed) {
-      await signOut(this.auth);
+      await this.firebaseAuth.signOut(this.auth);
       this.toastr.error(
         'Je hebt geen toegang. Neem contact op met de beheerder.',
         'Toegang geweigerd',
@@ -293,7 +242,7 @@ export class AuthenticationService {
       `Welkom ${result.user.displayName || email}!`,
       'Succesvol ingelogd',
     );
-    this.updateActivity();
+    this.sessionService.updateActivity();
 
     // Navigate to returnUrl from sessionStorage or default
     const returnUrl =
@@ -308,10 +257,10 @@ export class AuthenticationService {
     if (this._isSigningOut()) return;
     this._isSigningOut.set(true);
     try {
-      this.clearSessionTimers();
+      this.sessionService.stop();
       sessionStorage.clear();
       localStorage.removeItem('google_oauth_token');
-      await signOut(this.auth);
+      await this.firebaseAuth.signOut(this.auth);
       this.toastr.info('Je bent uitgelogd', 'Tot ziens!');
       // Navigate to signout page after successful logout
       await this.router.navigate(['/signedout']);

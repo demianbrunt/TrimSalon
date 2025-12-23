@@ -17,13 +17,22 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
+import { combineLatest, map, Observable, of, switchMap, take } from 'rxjs';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
-import { Appointment } from '../../core/models/appointment.model';
+import { TOAST_TITLE } from '../../core/constants/toast-titles';
+import {
+  APPOINTMENT_STATUS,
+  AppointmentStatus,
+} from '../../core/models/appointment-status';
+import { Invoice, PaymentStatus } from '../../core/models/invoice.model';
+import { AppSettingsService } from '../../core/services/app-settings.service';
 import { AppointmentService } from '../../core/services/appointment.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
+import { InvoiceService } from '../../core/services/invoice.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
+import { Appointment } from './../../core/models/appointment.model';
 import { CustomCalendarComponent } from './calendar-view/custom-calendar.component';
 import { CompleteAppointmentDialogComponent } from './complete-appointment-dialog/complete-appointment-dialog.component';
 import { GoogleCalendarSyncDialog } from './google-calendar-sync-dialog/google-calendar-sync-dialog';
@@ -71,15 +80,15 @@ export class AppointmentsComponent implements OnInit {
 
   mobileFiltersOpen = false;
 
-  statusFilter: 'all' | 'open' | 'completed' = 'all';
+  statusFilter: AppointmentStatus = APPOINTMENT_STATUS.open;
 
   readonly statusFilterOptions: {
     label: string;
-    value: 'all' | 'open' | 'completed';
+    value: AppointmentStatus;
   }[] = [
-    { label: 'Alles', value: 'all' },
-    { label: 'Open', value: 'open' },
-    { label: 'Afgerond', value: 'completed' },
+    { label: 'Alles', value: APPOINTMENT_STATUS.all },
+    { label: 'Open', value: APPOINTMENT_STATUS.open },
+    { label: 'Afgerond', value: APPOINTMENT_STATUS.completed },
   ];
 
   get statusFilterLabel(): string {
@@ -97,6 +106,8 @@ export class AppointmentsComponent implements OnInit {
   viewMode: 'list' | 'calendar' = 'list';
 
   private readonly appointmentService = inject(AppointmentService);
+  private readonly invoiceService = inject(InvoiceService);
+  private readonly appSettingsService = inject(AppSettingsService);
   private readonly toastrService = inject(ToastrService);
   private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly router = inject(Router);
@@ -125,7 +136,7 @@ export class AppointmentsComponent implements OnInit {
         this.isInitialized = true;
       },
       error: (err) => {
-        this.toastrService.error('Fout', err.message);
+        this.toastrService.error(TOAST_TITLE.error, err.message);
       },
     });
   }
@@ -150,11 +161,14 @@ export class AppointmentsComponent implements OnInit {
         if (confirmed) {
           this.appointmentService.delete(appointment.id!).subscribe({
             next: () => {
-              this.toastrService.success('Succes', 'Afspraak verwijderd');
+              this.toastrService.success(
+                TOAST_TITLE.success,
+                'Afspraak verwijderd',
+              );
               this.loadAppointments();
             },
             error: (err) => {
-              this.toastrService.error('Fout', err.message);
+              this.toastrService.error(TOAST_TITLE.error, err.message);
             },
           });
         }
@@ -173,6 +187,9 @@ export class AppointmentsComponent implements OnInit {
 
     this.dialogRef.onClose.subscribe((result) => {
       if (result && result.completed) {
+        const isPaid = !!result.isPaid;
+        const paidDate = result.paidDate ?? null;
+
         const updatedAppointment: Appointment = {
           ...appointment,
           actualEndTime: result.actualEndTime,
@@ -181,17 +198,107 @@ export class AppointmentsComponent implements OnInit {
           completed: true,
         };
 
-        this.appointmentService.update(updatedAppointment).subscribe({
-          next: () => {
-            this.toastrService.success('Succes', 'Afspraak afgerond');
-            this.loadAppointments();
-          },
-          error: (err) => {
-            this.toastrService.error('Fout', err.message);
-          },
-        });
+        this.appointmentService
+          .update(updatedAppointment)
+          .pipe(
+            switchMap(() =>
+              this.ensureInvoiceForAppointment$(updatedAppointment, {
+                isPaid,
+                paidDate,
+              }),
+            ),
+          )
+          .subscribe({
+            next: (invoiceCreated) => {
+              this.toastrService.success(
+                TOAST_TITLE.success,
+                'Afspraak afgerond',
+              );
+              if (invoiceCreated) {
+                this.toastrService.info(
+                  TOAST_TITLE.success,
+                  isPaid
+                    ? 'Factuur als betaald aangemaakt'
+                    : 'Conceptfactuur aangemaakt',
+                );
+              }
+              this.loadAppointments();
+            },
+            error: (err) => {
+              this.toastrService.error(TOAST_TITLE.error, err.message);
+            },
+          });
       }
     });
+  }
+
+  private ensureInvoiceForAppointment$(
+    appointment: Appointment,
+    invoicePayment?: { isPaid: boolean; paidDate?: Date | null },
+  ): Observable<boolean> {
+    const appointmentId = appointment.id;
+    if (!appointmentId) {
+      return of(false);
+    }
+
+    return combineLatest([
+      this.invoiceService
+        .getInvoicesForAppointment$(appointmentId)
+        .pipe(take(1)),
+      this.appSettingsService.settings$.pipe(take(1)),
+    ]).pipe(
+      switchMap(([existingInvoices, settings]) => {
+        if (existingInvoices.length > 0) {
+          return of(false);
+        }
+
+        const subtotal =
+          appointment.actualPrice ?? appointment.estimatedPrice ?? 0;
+        const vatRate = settings.korEnabled ? 0 : settings.defaultVatRate;
+        const vatAmount = (subtotal * vatRate) / 100;
+        const totalAmount = subtotal + vatAmount;
+
+        const issueDate = new Date();
+        const dueDate = new Date(issueDate);
+        dueDate.setDate(dueDate.getDate() + 30);
+
+        const isPaid = invoicePayment?.isPaid ?? false;
+        const paidDate = isPaid
+          ? (invoicePayment?.paidDate ?? issueDate)
+          : undefined;
+
+        const invoice: Invoice = {
+          invoiceNumber: this.generateInvoiceNumber(issueDate),
+          client: appointment.client,
+          appointmentId,
+          items: [
+            {
+              description: `Afspraak${appointment.dog?.name ? ` - ${appointment.dog.name}` : ''}`,
+              quantity: 1,
+              unitPrice: subtotal,
+              totalPrice: subtotal,
+            },
+          ],
+          subtotal,
+          vatRate,
+          vatAmount,
+          totalAmount,
+          paymentStatus: isPaid ? PaymentStatus.PAID : PaymentStatus.PENDING,
+          issueDate,
+          dueDate,
+          ...(paidDate ? { paidDate } : {}),
+          notes: appointment.notes ?? '',
+        };
+
+        return this.invoiceService.add(invoice).pipe(map(() => true));
+      }),
+    );
+  }
+
+  private generateInvoiceNumber(issueDate: Date): string {
+    const yyyymmdd = issueDate.toISOString().slice(0, 10).replace(/-/g, '');
+    const suffix = Date.now().toString().slice(-6);
+    return `INV-${yyyymmdd}-${suffix}`;
   }
 
   onCalendarAppointmentClick(appointment: Appointment): void {
@@ -221,9 +328,9 @@ export class AppointmentsComponent implements OnInit {
     const items = Array.isArray(this.appointments) ? this.appointments : [];
 
     const filtered =
-      this.statusFilter === 'open'
+      this.statusFilter === APPOINTMENT_STATUS.open
         ? items.filter((a) => !a.completed)
-        : this.statusFilter === 'completed'
+        : this.statusFilter === APPOINTMENT_STATUS.completed
           ? items.filter((a) => !!a.completed)
           : items;
 
@@ -232,36 +339,40 @@ export class AppointmentsComponent implements OnInit {
   }
 
   setStatusFilter(value: unknown): void {
+    const nextValue =
+      typeof value === 'string'
+        ? value
+        : value &&
+            typeof value === 'object' &&
+            'value' in value &&
+            typeof (value as { value?: unknown }).value === 'string'
+          ? (value as { value: string }).value
+          : undefined;
+
     // PrimeNG SelectButton can allow unselecting the current value.
     // We enforce a non-empty selection here.
-    if (value === 'all' || value === 'open' || value === 'completed') {
-      this.statusFilter = value;
+    if (
+      nextValue === APPOINTMENT_STATUS.all ||
+      nextValue === APPOINTMENT_STATUS.open ||
+      nextValue === APPOINTMENT_STATUS.completed
+    ) {
+      this.statusFilter = nextValue as AppointmentStatus;
+
+      // Update sort order based on filter
+      if (this.statusFilter === APPOINTMENT_STATUS.completed) {
+        this.sortOrder = -1; // Descending (Newest first)
+      } else {
+        this.sortOrder = 1; // Ascending (Oldest/Closest first)
+      }
       return;
     }
   }
 
   private compareAppointments(a: Appointment, b: Appointment): number {
-    // Default list ordering goal:
-    // - Upcoming appointments first, nearest on top
-    // - Past appointments afterwards, most recent past on top
-    const now = Date.now();
-    const aStart = a.startTime ? new Date(a.startTime).getTime() : null;
-    const bStart = b.startTime ? new Date(b.startTime).getTime() : null;
-
-    const aUpcoming = aStart != null ? aStart >= now : false;
-    const bUpcoming = bStart != null ? bStart >= now : false;
-
-    if (aUpcoming !== bUpcoming) {
-      return aUpcoming ? -1 : 1;
-    }
-
-    // Both upcoming => ascending by start
-    if (aUpcoming && bUpcoming) {
-      return this.compareDateAsc(a.startTime, b.startTime);
-    }
-
-    // Both past => descending by start
-    return this.compareDateDesc(a.startTime, b.startTime);
+    // Sort based on the current sortOrder (which is set by the filter)
+    // 1 = Ascending (Oldest -> Newest)
+    // -1 = Descending (Newest -> Oldest)
+    return this.compareDateAsc(a.startTime, b.startTime) * this.sortOrder;
   }
 
   private compareDateAsc(a?: Date, b?: Date): number {

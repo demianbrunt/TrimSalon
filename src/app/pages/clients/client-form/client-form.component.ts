@@ -32,7 +32,7 @@ import { FormBaseComponent } from '../../../core/components/form-base/form-base.
 import { ValidationMessageComponent } from '../../../core/components/validation-message/validation-message.component';
 import { Breed } from '../../../core/models/breed.model';
 import { Client } from '../../../core/models/client.model';
-import { Dog } from '../../../core/models/dog.model';
+import { Dog, DogInactiveReason } from '../../../core/models/dog.model';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { BreedService } from '../../../core/services/breed.service';
 import { ClientService } from '../../../core/services/client.service';
@@ -77,9 +77,23 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
         gender: FormControl<'male' | 'female' | null>;
         isNeutered: FormControl<boolean | null>;
         isAggressive: FormControl<boolean | null>;
+        isInactive: FormControl<boolean | null>;
+        inactiveReason: FormControl<DogInactiveReason | null>;
+        inactiveAt: FormControl<Date | null>;
       }>
     >;
   }>;
+
+  readonly inactiveReasonOptions: {
+    label: string;
+    value: DogInactiveReason;
+  }[] = [
+    { label: 'Niet meer klant', value: 'NO_LONGER_CLIENT' },
+    { label: 'Verhuisd', value: 'MOVED' },
+    { label: 'Duplicaat / samenvoegen', value: 'DUPLICATE' },
+    { label: 'Overleden', value: 'DECEASED' },
+    { label: 'Overig', value: 'OTHER' },
+  ];
 
   allBreeds: Breed[] = [];
   filteredBreeds: Breed[] = [];
@@ -175,6 +189,9 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
           gender: dog.gender,
           isNeutered: dog.isNeutered,
           isAggressive: dog.isAggressive,
+          isInactive: dog.isInactive,
+          inactiveReason: dog.inactiveReason,
+          inactiveAt: dog.inactiveAt,
         })),
       };
 
@@ -221,6 +238,9 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
             gender: FormControl<'male' | 'female' | null>;
             isNeutered: FormControl<boolean | null>;
             isAggressive: FormControl<boolean | null>;
+            isInactive: FormControl<boolean | null>;
+            inactiveReason: FormControl<DogInactiveReason | null>;
+            inactiveAt: FormControl<Date | null>;
           }>
         >([]),
       });
@@ -308,6 +328,11 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
 
   newDogGroup(dog?: Dog): FormGroup {
     const dob = dog?.dateOfBirth ? new Date(dog.dateOfBirth) : null;
+    const isInactive = dog?.isInactive ?? false;
+    const inactiveAt = dog?.inactiveAt ? new Date(dog.inactiveAt) : null;
+    const inactiveReason: DogInactiveReason | null =
+      dog?.inactiveReason ?? null;
+
     const group = this.formBuilder.group({
       name: [dog?.name || '', Validators.required],
       breed: [dog?.breed, Validators.required],
@@ -316,6 +341,12 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
       gender: [dog?.gender || null],
       isNeutered: [dog?.isNeutered || false],
       isAggressive: [dog?.isAggressive || false],
+      isInactive: [isInactive],
+      inactiveReason: [
+        { value: inactiveReason, disabled: !isInactive },
+        Validators.required,
+      ],
+      inactiveAt: [{ value: inactiveAt, disabled: !isInactive }],
     });
 
     group.controls.dateOfBirth.valueChanges
@@ -326,6 +357,29 @@ export class ClientFormComponent extends FormBaseComponent implements OnInit {
           group.controls.age.setValue(age);
         } else {
           group.controls.age.setValue(null);
+        }
+      });
+
+    group.controls.isInactive.valueChanges
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((isInactiveValue) => {
+        const isInactive = isInactiveValue ?? false;
+        if (isInactive) {
+          group.controls.inactiveAt.enable();
+          group.controls.inactiveReason.enable();
+
+          if (!group.controls.inactiveAt.value) {
+            group.controls.inactiveAt.setValue(new Date());
+          }
+
+          if (!group.controls.inactiveReason.value) {
+            group.controls.inactiveReason.setValue('NO_LONGER_CLIENT');
+          }
+        } else {
+          group.controls.inactiveAt.setValue(null);
+          group.controls.inactiveAt.disable();
+          group.controls.inactiveReason.setValue(null);
+          group.controls.inactiveReason.disable();
         }
       });
 

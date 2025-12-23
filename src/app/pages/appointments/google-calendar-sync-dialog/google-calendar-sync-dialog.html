@@ -8,17 +8,25 @@
     <div class="flex align-items-center gap-2 mb-3">
       <i
         class="pi"
-        [class.pi-check-circle]="syncStatus.enabled && !syncStatus.syncing"
+        [class.pi-check-circle]="
+          syncSettings.autoSync && syncStatus.enabled && !syncStatus.syncing
+        "
         [class.pi-spin]="syncStatus.syncing"
         [class.pi-sync]="syncStatus.syncing"
-        [class.pi-times-circle]="!syncStatus.enabled && !syncStatus.syncing"
-        [class.text-green-500]="syncStatus.enabled && !syncStatus.syncing"
-        [class.text-red-500]="!syncStatus.enabled && !syncStatus.syncing"
+        [class.pi-times-circle]="
+          (!syncSettings.autoSync || !syncStatus.enabled) && !syncStatus.syncing
+        "
+        [class.text-green-500]="
+          syncSettings.autoSync && syncStatus.enabled && !syncStatus.syncing
+        "
+        [class.text-red-500]="
+          (!syncSettings.autoSync || !syncStatus.enabled) && !syncStatus.syncing
+        "
       ></i>
       <span class="font-semibold">
         @if (syncStatus.syncing) {
           Bezig met synchroniseren...
-        } @else if (syncStatus.enabled) {
+        } @else if (syncSettings.autoSync) {
           Automatische sync ingeschakeld
         } @else {
           Automatische sync uitgeschakeld

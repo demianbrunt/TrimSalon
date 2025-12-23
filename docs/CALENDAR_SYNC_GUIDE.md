@@ -114,7 +114,7 @@ Voor Google Agenda synchronisatie heb je nodig:
 3. Kies "Web application"
 4. Voeg toe:
    - Authorized JavaScript origins: `http://localhost:4200` (dev), je productie URL
-   - Authorized redirect URIs: `postmessage`
+   - Authorized redirect URIs: dezelfde origins als hierboven (bijv. `http://localhost:4200`, `https://trimsalon-9b823.web.app`, `https://trimsalon-9b823.firebaseapp.com`)
 5. Download credentials
 
 #### 3. Firebase Functions Setup
@@ -184,6 +184,12 @@ Voor Google Agenda synchronisatie heb je nodig:
 - Monitor sync errors in de status display
 
 ## Troubleshooting
+
+### Let op bij het testen van callable functions
+
+`exchangeAuthCode` is een **callable** function. Als je deze rechtstreeks aanroept via een gewone HTTP POST op de Cloud Functions URL, krijg je typisch fouten zoals `INVALID_ARGUMENT` / `Invalid request, unable to process.`.
+
+Test daarom altijd via de app (AngularFire `httpsCallable`) of via de emulator UI.
 
 ### Sync werkt niet
 

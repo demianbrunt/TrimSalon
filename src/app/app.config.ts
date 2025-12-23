@@ -2,8 +2,10 @@ import { registerLocaleData } from '@angular/common';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import localeNl from '@angular/common/locales/nl';
 import {
+  APP_INITIALIZER,
   ApplicationConfig,
   ErrorHandler,
+  inject,
   isDevMode,
   LOCALE_ID,
   provideZoneChangeDetection,
@@ -32,21 +34,11 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { APP_CONFIG, AppConfig } from './app.config.model';
 import { routes } from './app.routes';
 import { GoogleAuthService } from './core/services/google-auth.service';
+import { RuntimeConfigService } from './core/services/runtime-config.service';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyApnb2vrrWaiewHEMzn73LbyPoBaPt4FUQ',
-  authDomain: 'trim.demianbrunt.nl',
-  projectId: 'trimsalon-9b823',
-  storageBucket: 'trimsalon-9b823.firebasestorage.app',
-  messagingSenderId: '495690826928',
-  appId: '1:495690826928:web:b787b6ce8d5dce8d09e775',
-  measurementId: 'G-KJC34PCNNY',
-};
-
-const appSettings: AppConfig = {
+const DEFAULT_APP_CONFIG: AppConfig = {
   googleAuth: {
-    clientId:
-      '495690826928-k7jfduihumi360hkiitfupla794qpe99.apps.googleusercontent.com',
+    clientId: '',
     scope: 'https://www.googleapis.com/auth/calendar',
   },
   // DEV MODE: Disabled - always require proper authentication
@@ -59,6 +51,14 @@ export const commonProviders = [
   provideZoneChangeDetection({ eventCoalescing: true }),
   provideRouter(routes),
   { provide: ErrorHandler, useClass: GlobalErrorHandler },
+  {
+    provide: APP_INITIALIZER,
+    multi: true,
+    useFactory: () => {
+      const runtimeConfig = inject(RuntimeConfigService);
+      return () => runtimeConfig.load();
+    },
+  },
   providePrimeNG({
     theme: {
       preset: Aura,
@@ -71,15 +71,41 @@ export const commonProviders = [
       },
     },
   }),
-  provideFirebaseApp(() => initializeApp(firebaseConfig)),
-  provideAuth(() => getAuth()),
+  provideFirebaseApp(() => {
+    const runtimeConfig = inject(RuntimeConfigService);
+    return initializeApp(runtimeConfig.getFirebaseConfigOrThrow());
+  }),
+  provideAuth(() => {
+    const auth = getAuth();
+    return auth;
+  }),
   provideRemoteConfig(() => getRemoteConfig()),
-  provideFirestore(() => getFirestore()),
-  provideFunctions(() => getFunctions(undefined, 'europe-west1')),
+  provideFirestore(() => {
+    const firestore = getFirestore();
+    return firestore;
+  }),
+  provideFunctions(() => {
+    const functions = getFunctions(undefined, 'europe-west1');
+    return functions;
+  }),
   provideMessaging(() => getMessaging()),
   provideHttpClient(withFetch()),
   provideAnimations(),
-  { provide: APP_CONFIG, useValue: appSettings },
+  {
+    provide: APP_CONFIG,
+    useFactory: (): AppConfig => {
+      const runtimeConfig = inject(RuntimeConfigService);
+      const app = runtimeConfig.getAppConfigOrDefault();
+      return {
+        googleAuth: {
+          clientId:
+            app.googleAuth.clientId || DEFAULT_APP_CONFIG.googleAuth.clientId,
+          scope: app.googleAuth.scope || DEFAULT_APP_CONFIG.googleAuth.scope,
+        },
+        devMode: app.devMode ?? DEFAULT_APP_CONFIG.devMode,
+      };
+    },
+  },
   { provide: LOCALE_ID, useValue: 'nl' },
 ];
 

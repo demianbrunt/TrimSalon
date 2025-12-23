@@ -19,7 +19,13 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
    npm install
    ```
 
-2. **Start Development Server**:
+2. **Configure environment**:
+
+   Copy `.env.example` to `.env` and fill in the values. This repo generates `public/runtime-config.json` from your `.env` during `npm start` / `npm run build`.
+
+   If you get `auth/api-key-expired`, update `FIREBASE_API_KEY` with the Web API Key from Firebase Console → Project settings → General → Your apps → (Web app) and re-run `npm start` (or `npm run config:generate`).
+
+3. **Start Development Server**:
 
    ```bash
    npm start
@@ -27,7 +33,7 @@ This project was generated using [Angular CLI](https://github.com/angular/angula
 
    Navigate to `http://localhost:4200/`.
 
-3. **Build**:
+4. **Build**:
    ```bash
    npm run build
    ```

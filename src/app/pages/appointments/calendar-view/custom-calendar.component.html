@@ -8,10 +8,12 @@
     <!-- Header - Optimized for Mobile -->
     <div class="calendar-header mb-2">
       <!-- Desktop Navigation -->
-      <div class="hidden md:flex gap-2 align-items-center">
+      <div class="calendar-nav hidden md:flex gap-2 align-items-center">
         <p-button
           icon="pi pi-chevron-left"
           (onClick)="previousPeriod()"
+          ariaLabel="Vorige periode"
+          pTooltip="Vorige"
           [rounded]="true"
           [text]="true"
           size="small"
@@ -19,48 +21,65 @@
         <p-button
           label="Vandaag"
           (onClick)="goToToday()"
+          pTooltip="Ga naar vandaag"
           [text]="true"
           size="small"
         />
         <p-button
           icon="pi pi-chevron-right"
           (onClick)="nextPeriod()"
+          ariaLabel="Volgende periode"
+          pTooltip="Volgende"
           [rounded]="true"
           [text]="true"
           size="small"
         />
       </div>
 
-      <!-- Mobile "Today" Button -->
-      <div class="md:hidden">
+      <!-- Mobile Navigation -->
+      <div class="calendar-nav-mobile md:hidden flex gap-1 align-items-center">
         <p-button
-          icon="pi pi-stopwatch"
+          icon="pi pi-chevron-left"
+          (onClick)="previousPeriod()"
+          ariaLabel="Vorige periode"
+          pTooltip="Vorige"
+          [rounded]="true"
+          [text]="true"
+          size="small"
+        />
+        <p-button
+          icon="pi pi-calendar"
           (onClick)="goToToday()"
+          ariaLabel="Ga naar vandaag"
           [rounded]="true"
           [text]="true"
           size="small"
           pTooltip="Ga naar vandaag"
+        />
+        <p-button
+          icon="pi pi-chevron-right"
+          (onClick)="nextPeriod()"
+          ariaLabel="Volgende periode"
+          pTooltip="Volgende"
+          [rounded]="true"
+          [text]="true"
+          size="small"
         />
       </div>
 
       <!-- Title - Enhanced Date Display -->
       <div class="date-display">
         <div class="date-main">
+          <span class="date-main__text">{{ currentPeriodMainTitle() }}</span>
           @if (viewMode() === "day" && isCurrentPeriodToday()) {
-            <p-badge
-              [value]="currentPeriodMainTitle()"
-              severity="success"
-              styleClass="ml-2"
-            />
-          } @else {
-            {{ currentPeriodMainTitle() }}
+            <p-badge value="Vandaag" severity="success" styleClass="ml-2" />
           }
         </div>
         <div class="date-sub">{{ currentPeriodSubTitle() }}</div>
       </div>
 
       <!-- Right Side Actions -->
-      <div class="flex align-items-center gap-2">
+      <div class="calendar-actions flex align-items-center gap-2">
         <!-- Projected Content -->
         <ng-content select="[header-actions]"></ng-content>
 

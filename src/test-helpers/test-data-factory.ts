@@ -3,7 +3,7 @@
  */
 
 export const TestDataFactory = {
-  createClient(overrides?: Partial<any>) {
+  createClient(overrides?: Partial<Record<string, unknown>>) {
     return {
       id: 'client-1',
       name: 'Test Client',
@@ -15,7 +15,7 @@ export const TestDataFactory = {
     };
   },
 
-  createDog(overrides?: Partial<any>) {
+  createDog(overrides?: Partial<Record<string, unknown>>) {
     return {
       id: 'dog-1',
       name: 'Rex',
@@ -27,7 +27,7 @@ export const TestDataFactory = {
     };
   },
 
-  createAppointment(overrides?: Partial<any>) {
+  createAppointment(overrides?: Partial<Record<string, unknown>>) {
     return {
       id: 'appointment-1',
       client: this.createClient(),
@@ -41,7 +41,7 @@ export const TestDataFactory = {
     };
   },
 
-  createService(overrides?: Partial<any>) {
+  createService(overrides?: Partial<Record<string, unknown>>) {
     return {
       id: 'service-1',
       name: 'Bath',
@@ -53,7 +53,7 @@ export const TestDataFactory = {
     };
   },
 
-  createPackage(overrides?: Partial<any>) {
+  createPackage(overrides?: Partial<Record<string, unknown>>) {
     return {
       id: 'package-1',
       name: 'Basic Package',
@@ -62,7 +62,7 @@ export const TestDataFactory = {
     };
   },
 
-  createExpense(overrides?: Partial<any>) {
+  createExpense(overrides?: Partial<Record<string, unknown>>) {
     return {
       id: 'expense-1',
       date: new Date(),
@@ -73,7 +73,7 @@ export const TestDataFactory = {
     };
   },
 
-  createInvoice(overrides?: Partial<any>) {
+  createInvoice(overrides?: Partial<Record<string, unknown>>) {
     return {
       id: 'invoice-1',
       invoiceNumber: 'INV-001',
@@ -90,7 +90,7 @@ export const TestDataFactory = {
     };
   },
 
-  createBreed(overrides?: Partial<any>) {
+  createBreed(overrides?: Partial<Record<string, unknown>>) {
     return {
       id: 'breed-1',
       name: 'Labrador',
@@ -99,7 +99,7 @@ export const TestDataFactory = {
     };
   },
 
-  createUser(overrides?: Partial<any>) {
+  createUser(overrides?: Partial<Record<string, unknown>>) {
     return {
       uid: 'user-1',
       email: 'test@example.com',

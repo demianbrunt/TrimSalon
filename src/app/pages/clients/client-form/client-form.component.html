@@ -76,6 +76,15 @@
       </div>
       @for (dogGroup of dogsArray.controls; track $index) {
         <div [formGroup]="$any(dogGroup)" class="p-2">
+          @if (dogGroup.controls.isInactive.value) {
+            <p-message
+              styleClass="mb-3"
+              severity="info"
+              icon="pi pi-info-circle"
+              message="Dit dier is niet actief"
+              >Dit dier is niet actief</p-message
+            >
+          }
           @if (dogGroup.controls.isAggressive.value) {
             <p-message
               styleClass="mb-3"
@@ -90,13 +99,13 @@
               <p-floatlabel variant="on">
                 <input
                   pInputText
-                  id="naamHond"
+                  [id]="'naamHond-' + $index"
                   class="w-full"
                   [formControl]="dogGroup.controls.name"
                   autocomplete="off"
                   aria-required="true"
                 />
-                <label for="naamHond">Naam *</label>
+                <label [for]="'naamHond-' + $index">Naam *</label>
               </p-floatlabel>
               <app-validation-message
                 [control]="dogGroup.controls.name"
@@ -107,6 +116,7 @@
               <p-floatlabel variant="on" class="w-full">
                 <p-autocomplete
                   class="w-full"
+                  [inputId]="'ras-' + $index"
                   [formControl]="dogGroup.controls.breed"
                   [dropdown]="true"
                   [suggestions]="filteredBreeds"
@@ -114,7 +124,7 @@
                   optionLabel="name"
                   appendTo="body"
                 />
-                <label for="ras">Ras</label>
+                <label [for]="'ras-' + $index">Ras</label>
               </p-floatlabel>
             </div>
             <div class="field mt-2 col-12 md:col-6">
@@ -152,7 +162,7 @@
             <div class="field col-12 md:col-4">
               <p-floatlabel variant="on">
                 <p-select
-                  inputId="geslacht"
+                  [inputId]="'geslacht-' + $index"
                   [formControl]="dogGroup.controls.gender"
                   [options]="[
                     { label: 'Reu', value: 'male' },
@@ -162,7 +172,7 @@
                   optionValue="value"
                   class="w-full"
                 />
-                <label for="geslacht">Geslacht</label>
+                <label [for]="'geslacht-' + $index">Geslacht</label>
               </p-floatlabel>
             </div>
             <div class="field col-12 md:col-4">
@@ -186,6 +196,43 @@
                 />
                 <label [for]="'agressief-' + $index">Agressief</label>
               </div>
+            </div>
+            <div class="field col-12 md:col-6">
+              <div class="flex align-items-center gap-2">
+                <p-checkbox
+                  [inputId]="'nietActief-' + $index"
+                  [formControl]="dogGroup.controls.isInactive"
+                  [binary]="true"
+                />
+                <label [for]="'nietActief-' + $index">Niet actief</label>
+              </div>
+            </div>
+            <div class="field col-12 md:col-6">
+              <p-floatlabel variant="on" class="w-full">
+                <p-select
+                  [inputId]="'nietActiefReden-' + $index"
+                  [formControl]="dogGroup.controls.inactiveReason"
+                  [options]="inactiveReasonOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  styleClass="w-full"
+                  appendTo="body"
+                />
+                <label [for]="'nietActiefReden-' + $index">Reden</label>
+              </p-floatlabel>
+            </div>
+            <div class="field col-12 md:col-6">
+              <p-floatlabel variant="on" class="w-full">
+                <p-datepicker
+                  [inputId]="'nietActiefSinds-' + $index"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                  [formControl]="dogGroup.controls.inactiveAt"
+                  dateFormat="dd-mm-yy"
+                  appendTo="body"
+                />
+                <label [for]="'nietActiefSinds-' + $index">Sinds</label>
+              </p-floatlabel>
             </div>
             @if (canDeleteDog) {
               <div class="field col-12 md:col-2">

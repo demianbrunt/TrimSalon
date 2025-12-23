@@ -10,7 +10,6 @@ import { TableModule } from 'primeng/table';
 import { Observable } from 'rxjs';
 import { SubscriptionHolder } from '../../core/components/subscription-holder.component';
 import {
-  ActivityBreakdown,
   BreedPerformance,
   CalendarOccupancy,
   DashboardReport,
@@ -41,6 +40,8 @@ import { ReportService } from '../../core/services/report.service';
 export class ReportsComponent extends SubscriptionHolder implements OnInit {
   private reportService = inject(ReportService);
 
+  private readonly autoTablePaddingAfterSection = 10;
+
   startDate: Date = new Date(
     new Date().getFullYear(),
     new Date().getMonth(),
@@ -57,7 +58,6 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
   popularPackages?: PopularPackage[];
   occupancy?: CalendarOccupancy;
   hourlyRateKPI?: HourlyRateKPI;
-  activityBreakdown?: ActivityBreakdown[];
   breedPerformance?: BreedPerformance[];
 
   revenueChartData: unknown;
@@ -86,7 +86,6 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         this.popularPackages = report.popularPackages;
         this.occupancy = report.occupancy;
         this.hourlyRateKPI = report.hourlyRateKPI;
-        this.activityBreakdown = report.activityBreakdown;
         this.breedPerformance = report.breedPerformance;
         this.updateCharts();
       }),
@@ -170,7 +169,11 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
   }
 
   exportToPDF(): void {
-    const doc = new jsPDF();
+    const doc = new jsPDF() as jsPDF & {
+      lastAutoTable?: {
+        finalY: number;
+      };
+    };
     const pageWidth = doc.internal.pageSize.getWidth();
 
     // Title
@@ -210,7 +213,9 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         headStyles: { fillColor: [41, 128, 185] },
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 10;
+      yPosition =
+        (doc.lastAutoTable?.finalY ?? yPosition) +
+        this.autoTablePaddingAfterSection;
     }
 
     // Expense Report
@@ -237,7 +242,9 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         headStyles: { fillColor: [41, 128, 185] },
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 10;
+      yPosition =
+        (doc.lastAutoTable?.finalY ?? yPosition) +
+        this.autoTablePaddingAfterSection;
     }
 
     // Profit/Loss Report
@@ -246,7 +253,7 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
       doc.text('Winst/Verlies Overzicht', 14, yPosition);
       yPosition += 5;
 
-      const profitLossBody: any[][] = [
+      const profitLossBody: [string, string][] = [
         [
           'Totale Omzet',
           this.formatCurrency(this.profitLossReport.totalRevenue),
@@ -280,7 +287,9 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         headStyles: { fillColor: [41, 128, 185] },
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 10;
+      yPosition =
+        (doc.lastAutoTable?.finalY ?? yPosition) +
+        this.autoTablePaddingAfterSection;
     }
 
     // Top Clients
@@ -307,7 +316,9 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         headStyles: { fillColor: [41, 128, 185] },
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 10;
+      yPosition =
+        (doc.lastAutoTable?.finalY ?? yPosition) +
+        this.autoTablePaddingAfterSection;
     }
 
     // Popular Services
@@ -334,7 +345,9 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         headStyles: { fillColor: [41, 128, 185] },
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 10;
+      yPosition =
+        (doc.lastAutoTable?.finalY ?? yPosition) +
+        this.autoTablePaddingAfterSection;
     }
 
     // Popular Packages
@@ -361,7 +374,9 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         headStyles: { fillColor: [41, 128, 185] },
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 10;
+      yPosition =
+        (doc.lastAutoTable?.finalY ?? yPosition) +
+        this.autoTablePaddingAfterSection;
     }
 
     // Occupancy

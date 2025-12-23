@@ -1,17 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { ReportsComponent } from './reports.component';
-import { ReportService } from '../../core/services/report.service';
 import {
-  DashboardReport,
-  RevenueReport,
-  ExpenseReport,
-  ProfitLossReport,
-  TopClient,
-  PopularService,
-  PopularPackage,
   CalendarOccupancy,
+  DashboardReport,
+  ExpenseReport,
+  PopularPackage,
+  PopularService,
+  ProfitLossReport,
+  RevenueReport,
+  TopClient,
 } from '../../core/models/report.model';
+import { ReportService } from '../../core/services/report.service';
+import { ReportsComponent } from './reports.component';
 
 describe('ReportsComponent', () => {
   let component: ReportsComponent;
@@ -131,7 +131,7 @@ describe('ReportsComponent', () => {
       component.exportToPDF();
       // If we get here without error, the PDF generation logic ran
       expect(component.exportToPDF).toHaveBeenCalled();
-    } catch (error) {
+    } catch {
       // jsPDF might not work in test environment, but we verified the call
       expect(component.exportToPDF).toHaveBeenCalled();
     }

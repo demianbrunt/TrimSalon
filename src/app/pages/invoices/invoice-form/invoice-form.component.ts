@@ -20,6 +20,7 @@ import { FormBaseComponent } from '../../../core/components/form-base/form-base.
 import { ValidationMessageComponent } from '../../../core/components/validation-message/validation-message.component';
 import { Client } from '../../../core/models/client.model';
 import { Invoice, PaymentStatus } from '../../../core/models/invoice.model';
+import { AppSettingsService } from '../../../core/services/app-settings.service';
 import { BreadcrumbService } from '../../../core/services/breadcrumb.service';
 import { ClientService } from '../../../core/services/client.service';
 import { InvoiceService } from '../../../core/services/invoice.service';
@@ -73,6 +74,7 @@ export class InvoiceFormComponent extends FormBaseComponent implements OnInit {
   private readonly invoiceService = inject(InvoiceService);
   private readonly clientService = inject(ClientService);
   private readonly breadcrumbService = inject(BreadcrumbService);
+  private readonly appSettingsService = inject(AppSettingsService);
 
   ngOnInit(): void {
     this.breadcrumbService.setItems([
@@ -132,6 +134,26 @@ export class InvoiceFormComponent extends FormBaseComponent implements OnInit {
     });
 
     this.setupValueChangeListeners();
+
+    this.appSettingsService.settings$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((settings) => {
+        if (this.isEditMode) {
+          return;
+        }
+
+        const vatRate = settings.korEnabled ? 0 : settings.defaultVatRate;
+        if (!this.form.controls.vatRate.dirty) {
+          this.form.controls.vatRate.setValue(vatRate);
+        }
+
+        if (settings.korEnabled) {
+          this.form.controls.vatRate.disable({ emitEvent: false });
+        } else {
+          this.form.controls.vatRate.enable({ emitEvent: false });
+        }
+      });
+
     await this.loadData();
   }
 

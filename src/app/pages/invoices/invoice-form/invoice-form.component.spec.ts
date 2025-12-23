@@ -81,7 +81,7 @@ describe('InvoiceFormComponent', () => {
           getAll: jasmine.createSpy('getAll').and.returnValue([]),
         },
         data: {},
-      } as any,
+      } as unknown as ActivatedRoute['snapshot'],
       params: of({}),
       queryParams: of({}),
     };

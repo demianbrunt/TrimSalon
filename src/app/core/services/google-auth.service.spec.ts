@@ -1,10 +1,9 @@
-import { TestBed } from '@angular/core/testing';
 import { PLATFORM_ID } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { Functions } from '@angular/fire/functions';
-import { of } from 'rxjs';
-import { GoogleAuthService } from './google-auth.service';
-import { APP_CONFIG } from '../../app.config.model';
 import { MockFunctions } from '../../../test-helpers/firebase-mocks';
+import { APP_CONFIG } from '../../app.config.model';
+import { GoogleAuthService } from './google-auth.service';
 
 describe('GoogleAuthService', () => {
   let service: GoogleAuthService;

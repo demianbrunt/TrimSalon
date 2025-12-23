@@ -22,7 +22,6 @@ interface CodeErrorResponse {
 export class GoogleAuthService {
   private readonly config: AppConfig = inject(APP_CONFIG);
   private readonly functions: Functions = inject(Functions);
-  private userId: string | null = null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private codeClient: any;
 
@@ -31,6 +30,9 @@ export class GoogleAuthService {
 
   private readonly _authorizationComplete = new Subject<void>();
   authorizationComplete$ = this._authorizationComplete.asObservable();
+
+  private readonly _authorizationError = new Subject<string>();
+  authorizationError$ = this._authorizationError.asObservable();
 
   private platformId = inject(PLATFORM_ID);
 
@@ -82,9 +84,7 @@ export class GoogleAuthService {
     this._gapiInitialized.next(true);
   }
 
-  public getAuthCode(userId: string): void {
-    this.userId = userId;
-
+  public getAuthCode(): void {
     if (isMockGoogleEnabled()) {
       // Dev-only: simulate successful authorization.
       setTimeout(() => this._authorizationComplete.next(), 0);
@@ -106,19 +106,27 @@ export class GoogleAuthService {
       return;
     }
 
-    if (!this.userId) {
-      console.error('User not logged in');
-      return;
-    }
     const callable = httpsCallable(this.functions, 'exchangeAuthCode');
-    from(callable({ code, userId: this.userId }))
+    from(callable({ code, clientId: this.config.googleAuth.clientId }))
       .pipe(map((result) => result.data))
       .subscribe({
         next: () => {
           // Emit event to notify that authorization is complete
           this._authorizationComplete.next();
         },
-        error: (err) => console.error('Error exchanging code for tokens', err),
+        error: (err: unknown) => {
+          console.error('Error exchanging code for tokens', err);
+
+          const message =
+            typeof err === 'object' &&
+            err !== null &&
+            'message' in err &&
+            typeof (err as { message?: unknown }).message === 'string'
+              ? (err as { message: string }).message
+              : 'Google autorisatie is mislukt. Probeer het opnieuw.';
+
+          this._authorizationError.next(message);
+        },
       });
   }
 }

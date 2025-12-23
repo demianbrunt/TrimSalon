@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmationDialogService } from './confirmation-dialog.service';
+import { Confirmation, ConfirmationService } from 'primeng/api';
 import { MockConfirmationService } from '../../../test-helpers/angular-mocks';
+import { ConfirmationDialogService } from './confirmation-dialog.service';
 
 describe('ConfirmationDialogService', () => {
   let service: ConfirmationDialogService;
@@ -28,7 +28,7 @@ describe('ConfirmationDialogService', () => {
   });
 
   it('should open confirmation dialog with default labels', async () => {
-    confirmationService.confirm.and.callFake((config: any) => {
+    confirmationService.confirm.and.callFake((config: Confirmation) => {
       config.accept();
       return confirmationService;
     });
@@ -50,7 +50,7 @@ describe('ConfirmationDialogService', () => {
   });
 
   it('should resolve true when user accepts', async () => {
-    confirmationService.confirm.and.callFake((config: any) => {
+    confirmationService.confirm.and.callFake((config: Confirmation) => {
       config.accept();
       return confirmationService;
     });
@@ -60,7 +60,7 @@ describe('ConfirmationDialogService', () => {
   });
 
   it('should resolve false when user rejects', async () => {
-    confirmationService.confirm.and.callFake((config: any) => {
+    confirmationService.confirm.and.callFake((config: Confirmation) => {
       config.reject();
       return confirmationService;
     });
@@ -70,7 +70,7 @@ describe('ConfirmationDialogService', () => {
   });
 
   it('should use custom labels when provided', async () => {
-    confirmationService.confirm.and.callFake((config: any) => {
+    confirmationService.confirm.and.callFake((config: Confirmation) => {
       config.accept();
       return confirmationService;
     });

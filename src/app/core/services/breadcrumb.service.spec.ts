@@ -1,4 +1,5 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { MenuItem } from 'primeng/api';
 import { BreadcrumbService } from './breadcrumb.service';
 
 describe('BreadcrumbService', () => {
@@ -23,12 +24,12 @@ describe('BreadcrumbService', () => {
   });
 
   it('should set and emit breadcrumb items', fakeAsync(() => {
-    const testItems = [
+    const testItems: MenuItem[] = [
       { label: 'Home', routerLink: '/' },
       { label: 'Clients', routerLink: '/clients' },
     ];
 
-    let emittedItems: any[] = [];
+    let emittedItems: MenuItem[] = [];
     service.items$.subscribe((items) => {
       emittedItems = items;
     });
@@ -40,13 +41,13 @@ describe('BreadcrumbService', () => {
   }));
 
   it('should update breadcrumb items', fakeAsync(() => {
-    const firstItems = [{ label: 'Home', routerLink: '/' }];
-    const secondItems = [
+    const firstItems: MenuItem[] = [{ label: 'Home', routerLink: '/' }];
+    const secondItems: MenuItem[] = [
       { label: 'Home', routerLink: '/' },
       { label: 'About', routerLink: '/about' },
     ];
 
-    let emittedItems: any[] = [];
+    let emittedItems: MenuItem[] = [];
     service.items$.subscribe((items) => {
       emittedItems = items;
     });

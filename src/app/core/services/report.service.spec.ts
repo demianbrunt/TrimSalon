@@ -1,11 +1,12 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { ReportService } from './report.service';
+import { TestDataFactory } from '../../../test-helpers/test-data-factory';
+import { Expense } from '../models/expense.model';
+import { Invoice, PaymentStatus } from '../models/invoice.model';
 import { AppointmentService } from './appointment.service';
 import { ExpenseService } from './expense.service';
 import { InvoiceService } from './invoice.service';
-import { PaymentStatus } from '../models/invoice.model';
-import { TestDataFactory } from '../../../test-helpers/test-data-factory';
+import { ReportService } from './report.service';
 
 describe('ReportService', () => {
   let service: ReportService;
@@ -62,9 +63,9 @@ describe('ReportService', () => {
           totalAmount: 200,
           paymentStatus: PaymentStatus.PAID,
         },
-      ];
+      ] as unknown as Invoice[];
 
-      mockInvoiceService.getData$.and.returnValue(of(invoices as any));
+      mockInvoiceService.getData$.and.returnValue(of(invoices));
 
       service.getRevenueReport(period).subscribe((report) => {
         expect(report.totalRevenue).toBe(250); // 100 + 150
@@ -93,9 +94,9 @@ describe('ReportService', () => {
           totalAmount: 150,
           paymentStatus: PaymentStatus.PENDING,
         },
-      ];
+      ] as unknown as Invoice[];
 
-      mockInvoiceService.getData$.and.returnValue(of(invoices as any));
+      mockInvoiceService.getData$.and.returnValue(of(invoices));
 
       service.getRevenueReport(period).subscribe((report) => {
         expect(report.totalRevenue).toBe(100);
@@ -144,9 +145,9 @@ describe('ReportService', () => {
           date: new Date('2024-02-01'),
           amount: 100,
         },
-      ];
+      ] as unknown as Expense[];
 
-      mockExpenseService.getData$.and.returnValue(of(expenses as any));
+      mockExpenseService.getData$.and.returnValue(of(expenses));
 
       service.getExpenseReport(period).subscribe((report) => {
         expect(report.totalExpenses).toBe(125); // 50 + 75
@@ -175,9 +176,9 @@ describe('ReportService', () => {
           amount: 75,
           deletedAt: new Date('2024-01-16'),
         },
-      ];
+      ] as unknown as Expense[];
 
-      mockExpenseService.getData$.and.returnValue(of(expenses as any));
+      mockExpenseService.getData$.and.returnValue(of(expenses));
 
       service.getExpenseReport(period).subscribe((report) => {
         expect(report.totalExpenses).toBe(50);
@@ -201,7 +202,7 @@ describe('ReportService', () => {
           totalAmount: 300,
           paymentStatus: PaymentStatus.PAID,
         },
-      ];
+      ] as unknown as Invoice[];
 
       const expenses = [
         {
@@ -209,10 +210,10 @@ describe('ReportService', () => {
           date: new Date('2024-01-10'),
           amount: 100,
         },
-      ];
+      ] as unknown as Expense[];
 
-      mockInvoiceService.getData$.and.returnValue(of(invoices as any));
-      mockExpenseService.getData$.and.returnValue(of(expenses as any));
+      mockInvoiceService.getData$.and.returnValue(of(invoices));
+      mockExpenseService.getData$.and.returnValue(of(expenses));
 
       service.getProfitLossReport(period).subscribe((report) => {
         expect(report.totalRevenue).toBe(300);

@@ -13,7 +13,10 @@ export class AppDialogService {
   private readonly dialogService = inject(DialogService);
   private readonly mobileService = inject(MobileService);
 
-  open(component: Type<any>, config: DynamicDialogConfig): DynamicDialogRef {
+  open<TComponent>(
+    component: Type<TComponent>,
+    config: DynamicDialogConfig,
+  ): DynamicDialogRef {
     const isMobile = this.mobileService.isMobile;
 
     const finalConfig: DynamicDialogConfig = isMobile

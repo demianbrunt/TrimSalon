@@ -5,14 +5,17 @@ import { map } from 'rxjs/operators';
 import { Appointment } from '../models/appointment.model';
 import { GoogleCalendar, GoogleCalendarList } from '../models/calendar.model';
 import { isMockGoogleEnabled } from '../utils/dev-flags';
-import { AuthenticationService } from './authentication.service';
+
+interface RawCalendarEvent {
+  id?: string;
+  [key: string]: unknown;
+}
 
 @Injectable({
   providedIn: 'root',
 })
 export class CalendarService {
   private readonly functions: Functions = inject(Functions);
-  private readonly authService = inject(AuthenticationService);
 
   private call<T>(functionName: string, data?: unknown): Observable<T> {
     const callable = httpsCallable(this.functions, functionName);
@@ -30,8 +33,7 @@ export class CalendarService {
     if (isMockGoogleEnabled()) {
       return of({ items: [] });
     }
-    const userId = this.authService.getCurrentUserId();
-    return this.call<GoogleCalendarList>('listCalendars', { userId });
+    return this.call<GoogleCalendarList>('listCalendars');
   }
 
   async ensureTrimSalonCalendar(): Promise<string> {
@@ -56,9 +58,7 @@ export class CalendarService {
         summary: 'TrimSalon',
       });
     }
-    const userId = this.authService.getCurrentUserId();
     return this.call<GoogleCalendar>('createCalendar', {
-      userId,
       summary: 'TrimSalon',
     }).toPromise();
   }
@@ -67,20 +67,16 @@ export class CalendarService {
     if (isMockGoogleEnabled()) {
       return of([]);
     }
-    const userId = this.authService.getCurrentUserId();
     return this.call<{ events: Appointment[] }>('getCalendarEvents', {
-      userId,
       calendarId,
     }).pipe(map((result) => result.events || []));
   }
 
-  getRawCalendarEvents(calendarId: string): Observable<any[]> {
+  getRawCalendarEvents(calendarId: string): Observable<RawCalendarEvent[]> {
     if (isMockGoogleEnabled()) {
       return of([]);
     }
-    const userId = this.authService.getCurrentUserId();
-    return this.call<{ events: any[] }>('getCalendarEvents', {
-      userId,
+    return this.call<{ events: RawCalendarEvent[] }>('getCalendarEvents', {
       calendarId,
     }).pipe(map((result) => result.events || []));
   }
@@ -92,9 +88,7 @@ export class CalendarService {
     if (isMockGoogleEnabled()) {
       return of(appointment);
     }
-    const userId = this.authService.getCurrentUserId();
     return this.call<{ event: Appointment }>('createCalendarEvent', {
-      userId,
       calendarId,
       event: appointment,
     }).pipe(map((result) => result.event));
@@ -107,9 +101,7 @@ export class CalendarService {
     if (isMockGoogleEnabled()) {
       return of(appointment);
     }
-    const userId = this.authService.getCurrentUserId();
     return this.call<{ event: Appointment }>('updateCalendarEvent', {
-      userId,
       calendarId,
       eventId: appointment.id,
       event: appointment,
@@ -123,9 +115,7 @@ export class CalendarService {
     if (isMockGoogleEnabled()) {
       return of(void 0);
     }
-    const userId = this.authService.getCurrentUserId();
     return this.call<void>('deleteCalendarEvent', {
-      userId,
       calendarId,
       eventId: appointmentId,
     });

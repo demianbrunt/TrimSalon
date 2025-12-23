@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { take } from 'rxjs';
+import { FIRESTORE_COLLECTION } from '../constants/firestore-collections';
 import { Breed } from '../models/breed.model';
 import { BaseService } from './base.service';
 
@@ -210,7 +211,7 @@ export class BreedService extends BaseService<Breed> {
   ];
 
   constructor() {
-    super('breeds');
+    super(FIRESTORE_COLLECTION.breeds);
     this.initializeDefaults();
   }
 
