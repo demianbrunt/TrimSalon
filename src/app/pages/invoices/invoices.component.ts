@@ -37,6 +37,8 @@ export class InvoicesComponent implements OnInit {
   sortOrder = -1;
   PaymentStatus = PaymentStatus;
 
+  showArchived = false;
+
   private readonly invoiceService = inject(InvoiceService);
   private readonly toastrService = inject(ToastrService);
   private readonly confirmationDialogService = inject(
@@ -63,12 +65,20 @@ export class InvoicesComponent implements OnInit {
   loadInvoices(): void {
     this.invoiceService.getData$().subscribe({
       next: (data) => {
-        this.invoices = data.filter((inv) => !inv.deletedAt);
+        this.invoices = data.filter((inv) =>
+          this.showArchived ? !!inv.deletedAt : !inv.deletedAt,
+        );
       },
       error: (err) => {
         this.toastrService.error('Fout', err.message);
       },
     });
+  }
+
+  setShowArchived(show: boolean): void {
+    if (this.showArchived === show) return;
+    this.showArchived = show;
+    this.loadInvoices();
   }
 
   showInvoiceForm(invoice?: Invoice): void {
@@ -82,16 +92,16 @@ export class InvoicesComponent implements OnInit {
   deleteInvoice(invoice: Invoice): void {
     this.confirmationDialogService
       .open(
-        'Bevestiging Verwijderen',
-        `Weet je zeker dat je factuur <b>${invoice.invoiceNumber}</b> wilt <b>verwijderen</b>?`,
-        'Verwijderen',
+        'Bevestiging Archiveren',
+        `Weet je zeker dat je factuur <b>${invoice.invoiceNumber}</b> wilt <b>archiveren</b>? Je kunt deze later terugzetten vanuit het archief.`,
+        'Archiveren',
         'Annuleren',
       )
       .then((confirmed) => {
         if (confirmed) {
           this.invoiceService.delete(invoice.id!).subscribe({
             next: () => {
-              this.toastrService.success('Succes', 'Factuur is verwijderd');
+              this.toastrService.success('Succes', 'Factuur is gearchiveerd');
               this.loadInvoices();
             },
             error: (err) => {
@@ -99,6 +109,29 @@ export class InvoicesComponent implements OnInit {
             },
           });
         }
+      });
+  }
+
+  restoreInvoice(invoice: Invoice): void {
+    this.confirmationDialogService
+      .open(
+        'Bevestiging Herstellen',
+        `Weet je zeker dat je factuur <b>${invoice.invoiceNumber}</b> wilt herstellen?`,
+        'Herstellen',
+        'Annuleren',
+      )
+      .then((confirmed) => {
+        if (!confirmed) return;
+
+        this.invoiceService.restore(invoice.id!).subscribe({
+          next: () => {
+            this.toastrService.success('Succes', 'Factuur is hersteld');
+            this.loadInvoices();
+          },
+          error: (err) => {
+            this.toastrService.error('Fout', err.message);
+          },
+        });
       });
   }
 

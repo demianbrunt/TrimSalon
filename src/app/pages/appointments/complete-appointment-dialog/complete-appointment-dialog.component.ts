@@ -210,19 +210,19 @@ interface CompleteAppointmentFormControls {
         />
         <div class="flex gap-2" [class.w-full]="isMobile">
           <p-button
-            label="Annuleren"
-            severity="secondary"
-            [outlined]="true"
-            [styleClass]="isMobile ? 'flex-1' : ''"
-            (onClick)="cancel()"
-          />
-          <p-button
             label="Afronden"
             icon="pi pi-check"
             severity="success"
             [styleClass]="isMobile ? 'flex-1' : ''"
             (onClick)="complete()"
             [disabled]="!form.valid"
+          />
+          <p-button
+            label="Annuleren"
+            severity="secondary"
+            [outlined]="true"
+            [styleClass]="isMobile ? 'flex-1' : ''"
+            (onClick)="cancel()"
           />
         </div>
       </div>

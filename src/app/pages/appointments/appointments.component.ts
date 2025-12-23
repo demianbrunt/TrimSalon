@@ -105,6 +105,8 @@ export class AppointmentsComponent implements OnInit {
 
   viewMode: 'list' | 'calendar' = 'list';
 
+  showArchived = false;
+
   private readonly appointmentService = inject(AppointmentService);
   private readonly invoiceService = inject(InvoiceService);
   private readonly appSettingsService = inject(AppSettingsService);
@@ -132,13 +134,39 @@ export class AppointmentsComponent implements OnInit {
   loadAppointments(): void {
     this.appointmentService.getData$().subscribe({
       next: (data) => {
-        this.appointments = data;
+        this.appointments = data.filter((a) => {
+          // Archived items are not shown on the calendar.
+          if (this.viewMode === 'calendar') {
+            return !a.deletedAt;
+          }
+
+          return this.showArchived ? !!a.deletedAt : !a.deletedAt;
+        });
         this.isInitialized = true;
       },
       error: (err) => {
         this.toastrService.error(TOAST_TITLE.error, err.message);
       },
     });
+  }
+
+  setViewMode(mode: 'list' | 'calendar'): void {
+    if (this.viewMode === mode) return;
+
+    this.viewMode = mode;
+
+    // Archived items are not shown on the calendar.
+    if (mode === 'calendar') {
+      this.showArchived = false;
+    }
+
+    this.loadAppointments();
+  }
+
+  setShowArchived(show: boolean): void {
+    if (this.showArchived === show) return;
+    this.showArchived = show;
+    this.loadAppointments();
   }
 
   showAppointmentForm(appointment?: Appointment): void {
@@ -152,9 +180,9 @@ export class AppointmentsComponent implements OnInit {
   deleteAppointment(appointment: Appointment): void {
     this.confirmationService
       .open(
-        'Bevestiging Verwijderen',
-        `Weet je zeker dat je de afspraak wilt <b>verwijderen</b>? Dit kan <u>niet</u> ongedaan worden gemaakt.`,
-        'Verwijderen',
+        'Bevestiging Archiveren',
+        `Weet je zeker dat je de afspraak wilt <b>archiveren</b>? Je kunt deze later terugzetten vanuit het archief.`,
+        'Archiveren',
         'Annuleren',
       )
       .then((confirmed) => {
@@ -163,7 +191,7 @@ export class AppointmentsComponent implements OnInit {
             next: () => {
               this.toastrService.success(
                 TOAST_TITLE.success,
-                'Afspraak verwijderd',
+                'Afspraak is gearchiveerd',
               );
               this.loadAppointments();
             },
@@ -172,6 +200,33 @@ export class AppointmentsComponent implements OnInit {
             },
           });
         }
+      });
+  }
+
+  restoreAppointment(appointment: Appointment): void {
+    this.confirmationService
+      .open(
+        'Bevestiging Herstellen',
+        'Weet je zeker dat je deze afspraak wilt herstellen?',
+        'Herstellen',
+        'Annuleren',
+        'p-button-success',
+      )
+      .then((confirmed) => {
+        if (!confirmed) return;
+
+        this.appointmentService.restore(appointment.id!).subscribe({
+          next: () => {
+            this.toastrService.success(
+              TOAST_TITLE.success,
+              'Afspraak is hersteld',
+            );
+            this.loadAppointments();
+          },
+          error: (err) => {
+            this.toastrService.error(TOAST_TITLE.error, err.message);
+          },
+        });
       });
   }
 

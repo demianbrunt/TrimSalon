@@ -6,6 +6,7 @@ import {
   collection,
   collectionData,
   deleteDoc,
+  deleteField,
   doc,
   docData,
   updateDoc,
@@ -97,6 +98,30 @@ export abstract class BaseService<T extends { id?: string }> {
         return items.map((item) => this.convertTimestamps(item) as T);
       }),
     ) as Observable<T[]>;
+  }
+
+  /**
+   * Convenience wrapper for lists that should exclude archived (soft-deleted) items.
+   *
+   * This relies on the convention: documents may have a `deletedAt` field.
+   */
+  getActive$(): Observable<T[]> {
+    return this.getData$().pipe(
+      map((items) =>
+        items.filter((i) => !(i as { deletedAt?: unknown }).deletedAt),
+      ),
+    );
+  }
+
+  /**
+   * Convenience wrapper for lists that should include only archived (soft-deleted) items.
+   */
+  getArchived$(): Observable<T[]> {
+    return this.getData$().pipe(
+      map((items) =>
+        items.filter((i) => !!(i as { deletedAt?: unknown }).deletedAt),
+      ),
+    );
   }
 
   getById(id: string): Observable<T> {
@@ -214,6 +239,47 @@ export abstract class BaseService<T extends { id?: string }> {
         .catch((error) => {
           console.error(
             `[BaseService] ❌ Error deleting document ${id} from ${this.collection.path}:`,
+            error,
+          );
+          subscriber.error(error);
+        });
+    });
+  }
+
+  /**
+   * Soft delete: marks a document as archived by setting `deletedAt`.
+   */
+  archive(id: string, archivedAt: Date = new Date()): Observable<void> {
+    this.log(
+      `[BaseService] 🗄️ Archiving document ID: ${id} in: ${this.collection.path}`,
+    );
+    return this.updateFields(id, { deletedAt: archivedAt });
+  }
+
+  /**
+   * Restore: removes the `deletedAt` field.
+   */
+  restore(id: string): Observable<void> {
+    this.log(
+      `[BaseService] ♻️ Restoring document ID: ${id} in: ${this.collection.path}`,
+    );
+    return this.updateFields(id, { deletedAt: deleteField() });
+  }
+
+  protected updateFields(
+    id: string,
+    fields: Record<string, unknown>,
+  ): Observable<void> {
+    const document = doc(this.firestore, `${this.collection.path}/${id}`);
+    return new Observable((subscriber) => {
+      updateDoc(document, fields)
+        .then(() => {
+          subscriber.next();
+          subscriber.complete();
+        })
+        .catch((error) => {
+          console.error(
+            `[BaseService] ❌ Error updating fields for document ${id} in ${this.collection.path}:`,
             error,
           );
           subscriber.error(error);

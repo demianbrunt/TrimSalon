@@ -1,0 +1,20 @@
+<app-form-shell
+  [title]="title"
+  [outerClass]="outerClass"
+  [cardClass]="cardClass"
+>
+  <div formShellHeaderEnd class="text-sm text-color-secondary">
+    {{ stepCounterLabel }}
+  </div>
+
+  <div class="mb-3">
+    <p-steps
+      [model]="steps"
+      [activeIndex]="activeIndex"
+      [readonly]="true"
+      (activeIndexChange)="onActiveIndexChange($event)"
+    ></p-steps>
+  </div>
+
+  <ng-content></ng-content>
+</app-form-shell>

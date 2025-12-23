@@ -1,372 +1,449 @@
-<div class="appointment-form md:p-4">
-  <p-card
-    styleClass="responsive-card mx-auto w-full max-w-3xl md:max-w-4xl xl:max-w-5xl"
+<app-wizard-shell
+  *ngIf="!isEditMode; else regularForm"
+  [title]="isEditMode ? 'Afspraak Bewerken' : 'Nieuwe Afspraak'"
+  [steps]="steps"
+  [activeIndex]="currentStep"
+  (activeIndexChange)="currentStep = $event"
+  outerClass="appointment-form md:p-4"
+  cardClass="responsive-card mx-auto w-full max-w-3xl md:max-w-4xl xl:max-w-5xl"
+>
+  <ng-container *ngTemplateOutlet="appointmentForm"></ng-container>
+</app-wizard-shell>
+
+<ng-template #regularForm>
+  <app-form-shell
+    [title]="isEditMode ? 'Afspraak Bewerken' : 'Nieuwe Afspraak'"
+    outerClass="appointment-form md:p-4"
+    cardClass="responsive-card mx-auto w-full max-w-3xl md:max-w-4xl xl:max-w-5xl"
   >
-    <ng-template pTemplate="title">
-      <div class="flex justify-content-between align-items-center">
-        <h2 class="m-0">
-          {{ isEditMode ? "Afspraak Bewerken" : "Nieuwe Afspraak" }}
-        </h2>
-        <div class="text-sm text-color-secondary" *ngIf="!isEditMode">
-          Stap {{ currentStep + 1 }} van {{ steps.length }}
+    <ng-container *ngTemplateOutlet="appointmentForm"></ng-container>
+  </app-form-shell>
+</ng-template>
+
+<ng-template #appointmentForm>
+  <form
+    [formGroup]="form"
+    class="appointment-form p-fluid form-content-wrapper"
+  >
+    <!-- STAP 1: KLANT & HOND SELECTIE -->
+    <div *ngIf="currentStep === 0 || isEditMode">
+      <h3
+        class="text-lg font-semibold mb-3 flex align-items-center"
+        *ngIf="!isEditMode"
+      >
+        <i class="pi pi-user text-primary mr-2"></i>
+        Klant & Hond
+      </h3>
+      <div class="formgrid grid">
+        <div class="field col-12 md:col-6">
+          <label for="client" class="block mb-2 font-medium"
+            >Klant <span class="text-red-500">*</span></label
+          >
+          <p-select
+            inputId="client"
+            [formControl]="client"
+            [options]="clients"
+            optionLabel="name"
+            [filter]="true"
+            filterBy="name"
+            placeholder="Kies klant"
+            [showClear]="true"
+            styleClass="w-full"
+            appendTo="body"
+          />
+          @if (!client.value) {
+            <small class="text-color-secondary mt-1 block"
+              >Kies de klant voor deze afspraak</small
+            >
+          }
+        </div>
+
+        <div class="field col-12 md:col-6">
+          <label for="dog" class="block mb-2 font-medium"
+            >Hond <span class="text-red-500">*</span></label
+          >
+          <p-select
+            inputId="dog"
+            [formControl]="dog"
+            [options]="dogs"
+            optionLabel="name"
+            [filter]="true"
+            filterBy="name"
+            placeholder="Kies hond"
+            [showClear]="true"
+            styleClass="w-full"
+            appendTo="body"
+          >
+            <ng-template pTemplate="selectedItem" let-selected>
+              <span>{{ selected?.name || "-" }}</span>
+              @if (selected?.isInactive) {
+                <span class="ml-2 text-color-secondary">(niet actief)</span>
+              }
+            </ng-template>
+            <ng-template pTemplate="item" let-d>
+              <div
+                class="flex justify-content-between align-items-center w-full"
+              >
+                <span>{{ d.name }}</span>
+                @if (d.isInactive) {
+                  <span class="text-sm text-color-secondary">Niet actief</span>
+                }
+              </div>
+            </ng-template>
+          </p-select>
+
+          @if (!client.value) {
+            <small class="text-color-secondary mt-1 block"
+              >Selecteer eerst een klant</small
+            >
+          } @else {
+            @if (isSelectedDogInactive) {
+              <p-message
+                styleClass="mt-3 w-full block"
+                severity="info"
+                icon="pi pi-info-circle"
+              >
+                Deze hond is niet actief.
+              </p-message>
+            }
+
+            @if (isSelectedDogAggressive) {
+              <p-message
+                styleClass="mt-3 w-full block"
+                severity="warn"
+                icon="pi pi-exclamation-triangle"
+              >
+                Let op: Deze hond is gemarkeerd als agressief!
+              </p-message>
+            }
+
+            @if (
+              !isSelectedDogAggressive &&
+              !isSelectedDogInactive &&
+              dog.value &&
+              dog.value.breed
+            ) {
+              <small class="text-color-secondary mt-1 block">
+                <i class="pi pi-info-circle"></i>
+                Ras: {{ dog.value.breed.name }} ({{
+                  dog.value.breed.size === "small"
+                    ? "Klein"
+                    : dog.value.breed.size === "medium"
+                      ? "Middel"
+                      : "Groot"
+                }})
+              </small>
+            }
+          }
         </div>
       </div>
-    </ng-template>
-
-    <div class="mb-3" *ngIf="!isEditMode">
-      <p-steps
-        [model]="steps"
-        [(activeIndex)]="currentStep"
-        [readonly]="true"
-      ></p-steps>
     </div>
 
-    <form [formGroup]="form" class="p-fluid form-content-wrapper">
-      <!-- STAP 1: KLANT & HOND SELECTIE -->
-      <div *ngIf="currentStep === 0 || isEditMode">
-        <h3
-          class="text-lg font-semibold mb-3 flex align-items-center"
-          *ngIf="!isEditMode"
-        >
-          <i class="pi pi-user text-primary"></i>
-          Klant & Hond
-        </h3>
+    <!-- STAP 2: DATUM & TIJD (Moved up for wizard flow) -->
+    <div *ngIf="currentStep === 1 || isEditMode">
+      <h3
+        class="text-lg font-semibold mb-3 flex align-items-center"
+        *ngIf="!isEditMode"
+      >
+        <i class="pi pi-calendar text-primary mr-2"></i>
+        Planning
+      </h3>
+      <div class="formgrid grid">
+        <div class="field col-6 md:col-6 lg:col-4">
+          <label for="appointmentDate" class="block mb-2 font-medium"
+            >Datum <span class="text-red-500">*</span></label
+          >
+          <p-datepicker
+            inputId="appointmentDate"
+            formControlName="appointmentDate"
+            dateFormat="dd-mm-yy"
+            [showIcon]="true"
+            placeholder="Kies datum"
+            inputStyleClass="w-full"
+            styleClass="w-full"
+            appendTo="body"
+          />
+        </div>
+
+        <div class="field col-6 md:col-6 lg:col-4">
+          <label for="startTime" class="block mb-2 font-medium"
+            >Starttijd <span class="text-red-500">*</span></label
+          >
+          <p-datepicker
+            inputId="startTime"
+            formControlName="startTime"
+            [timeOnly]="true"
+            hourFormat="24"
+            [showIcon]="true"
+            placeholder="Kies starttijd"
+            inputStyleClass="w-full"
+            styleClass="w-full"
+            appendTo="body"
+          />
+        </div>
+
+        <div class="field col-12 md:col-12 lg:col-4">
+          <label for="endTime" class="block mb-2 font-medium">
+            Verwachte eindtijd
+          </label>
+          <p-datepicker
+            inputId="endTime"
+            formControlName="endTime"
+            [timeOnly]="true"
+            hourFormat="24"
+            [showIcon]="true"
+            placeholder="Wordt berekend..."
+            [disabled]="true"
+            inputStyleClass="w-full"
+            styleClass="w-full"
+            appendTo="body"
+          />
+          <small class="text-color-secondary mt-1 block field-help">
+            Automatisch berekend op basis van geschatte duur
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAP 3: WERKZAAMHEDEN -->
+    <div *ngIf="currentStep === 2 || isEditMode">
+      <h3
+        class="text-lg font-semibold mb-3 flex align-items-center"
+        *ngIf="!isEditMode"
+      >
+        <i class="pi pi-wrench text-primary mr-2"></i>
+        Werkzaamheden
+      </h3>
+      <div class="formgrid grid">
+        <div class="field col-12 md:col-6">
+          <label for="packages" class="block mb-2 font-medium">Pakketten</label>
+          <p-multiSelect
+            inputId="packages"
+            [options]="packages"
+            [formControl]="packagesControl"
+            optionLabel="name"
+            dataKey="id"
+            placeholder="Pakketten (optioneel)"
+            display="chip"
+            [showClear]="true"
+            styleClass="w-full"
+            appendTo="body"
+          />
+          @if (!packagesControl.value || packagesControl.value.length === 0) {
+            <small class="text-color-secondary mt-1 block field-help">
+              Voorgedefinieerde pakketten
+            </small>
+          }
+        </div>
+
+        <div class="field col-12 md:col-6">
+          <label for="services" class="block mb-2 font-medium"
+            >Extra Werkzaamheden</label
+          >
+          <p-multiSelect
+            inputId="services"
+            [options]="services"
+            [formControl]="servicesControl"
+            optionLabel="name"
+            dataKey="id"
+            placeholder="Extra werkzaamheden (optioneel)"
+            display="chip"
+            [showClear]="true"
+            styleClass="w-full"
+            appendTo="body"
+          >
+            <ng-template #item let-s>
+              <div
+                class="flex justify-content-between align-items-center w-full"
+              >
+                <span>{{ s.name }}</span>
+                @if (s?.id && includedServiceIds.has(s.id)) {
+                  <span
+                    class="text-color-secondary text-sm flex align-items-center gap-1"
+                  >
+                    <i class="pi pi-lock" aria-hidden="true"></i>
+                    In pakket
+                  </span>
+                }
+              </div>
+            </ng-template>
+          </p-multiSelect>
+
+          @if (includedServiceIds.size > 0) {
+            <small class="text-color-secondary mt-1 block field-help">
+              Werkzaamheden die in een pakket zitten worden automatisch
+              geselecteerd en kun je niet uitvinken.
+            </small>
+          } @else if (
+            !servicesControl.value || servicesControl.value.length === 0
+          ) {
+            <small class="text-color-secondary mt-1 block field-help">
+              Aanvullende werkzaamheden
+            </small>
+          }
+        </div>
+      </div>
+
+      <!-- Geschatte Duur en Prijs Indicator -->
+      @if (estimatedDurationMinutes > 0 || priceCalculation) {
+        <div class="mt-3 grid">
+          @if (estimatedDurationMinutes > 0) {
+            <div class="col-12 md:col-6">
+              <div class="bg-primary-50 border-round p-3 h-full">
+                <div class="flex align-items-center mb-2">
+                  <i class="pi pi-clock text-primary text-xl"></i>
+                  <div class="font-semibold text-primary">
+                    Geschatte duur:
+                    {{ formatDuration(estimatedDurationMinutes) }}
+                  </div>
+                </div>
+                @if (calculatedEndTime) {
+                  <div class="flex align-items-center gap-2 mb-1">
+                    <i class="pi pi-calendar-plus text-primary"></i>
+                    <span class="text-color-secondary"
+                      >Verwachte eindtijd:</span
+                    >
+                    <span class="font-semibold text-primary">
+                      {{ calculatedEndTime | date: "HH:mm" }}
+                    </span>
+                  </div>
+                }
+                <small class="text-color-secondary">
+                  Gebaseerd op hondengrootte en geselecteerde werkzaamheden
+                </small>
+              </div>
+            </div>
+          }
+          @if (priceCalculation && priceCalculation.totalPrice > 0) {
+            <div class="col-12 md:col-6">
+              <div class="bg-green-50 border-round p-3 h-full">
+                <div class="flex align-items-center mb-2">
+                  <i class="pi pi-euro text-green-600 text-xl"></i>
+                  <div class="font-semibold text-green-600">
+                    Geschatte prijs:
+                    {{ priceCalculation.totalPrice | currency: "EUR" }}
+                  </div>
+                </div>
+                @if (
+                  hourlyRateCalculation &&
+                  hourlyRateCalculation.effectiveHourlyRate > 0
+                ) {
+                  <small class="text-color-secondary">
+                    Effectief uurtarief:
+                    {{
+                      hourlyRateCalculation.effectiveHourlyRate
+                        | number: "1.0-0"
+                    }}
+                    €/uur
+                    @if (hourlyRateCalculation.rateComparison >= 95) {
+                      <i class="pi pi-check-circle text-green-600 ml-1"></i>
+                    } @else if (hourlyRateCalculation.rateComparison >= 80) {
+                      <i
+                        class="pi pi-exclamation-triangle text-orange-500 ml-1"
+                      ></i>
+                    } @else {
+                      <i class="pi pi-times-circle text-red-500 ml-1"></i>
+                    }
+                    ({{
+                      hourlyRateCalculation.rateComparison | number: "1.0-0"
+                    }}% van streefdoel €{{ hourlyRateCalculation.targetRate }})
+                  </small>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Price Breakdown -->
+      @if (priceCalculation && priceCalculation.breakdown.length > 0) {
+        <details class="mt-3">
+          <summary class="text-sm font-semibold">Prijsopbouw</summary>
+
+          <div class="mt-2 grid">
+            @for (item of priceCalculation.breakdown; track item.name) {
+              <div class="col-12">
+                <div
+                  class="flex justify-content-between align-items-center p-2 bg-gray-50 border-round"
+                >
+                  <span class="text-sm">
+                    <i
+                      [class]="
+                        item.type === 'package'
+                          ? 'pi pi-box text-primary'
+                          : 'pi pi-wrench text-primary'
+                      "
+                    ></i>
+                    {{ item.name }}
+                  </span>
+                  <span class="font-semibold text-sm">{{
+                    item.price | currency: "EUR"
+                  }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </details>
+      }
+    </div>
+
+    <!-- STAP 4: OVERZICHT & NOTITIES -->
+    <div *ngIf="currentStep === 3 || isEditMode">
+      <h3
+        class="text-lg font-semibold mb-3 flex align-items-center gap-2"
+        *ngIf="!isEditMode"
+      >
+        <i class="pi pi-check-circle text-primary"></i>
+        Overzicht & Notities
+      </h3>
+
+      @if (!isEditMode) {
         <div class="formgrid grid">
           <div class="field col-12 md:col-6">
-            <label for="client" class="block mb-2 font-medium"
-              >Klant <span class="text-red-500">*</span></label
-            >
-            <p-select
-              inputId="client"
-              [formControl]="client"
-              [options]="clients"
-              optionLabel="name"
-              [filter]="true"
-              filterBy="name"
-              placeholder="Kies klant"
-              [showClear]="true"
-              styleClass="w-full"
-              appendTo="body"
-            />
-            @if (!client.value) {
-              <small class="text-color-secondary mt-1 block"
-                >Kies de klant voor deze afspraak</small
-              >
-            }
+            <label for="notes" class="block mb-2 font-medium">Notities</label>
+            <textarea
+              id="notes"
+              rows="3"
+              pTextarea
+              formControlName="notes"
+              placeholder="Notities (optioneel)"
+              class="w-full"
+            ></textarea>
           </div>
 
-          <div class="field col-12 md:col-6">
-            <label for="dog" class="block mb-2 font-medium"
-              >Hond <span class="text-red-500">*</span></label
-            >
-            <p-select
-              inputId="dog"
-              [formControl]="dog"
-              [options]="dogs"
-              optionLabel="name"
-              [filter]="true"
-              filterBy="name"
-              placeholder="Kies hond"
-              [showClear]="true"
-              styleClass="w-full"
-              appendTo="body"
-            >
-              <ng-template pTemplate="selectedItem" let-selected>
-                <span>{{ selected?.name || "-" }}</span>
-                @if (selected?.isInactive) {
-                  <span class="ml-2 text-color-secondary">(niet actief)</span>
-                }
-              </ng-template>
-              <ng-template pTemplate="item" let-d>
-                <div
-                  class="flex justify-content-between align-items-center w-full"
-                >
-                  <span>{{ d.name }}</span>
-                  @if (d.isInactive) {
-                    <span class="text-sm text-color-secondary"
-                      >Niet actief</span
-                    >
-                  }
-                </div>
-              </ng-template>
-            </p-select>
-
-            @if (!client.value) {
-              <small class="text-color-secondary mt-1 block"
-                >Selecteer eerst een klant</small
-              >
-            } @else {
-              @if (isSelectedDogInactive) {
-                <p-message
-                  styleClass="mt-3 w-full block"
-                  severity="info"
-                  icon="pi pi-info-circle"
-                >
-                  Deze hond is niet actief.
-                </p-message>
-              }
-
-              @if (isSelectedDogAggressive) {
-                <p-message
-                  styleClass="mt-3 w-full block"
-                  severity="warn"
-                  icon="pi pi-exclamation-triangle"
-                >
-                  Let op: Deze hond is gemarkeerd als agressief!
-                </p-message>
-              }
-
-              @if (
-                !isSelectedDogAggressive &&
-                !isSelectedDogInactive &&
-                dog.value &&
-                dog.value.breed
-              ) {
-                <small class="text-color-secondary mt-1 block">
-                  <i class="pi pi-info-circle"></i>
-                  Ras: {{ dog.value.breed.name }} ({{
-                    dog.value.breed.size === "small"
-                      ? "Klein"
-                      : dog.value.breed.size === "medium"
-                        ? "Middel"
-                        : "Groot"
-                  }})
-                </small>
-              }
-            }
-          </div>
-        </div>
-      </div>
-
-      <!-- STAP 2: DATUM & TIJD (Moved up for wizard flow) -->
-      <div *ngIf="currentStep === 1 || isEditMode">
-        <h3
-          class="text-lg font-semibold mb-3 flex align-items-center"
-          *ngIf="!isEditMode"
-        >
-          <i class="pi pi-calendar text-primary"></i>
-          Planning
-        </h3>
-        <div class="formgrid">
-          <div class="field col-12 md:col-6 lg:col-4">
-            <label for="appointmentDate" class="block mb-2 font-medium"
-              >Datum <span class="text-red-500">*</span></label
-            >
-            <p-datepicker
-              inputId="appointmentDate"
-              formControlName="appointmentDate"
-              dateFormat="dd-mm-yy"
-              [showIcon]="true"
-              placeholder="Kies datum"
-              styleClass="w-full"
-              appendTo="body"
-            />
-          </div>
-
-          <div class="field col-12 md:col-6 lg:col-4">
-            <label for="startTime" class="block mb-2 font-medium"
-              >Starttijd <span class="text-red-500">*</span></label
-            >
-            <p-datepicker
-              inputId="startTime"
-              formControlName="startTime"
-              [timeOnly]="true"
-              hourFormat="24"
-              [showIcon]="true"
-              placeholder="Kies starttijd"
-              styleClass="w-full"
-              appendTo="body"
-            />
-          </div>
-
-          <div class="field col-12 md:col-12 lg:col-4">
-            <div id="calculatedEndTimeLabel" class="block mb-2 font-medium">
-              Verwachte eindtijd
-            </div>
-            <div
-              class="appointment-form__readonly-input p-inputtext w-full flex align-items-center"
-              role="status"
-              aria-live="polite"
-              aria-labelledby="calculatedEndTimeLabel"
-            >
-              @if (calculatedEndTime) {
-                <span class="font-semibold text-primary">
-                  {{ calculatedEndTime | date: "HH:mm" }}
-                </span>
-              } @else {
-                <span class="text-color-secondary">Wordt berekend...</span>
-              }
-            </div>
-            @if (!calculatedEndTime) {
-              <small class="text-color-secondary mt-1 block field-help">
-                Automatisch berekend op basis van geschatte duur
-              </small>
-            }
-          </div>
-        </div>
-      </div>
-
-      <!-- STAP 3: WERKZAAMHEDEN -->
-      <div *ngIf="currentStep === 2 || isEditMode">
-        <h3
-          class="text-lg font-semibold mb-3 flex align-items-center"
-          *ngIf="!isEditMode"
-        >
-          <i class="pi pi-wrench text-primary"></i>
-          Werkzaamheden
-        </h3>
-        <div class="formgrid">
-          <div class="field col-12 md:col-6">
-            <label for="packages" class="block mb-2 font-medium"
-              >Pakketten</label
-            >
-            <p-multiSelect
-              inputId="packages"
-              [options]="packages"
-              [formControl]="packagesControl"
-              optionLabel="name"
-              dataKey="id"
-              placeholder="Pakketten (optioneel)"
-              display="chip"
-              [showClear]="true"
-              styleClass="w-full"
-              appendTo="body"
-            />
-            @if (!packagesControl.value || packagesControl.value.length === 0) {
-              <small class="text-color-secondary mt-1 block field-help">
-                Voorgedefinieerde pakketten
-              </small>
-            }
-          </div>
-
-          <div class="field col-12 md:col-6">
-            <label for="services" class="block mb-2 font-medium"
-              >Extra Werkzaamheden</label
-            >
-            <p-multiSelect
-              inputId="services"
-              [options]="services"
-              [formControl]="servicesControl"
-              optionLabel="name"
-              dataKey="id"
-              placeholder="Extra werkzaamheden (optioneel)"
-              display="chip"
-              [showClear]="true"
-              styleClass="w-full"
-              appendTo="body"
-            />
-            @if (!servicesControl.value || servicesControl.value.length === 0) {
-              <small class="text-color-secondary mt-1 block field-help">
-                Aanvullende werkzaamheden
-              </small>
-            }
-          </div>
-        </div>
-
-        <!-- Geschatte Duur en Prijs Indicator -->
-        @if (estimatedDurationMinutes > 0 || priceCalculation) {
-          <div class="mt-3 grid">
-            @if (estimatedDurationMinutes > 0) {
-              <div class="col-12 md:col-6">
-                <div class="bg-primary-50 border-round p-3 h-full">
-                  <div class="flex align-items-center mb-2">
-                    <i class="pi pi-clock text-primary text-xl"></i>
-                    <div class="font-semibold text-primary">
-                      Geschatte duur:
-                      {{ formatDuration(estimatedDurationMinutes) }}
-                    </div>
-                  </div>
-                  <small class="text-color-secondary">
-                    Gebaseerd op hondengrootte en geselecteerde werkzaamheden
-                  </small>
-                </div>
-              </div>
-            }
-            @if (priceCalculation && priceCalculation.totalPrice > 0) {
-              <div class="col-12 md:col-6">
-                <div class="bg-green-50 border-round p-3 h-full">
-                  <div class="flex align-items-center mb-2">
-                    <i class="pi pi-euro text-green-600 text-xl"></i>
-                    <div class="font-semibold text-green-600">
-                      Geschatte prijs:
-                      {{ priceCalculation.totalPrice | currency: "EUR" }}
-                    </div>
-                  </div>
-                  @if (
-                    hourlyRateCalculation &&
-                    hourlyRateCalculation.effectiveHourlyRate > 0
-                  ) {
-                    <small class="text-color-secondary">
-                      Effectief uurtarief:
-                      {{
-                        hourlyRateCalculation.effectiveHourlyRate
-                          | number: "1.0-0"
-                      }}
-                      €/uur
-                      @if (hourlyRateCalculation.rateComparison >= 95) {
-                        <i class="pi pi-check-circle text-green-600 ml-1"></i>
-                      } @else if (hourlyRateCalculation.rateComparison >= 80) {
-                        <i
-                          class="pi pi-exclamation-triangle text-orange-500 ml-1"
-                        ></i>
-                      } @else {
-                        <i class="pi pi-times-circle text-red-500 ml-1"></i>
-                      }
-                      ({{
-                        hourlyRateCalculation.rateComparison | number: "1.0-0"
-                      }}% van streefdoel €{{
-                        hourlyRateCalculation.targetRate
-                      }})
-                    </small>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-        }
-
-        <!-- Price Breakdown -->
-        @if (priceCalculation && priceCalculation.breakdown.length > 0) {
-          <details class="mt-3">
-            <summary class="text-sm font-semibold">Prijsopbouw</summary>
-
-            <div class="mt-2 grid">
-              @for (item of priceCalculation.breakdown; track item.name) {
-                <div class="col-12">
-                  <div
-                    class="flex justify-content-between align-items-center p-2 bg-gray-50 border-round"
+          <div class="col-12 md:col-6">
+            <div class="bg-gray-50 p-3 border-round h-full">
+              <h4 class="m-0 mb-2">Samenvatting</h4>
+              <ul class="list-none p-0 m-0">
+                <li class="mb-2 flex align-items-center gap-2">
+                  <i class="pi pi-user text-color-secondary"></i>
+                  <strong>Klant:</strong> {{ client.value?.name || "-" }}
+                </li>
+                <li class="mb-2 flex align-items-center gap-2">
+                  <i class="pi pi-heart text-color-secondary"></i>
+                  <strong>Hond:</strong> {{ dog.value?.name || "-" }}
+                  <span
+                    *ngIf="isSelectedDogAggressive"
+                    class="text-red-500 font-bold ml-2"
                   >
-                    <span class="text-sm">
-                      <i
-                        [class]="
-                          item.type === 'package'
-                            ? 'pi pi-box text-primary'
-                            : 'pi pi-wrench text-primary'
-                        "
-                      ></i>
-                      {{ item.name }}
-                    </span>
-                    <span class="font-semibold text-sm">{{
-                      item.price | currency: "EUR"
-                    }}</span>
-                  </div>
-                </div>
-              }
+                    <i class="pi pi-exclamation-triangle"></i> AGRESSIEF
+                  </span>
+                </li>
+                <li class="mb-2 flex align-items-center gap-2">
+                  <i class="pi pi-calendar text-color-secondary"></i>
+                  <strong>Datum:</strong>
+                  {{ form.get("appointmentDate")?.value | date: "dd-MM-yyyy" }}
+                </li>
+                <li class="mb-2 flex align-items-center gap-2">
+                  <i class="pi pi-clock text-color-secondary"></i>
+                  <strong>Tijd:</strong>
+                  {{ form.get("startTime")?.value | date: "HH:mm" }}
+                </li>
+              </ul>
             </div>
-          </details>
-        }
-      </div>
-
-      <!-- STAP 4: OVERZICHT & NOTITIES -->
-      <div *ngIf="currentStep === 3 || isEditMode">
-        <h3
-          class="text-lg font-semibold mb-3 flex align-items-center gap-2"
-          *ngIf="!isEditMode"
-        >
-          <i class="pi pi-check-circle text-primary"></i>
-          Overzicht & Notities
-        </h3>
-
+          </div>
+        </div>
+      } @else {
         <div class="field">
           <label for="notes" class="block mb-2 font-medium">Notities</label>
           <textarea
@@ -378,296 +455,274 @@
             class="w-full"
           ></textarea>
         </div>
+      }
+    </div>
 
-        <div *ngIf="!isEditMode" class="bg-gray-50 p-3 border-round mt-3">
-          <h4 class="m-0 mb-2">Samenvatting</h4>
-          <ul class="list-none p-0 m-0">
-            <li class="mb-2 flex align-items-center gap-2">
-              <i class="pi pi-user text-color-secondary"></i>
-              <strong>Klant:</strong> {{ client.value?.name || "-" }}
-            </li>
-            <li class="mb-2 flex align-items-center gap-2">
-              <i class="pi pi-github text-color-secondary"></i>
-              <strong>Hond:</strong> {{ dog.value?.name || "-" }}
-              <span
-                *ngIf="isSelectedDogAggressive"
-                class="text-red-500 font-bold ml-2"
-              >
-                <i class="pi pi-exclamation-triangle"></i> AGRESSIEF
-              </span>
-            </li>
-            <li class="mb-2 flex align-items-center gap-2">
-              <i class="pi pi-calendar text-color-secondary"></i>
-              <strong>Datum:</strong>
-              {{ form.get("appointmentDate")?.value | date: "dd-MM-yyyy" }}
-            </li>
-            <li class="mb-2 flex align-items-center gap-2">
-              <i class="pi pi-clock text-color-secondary"></i>
-              <strong>Tijd:</strong>
-              {{ form.get("startTime")?.value | date: "HH:mm" }}
-            </li>
-          </ul>
+    @if (isEditMode) {
+      <p-divider />
+
+      <!-- WERKELIJK UITGEVOERD WERK -->
+      <div class="mt-4">
+        <h4 class="text-md font-semibold mb-3 flex align-items-center gap-2">
+          <i class="pi pi-check-square text-green-600"></i>
+          Werkelijk Uitgevoerd Werk (Logboek)
+        </h4>
+        <div class="formgrid grid">
+          <div class="field col-12 md:col-6">
+            <label for="actualEndTime" class="block mb-2 font-medium"
+              >Werkelijke eindtijd <span class="text-red-500">*</span></label
+            >
+            <p-datepicker
+              inputId="actualEndTime"
+              formControlName="actualEndTime"
+              [showTime]="true"
+              hourFormat="24"
+              dateFormat="dd-mm-yy"
+              [showIcon]="true"
+              placeholder="Eindtijd"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <small class="text-color-secondary mt-1 block field-help">
+              Na afloop invullen
+            </small>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <label for="actualPrice" class="block mb-2 font-medium">
+              Werkelijke prijs
+            </label>
+            <p-inputNumber
+              inputId="actualPrice"
+              formControlName="actualPrice"
+              mode="currency"
+              currency="EUR"
+              locale="nl-NL"
+              [min]="0"
+              styleClass="w-full"
+            />
+            <small class="text-color-secondary mt-1 block field-help">
+              Optioneel (overschrijft berekend)
+            </small>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <label for="actualPackages" class="block mb-2 font-medium"
+              >Werkelijk uitgevoerde pakketten</label
+            >
+            <p-multiSelect
+              inputId="actualPackages"
+              [options]="packages"
+              formControlName="actualPackages"
+              optionLabel="name"
+              dataKey="id"
+              placeholder="Pakketten"
+              display="chip"
+              [showClear]="true"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <small class="text-color-secondary mt-1 block field-help">
+              Alleen aanpassen bij afwijking
+            </small>
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <label for="actualServices" class="block mb-2 font-medium"
+              >Werkelijk uitgevoerde werkzaamheden</label
+            >
+            <p-multiSelect
+              inputId="actualServices"
+              [options]="services"
+              formControlName="actualServices"
+              optionLabel="name"
+              dataKey="id"
+              placeholder="Werkzaamheden"
+              display="chip"
+              [showClear]="true"
+              styleClass="w-full"
+              appendTo="body"
+            />
+            <small class="text-color-secondary mt-1 block field-help">
+              Alleen aanpassen bij afwijking
+            </small>
+          </div>
         </div>
-      </div>
 
-      @if (isEditMode) {
-        <p-divider />
-
-        <!-- WERKELIJK UITGEVOERD WERK -->
-        <div class="mt-4">
-          <h4 class="text-md font-semibold mb-3 flex align-items-center gap-2">
-            <i class="pi pi-check-square text-green-600"></i>
-            Werkelijk Uitgevoerd Werk (Logboek)
-          </h4>
-          <div class="formgrid">
-            <div class="field col-12 md:col-6">
-              <label for="actualEndTime" class="block mb-2 font-medium"
-                >Werkelijke eindtijd <span class="text-red-500">*</span></label
-              >
-              <p-datepicker
-                inputId="actualEndTime"
-                formControlName="actualEndTime"
-                [showTime]="true"
-                hourFormat="24"
-                dateFormat="dd-mm-yy"
-                [showIcon]="true"
-                placeholder="Eindtijd"
-                styleClass="w-full"
-                appendTo="body"
-              />
-              <small class="text-color-secondary mt-1 block field-help">
-                Na afloop invullen
-              </small>
+        <!-- Actual Pricing Display -->
+        @if (actualPriceCalculation && actualHourlyRateCalculation) {
+          <div class="mt-3 grid">
+            <div class="col-12 md:col-6">
+              <div class="bg-blue-50 border-round p-3 h-full">
+                <div class="flex align-items-center gap-2 mb-2">
+                  <i class="pi pi-euro text-blue-600 text-xl"></i>
+                  <div class="font-semibold text-blue-600">
+                    Werkelijke prijs:
+                    {{ actualPriceTotal | currency: "EUR" }}
+                    @if (hasActualPriceOverride) {
+                      <span class="text-xs text-color-secondary ml-2">
+                        (handmatig)
+                      </span>
+                    }
+                  </div>
+                </div>
+                <small class="text-color-secondary">
+                  Totale duur:
+                  {{ formatDuration(actualHourlyRateCalculation.totalMinutes) }}
+                </small>
+              </div>
             </div>
 
-            <div class="field col-12 md:col-6">
-              <label for="actualPrice" class="block mb-2 font-medium">
-                Werkelijke prijs
-              </label>
-              <p-inputNumber
-                inputId="actualPrice"
-                formControlName="actualPrice"
-                mode="currency"
-                currency="EUR"
-                locale="nl-NL"
-                [min]="0"
-                styleClass="w-full"
-              />
-              <small class="text-color-secondary mt-1 block field-help">
-                Optioneel (overschrijft berekend)
-              </small>
-            </div>
-
-            <div class="field col-12 md:col-6">
-              <label for="actualPackages" class="block mb-2 font-medium"
-                >Werkelijk uitgevoerde pakketten</label
-              >
-              <p-multiSelect
-                inputId="actualPackages"
-                [options]="packages"
-                formControlName="actualPackages"
-                optionLabel="name"
-                dataKey="id"
-                placeholder="Pakketten"
-                display="chip"
-                [showClear]="true"
-                styleClass="w-full"
-                appendTo="body"
-              />
-              <small class="text-color-secondary mt-1 block field-help">
-                Alleen aanpassen bij afwijking
-              </small>
-            </div>
-
-            <div class="field col-12 md:col-6">
-              <label for="actualServices" class="block mb-2 font-medium"
-                >Werkelijk uitgevoerde werkzaamheden</label
-              >
-              <p-multiSelect
-                inputId="actualServices"
-                [options]="services"
-                formControlName="actualServices"
-                optionLabel="name"
-                dataKey="id"
-                placeholder="Werkzaamheden"
-                display="chip"
-                [showClear]="true"
-                styleClass="w-full"
-                appendTo="body"
-              />
-              <small class="text-color-secondary mt-1 block field-help">
-                Alleen aanpassen bij afwijking
-              </small>
+            <div class="col-12 md:col-6">
+              <div class="bg-purple-50 border-round p-3 h-full">
+                <div class="flex align-items-center gap-2 mb-2">
+                  <i class="pi pi-chart-line text-purple-600 text-xl"></i>
+                  <div class="font-semibold text-purple-600">
+                    Behaald uurtarief:
+                    {{
+                      actualHourlyRateCalculation.effectiveHourlyRate
+                        | number: "1.0-0"
+                    }}
+                    €/uur
+                  </div>
+                </div>
+                <small class="text-color-secondary">
+                  @if (actualHourlyRateCalculation.rateComparison >= 95) {
+                    <i class="pi pi-check-circle text-green-600"></i>
+                    Uitstekend!
+                  } @else if (
+                    actualHourlyRateCalculation.rateComparison >= 80
+                  ) {
+                    <i class="pi pi-exclamation-triangle text-orange-500"></i>
+                    Bijna op streefdoel
+                  } @else {
+                    <i class="pi pi-times-circle text-red-500"></i> Onder
+                    streefdoel
+                  }
+                  ({{
+                    actualHourlyRateCalculation.rateComparison
+                      | number: "1.0-0"
+                  }}% van €{{ actualHourlyRateCalculation.targetRate }})
+                </small>
+              </div>
             </div>
           </div>
 
-          <!-- Actual Pricing Display -->
-          @if (actualPriceCalculation && actualHourlyRateCalculation) {
-            <div class="mt-3 grid">
-              <div class="col-12 md:col-6">
-                <div class="bg-blue-50 border-round p-3 h-full">
-                  <div class="flex align-items-center gap-2 mb-2">
-                    <i class="pi pi-euro text-blue-600 text-xl"></i>
-                    <div class="font-semibold text-blue-600">
-                      Werkelijke prijs:
-                      {{ actualPriceTotal | currency: "EUR" }}
-                      @if (hasActualPriceOverride) {
-                        <span class="text-xs text-color-secondary ml-2">
-                          (handmatig)
-                        </span>
-                      }
+          <!-- Comparison -->
+          @if (priceCalculation && hourlyRateCalculation) {
+            <details class="mt-3">
+              <summary class="text-sm font-semibold">
+                Vergelijking geschat vs werkelijk
+              </summary>
+
+              <div class="mt-2 bg-gray-50 border-round p-3">
+                <div class="grid">
+                  <div class="col-12 md:col-4">
+                    <small class="text-color-secondary">Prijs verschil:</small>
+                    <div
+                      class="font-semibold"
+                      [class.text-green-600]="
+                        actualPriceTotal >= priceCalculation.totalPrice
+                      "
+                      [class.text-red-500]="
+                        actualPriceTotal < priceCalculation.totalPrice
+                      "
+                    >
+                      {{
+                        actualPriceTotal - priceCalculation.totalPrice
+                          | currency: "EUR"
+                      }}
                     </div>
                   </div>
-                  <small class="text-color-secondary">
-                    Totale duur:
-                    {{
-                      formatDuration(actualHourlyRateCalculation.totalMinutes)
-                    }}
-                  </small>
-                </div>
-              </div>
-
-              <div class="col-12 md:col-6">
-                <div class="bg-purple-50 border-round p-3 h-full">
-                  <div class="flex align-items-center gap-2 mb-2">
-                    <i class="pi pi-chart-line text-purple-600 text-xl"></i>
-                    <div class="font-semibold text-purple-600">
-                      Behaald uurtarief:
+                  <div class="col-12 md:col-4">
+                    <small class="text-color-secondary">Tijd verschil:</small>
+                    <div
+                      class="font-semibold"
+                      [class.text-green-600]="
+                        actualHourlyRateCalculation.totalMinutes <=
+                        estimatedDurationMinutes
+                      "
+                      [class.text-orange-500]="
+                        actualHourlyRateCalculation.totalMinutes >
+                        estimatedDurationMinutes
+                      "
+                    >
                       {{
-                        actualHourlyRateCalculation.effectiveHourlyRate
+                        formatDurationDifference(
+                          actualHourlyRateCalculation.totalMinutes,
+                          estimatedDurationMinutes
+                        )
+                      }}
+                    </div>
+                  </div>
+                  <div class="col-12 md:col-4">
+                    <small class="text-color-secondary"
+                      >Uurtarief verschil:</small
+                    >
+                    <div
+                      class="font-semibold"
+                      [class.text-green-600]="
+                        actualHourlyRateCalculation.effectiveHourlyRate >=
+                        hourlyRateCalculation.effectiveHourlyRate
+                      "
+                      [class.text-red-500]="
+                        actualHourlyRateCalculation.effectiveHourlyRate <
+                        hourlyRateCalculation.effectiveHourlyRate
+                      "
+                    >
+                      {{
+                        actualHourlyRateCalculation.effectiveHourlyRate -
+                          hourlyRateCalculation.effectiveHourlyRate >
+                        0
+                          ? "+"
+                          : ""
+                      }}{{
+                        actualHourlyRateCalculation.effectiveHourlyRate -
+                          hourlyRateCalculation.effectiveHourlyRate
                           | number: "1.0-0"
                       }}
                       €/uur
                     </div>
                   </div>
-                  <small class="text-color-secondary">
-                    @if (actualHourlyRateCalculation.rateComparison >= 95) {
-                      <i class="pi pi-check-circle text-green-600"></i>
-                      Uitstekend!
-                    } @else if (
-                      actualHourlyRateCalculation.rateComparison >= 80
-                    ) {
-                      <i class="pi pi-exclamation-triangle text-orange-500"></i>
-                      Bijna op streefdoel
-                    } @else {
-                      <i class="pi pi-times-circle text-red-500"></i> Onder
-                      streefdoel
-                    }
-                    ({{
-                      actualHourlyRateCalculation.rateComparison
-                        | number: "1.0-0"
-                    }}% van €{{ actualHourlyRateCalculation.targetRate }})
-                  </small>
                 </div>
               </div>
-            </div>
-
-            <!-- Comparison -->
-            @if (priceCalculation && hourlyRateCalculation) {
-              <details class="mt-3">
-                <summary class="text-sm font-semibold">
-                  Vergelijking geschat vs werkelijk
-                </summary>
-
-                <div class="mt-2 bg-gray-50 border-round p-3">
-                  <div class="grid">
-                    <div class="col-12 md:col-4">
-                      <small class="text-color-secondary"
-                        >Prijs verschil:</small
-                      >
-                      <div
-                        class="font-semibold"
-                        [class.text-green-600]="
-                          actualPriceTotal >= priceCalculation.totalPrice
-                        "
-                        [class.text-red-500]="
-                          actualPriceTotal < priceCalculation.totalPrice
-                        "
-                      >
-                        {{
-                          actualPriceTotal - priceCalculation.totalPrice
-                            | currency: "EUR"
-                        }}
-                      </div>
-                    </div>
-                    <div class="col-12 md:col-4">
-                      <small class="text-color-secondary">Tijd verschil:</small>
-                      <div
-                        class="font-semibold"
-                        [class.text-green-600]="
-                          actualHourlyRateCalculation.totalMinutes <=
-                          estimatedDurationMinutes
-                        "
-                        [class.text-orange-500]="
-                          actualHourlyRateCalculation.totalMinutes >
-                          estimatedDurationMinutes
-                        "
-                      >
-                        {{
-                          formatDurationDifference(
-                            actualHourlyRateCalculation.totalMinutes,
-                            estimatedDurationMinutes
-                          )
-                        }}
-                      </div>
-                    </div>
-                    <div class="col-12 md:col-4">
-                      <small class="text-color-secondary"
-                        >Uurtarief verschil:</small
-                      >
-                      <div
-                        class="font-semibold"
-                        [class.text-green-600]="
-                          actualHourlyRateCalculation.effectiveHourlyRate >=
-                          hourlyRateCalculation.effectiveHourlyRate
-                        "
-                        [class.text-red-500]="
-                          actualHourlyRateCalculation.effectiveHourlyRate <
-                          hourlyRateCalculation.effectiveHourlyRate
-                        "
-                      >
-                        {{
-                          actualHourlyRateCalculation.effectiveHourlyRate -
-                            hourlyRateCalculation.effectiveHourlyRate >
-                          0
-                            ? "+"
-                            : ""
-                        }}{{
-                          actualHourlyRateCalculation.effectiveHourlyRate -
-                            hourlyRateCalculation.effectiveHourlyRate
-                            | number: "1.0-0"
-                        }}
-                        €/uur
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </details>
-            }
+            </details>
           }
-        </div>
-      }
+        }
+      </div>
+    }
 
-      <!-- NAVIGATION BUTTONS -->
-      <div
-        class="flex justify-content-between mt-5 pt-3 border-top-1 border-gray-200"
-      >
-        <div *ngIf="!isEditMode">
+    <!-- NAVIGATION BUTTONS -->
+    <div class="mt-5 pt-3 border-top-1 border-gray-200">
+      <div class="sticky-footer-actions gap-2">
+        <div class="sticky-footer-actions__left flex align-items-center gap-2">
           <p-button
-            *ngIf="currentStep > 0"
+            *ngIf="!isEditMode && currentStep > 0"
             label="Vorige"
             icon="pi pi-arrow-left"
             styleClass="p-button-secondary"
+            type="button"
             (onClick)="prevStep()"
           ></p-button>
         </div>
 
-        <div class="flex gap-2 ml-auto sticky-footer-actions flex-wrap">
+        <div class="sticky-footer-actions__center flex align-items-center">
+          <p-button
+            label="Annuleren"
+            icon="pi pi-times"
+            styleClass="p-button-text"
+            type="button"
+            (onClick)="cancel()"
+          ></p-button>
+        </div>
+
+        <div class="sticky-footer-actions__right flex align-items-center gap-2">
           <p-button
             *ngIf="!isEditMode && currentStep < steps.length - 1"
             label="Volgende"
             icon="pi pi-arrow-right"
             iconPos="right"
+            type="button"
             (onClick)="nextStep()"
             [disabled]="
               (currentStep === 0 && (!client.valid || !dog.valid)) ||
@@ -681,19 +736,13 @@
             *ngIf="isEditMode || currentStep === steps.length - 1"
             label="Opslaan"
             icon="pi pi-check"
+            type="button"
             (onClick)="submit()"
             [loading]="isLoading"
             [disabled]="form.invalid"
           ></p-button>
-
-          <p-button
-            label="Annuleren"
-            icon="pi pi-times"
-            styleClass="p-button-text"
-            (onClick)="cancel()"
-          ></p-button>
         </div>
       </div>
-    </form>
-  </p-card>
-</div>
+    </div>
+  </form>
+</ng-template>

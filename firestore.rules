@@ -26,42 +26,58 @@ service cloud.firestore {
     
     // Clients collection - allowed users only
     match /clients/{clientId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser();
+      allow delete: if false;
     }
     
     // Appointments collection - allowed users only
     match /appointments/{appointmentId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser();
+      allow delete: if false;
     }
     
     // Services collection - allowed users only
     match /services/{serviceId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser();
+      allow delete: if false;
     }
     
     // Packages collection - allowed users only
     match /packages/{packageId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser();
+      allow delete: if false;
     }
     
     // Invoices collection - allowed users only
     match /invoices/{invoiceId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser();
+      allow delete: if false;
     }
 
     // Settings collection - allowed users only
     match /settings/{settingsId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser();
+      allow delete: if false;
     }
     
     // Expenses collection - allowed users only
     match /expenses/{expenseId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser();
+      allow delete: if false;
     }
     
     // Breeds collection - allowed users only
     match /breeds/{breedId} {
-      allow read, write: if isAllowedUser();
+      allow read: if isAllowedUser();
+      allow create, update: if isAllowedUser();
+      allow delete: if false;
     }
     
     // Allowed users collection - authenticated users can read to verify access

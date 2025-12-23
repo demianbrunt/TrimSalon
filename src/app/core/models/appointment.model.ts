@@ -24,4 +24,7 @@ export interface Appointment {
   // Google Calendar sync
   googleCalendarEventId?: string; // Google Calendar event ID for two-way sync
   lastModified?: Date; // Last modification timestamp for conflict resolution
+
+  // Soft delete
+  deletedAt?: Date;
 }

@@ -46,6 +46,8 @@ export class ServicesComponent implements OnInit {
   sortOrder = 1;
   isInitialized = false;
 
+  showArchived = false;
+
   private readonly serviceService = inject(ServiceService);
   private readonly toastrService = inject(ToastrService);
   private readonly dialogService = inject(AppDialogService);
@@ -69,9 +71,17 @@ export class ServicesComponent implements OnInit {
 
   loadServices(): void {
     this.serviceService.getData$().subscribe((data) => {
-      this.services = data;
+      this.services = data.filter((service) =>
+        this.showArchived ? !!service.deletedAt : !service.deletedAt,
+      );
       this.isInitialized = true;
     });
+  }
+
+  setShowArchived(show: boolean): void {
+    if (this.showArchived === show) return;
+    this.showArchived = show;
+    this.loadServices();
   }
 
   showServiceForm(service?: Service): void {
@@ -85,14 +95,19 @@ export class ServicesComponent implements OnInit {
   deleteService(service: Service): void {
     this.confirmationService
       .open(
-        'Bevestiging',
-        `Weet je zeker dat je <b>${service.name}</b> wilt verwijderen? Dit kan <u>niet</u> ongedaan worden gemaakt.`,
+        'Bevestiging Archiveren',
+        `Weet je zeker dat je <b>${service.name}</b> wilt archiveren? Je kunt dit later terugzetten vanuit het archief.`,
+        'Archiveren',
+        'Annuleren',
       )
       .then((confirmed) => {
         if (confirmed) {
           this.serviceService.delete(service.id!).subscribe({
             next: () => {
-              this.toastrService.success('Succes', 'Werkzaamheid verwijderd');
+              this.toastrService.success(
+                'Succes',
+                'Werkzaamheid is gearchiveerd',
+              );
               this.loadServices();
             },
             error: (err) => {
@@ -100,6 +115,29 @@ export class ServicesComponent implements OnInit {
             },
           });
         }
+      });
+  }
+
+  restoreService(service: Service): void {
+    this.confirmationService
+      .open(
+        'Bevestiging Herstellen',
+        `Weet je zeker dat je <b>${service.name}</b> wilt herstellen?`,
+        'Herstellen',
+        'Annuleren',
+      )
+      .then((confirmed) => {
+        if (!confirmed) return;
+
+        this.serviceService.restore(service.id!).subscribe({
+          next: () => {
+            this.toastrService.success('Succes', 'Werkzaamheid is hersteld');
+            this.loadServices();
+          },
+          error: (err) => {
+            this.toastrService.error('Fout', err.message);
+          },
+        });
       });
   }
 }

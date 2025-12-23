@@ -38,6 +38,11 @@ import { MobileService } from '../../services/mobile.service';
           class="w-full"
         />
       </p-iconfield>
+
+      <div class="table-header__actions">
+        <ng-content select="[header-actions]"></ng-content>
+      </div>
+
       @if (showAdd) {
         <p-button
           [label]="addLabel"

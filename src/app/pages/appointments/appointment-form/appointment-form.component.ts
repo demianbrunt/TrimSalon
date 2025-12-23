@@ -9,7 +9,6 @@ import {
   Validators,
 } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DividerModule } from 'primeng/divider';
 import { FloatLabelModule } from 'primeng/floatlabel';
@@ -42,7 +41,8 @@ import {
 import { ServiceService } from '../../../core/services/service.service';
 
 import { MenuItem } from 'primeng/api';
-import { StepsModule } from 'primeng/steps';
+import { FormShellComponent } from '../../../core/components/form-shell/form-shell.component';
+import { WizardShellComponent } from '../../../core/components/wizard-shell/wizard-shell.component';
 
 @Component({
   selector: 'app-appointment-form',
@@ -60,11 +60,11 @@ import { StepsModule } from 'primeng/steps';
     SelectButtonModule,
     TableModule,
     ToastModule,
-    CardModule,
     MultiSelectModule,
     DividerModule,
     MessageModule,
-    StepsModule,
+    FormShellComponent,
+    WizardShellComponent,
   ],
   templateUrl: './appointment-form.component.html',
   styleUrls: ['./appointment-form.component.css'],
@@ -73,6 +73,9 @@ export class AppointmentFormComponent
   extends FormBaseComponent
   implements OnInit
 {
+  includedServiceIds = new Set<string>();
+  private isSyncingPackageServices = false;
+
   private isDogInactive(dog: Dog | null | undefined): boolean {
     if (!dog) {
       return false;
@@ -243,8 +246,8 @@ export class AppointmentFormComponent
         id: formValue.id || undefined,
         client: formValue.client!,
         dog: formValue.dog!,
-        services: formValue.services || [],
-        packages: formValue.packages || [],
+        services: this.getExtraSelectedServices(),
+        packages: this.form.controls.packages.value ?? [],
         startTime: combinedStartTime || undefined,
         endTime: this.calculatedEndTime || formValue.endTime || undefined,
         notes: formValue.notes || undefined,
@@ -293,7 +296,7 @@ export class AppointmentFormComponent
         packages: new FormControl<Package[] | null>([]),
         appointmentDate: new FormControl<Date | null>(null),
         startTime: new FormControl<Date | null>(null),
-        endTime: new FormControl<Date | null>(null),
+        endTime: new FormControl<Date | null>({ value: null, disabled: true }),
         estimatedDuration: new FormControl<number | null>(null),
         notes: new FormControl(null),
         actualServices: new FormControl<Service[] | null>([]),
@@ -317,7 +320,6 @@ export class AppointmentFormComponent
       this.loadAppointmentData(appointmentId);
       this.form.controls.appointmentDate.setValidators(Validators.required);
       this.form.controls.startTime.setValidators(Validators.required);
-      this.form.controls.endTime.setValidators(Validators.required);
     } else {
       this.breadcrumbService.setItems([
         { label: 'Afspraken', routerLink: APP_ROUTE.appointments },
@@ -385,6 +387,7 @@ export class AppointmentFormComponent
       .get('packages')
       ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
+        this.syncServicesWithSelectedPackages();
         this.calculateEstimatedDuration();
         this.calculatePricing();
       });
@@ -393,6 +396,7 @@ export class AppointmentFormComponent
       .get('services')
       ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
+        this.ensureIncludedServicesCannotBeRemoved();
         this.calculateEstimatedDuration();
         this.calculatePricing();
       });
@@ -446,7 +450,7 @@ export class AppointmentFormComponent
   calculateEstimatedDuration(): void {
     const dog = this.form.get('dog')?.value;
     const packages = this.form.get('packages')?.value || [];
-    const services = this.form.get('services')?.value || [];
+    const services = this.getExtraSelectedServices(packages);
 
     if (!dog) {
       this.estimatedDurationMinutes = 0;
@@ -505,10 +509,7 @@ export class AppointmentFormComponent
 
     this.calculatedEndTime = endDateTime;
 
-    // In edit mode, update the endTime form control
-    if (this.isEditMode) {
-      this.form.get('endTime')?.setValue(endDateTime, { emitEvent: false });
-    }
+    this.form.get('endTime')?.setValue(endDateTime, { emitEvent: false });
   }
 
   formatDuration(minutes: number): string {
@@ -536,7 +537,7 @@ export class AppointmentFormComponent
   calculatePricing(): void {
     const dog = this.form.get('dog')?.value;
     const packages = this.form.get('packages')?.value || [];
-    const services = this.form.get('services')?.value || [];
+    const services = this.getExtraSelectedServices(packages);
 
     if (!dog) {
       this.priceCalculation = null;
@@ -655,6 +656,76 @@ export class AppointmentFormComponent
       normalizeList(currentActualPackages, packageById),
       { emitEvent: false },
     );
+
+    this.syncServicesWithSelectedPackages();
+  }
+
+  private computeIncludedServiceIds(packages: Package[]): Set<string> {
+    const ids = new Set<string>();
+    for (const pkg of packages) {
+      for (const svc of pkg?.services ?? []) {
+        if (svc?.id) {
+          ids.add(svc.id);
+        }
+      }
+    }
+    return ids;
+  }
+
+  private getExtraSelectedServices(packagesOverride?: Package[]): Service[] {
+    const packages =
+      packagesOverride ?? this.form.controls.packages.value ?? [];
+    const includedIds = this.computeIncludedServiceIds(packages);
+    const selectedServices = this.form.controls.services.value ?? [];
+    return selectedServices.filter(
+      (svc) => !svc?.id || !includedIds.has(svc.id),
+    );
+  }
+
+  private syncServicesWithSelectedPackages(): void {
+    if (this.isSyncingPackageServices) {
+      return;
+    }
+
+    this.isSyncingPackageServices = true;
+    try {
+      const selectedPackages = this.form.controls.packages.value ?? [];
+      const includedIds = this.computeIncludedServiceIds(selectedPackages);
+      this.includedServiceIds = includedIds;
+
+      const serviceById = new Map(
+        this.services.filter((s) => s?.id).map((s) => [s.id!, s]),
+      );
+
+      const includedServices = [...includedIds]
+        .map((id) => serviceById.get(id))
+        .filter((svc): svc is Service => Boolean(svc));
+
+      const selectedServices = this.form.controls.services.value ?? [];
+      const extraSelected = selectedServices.filter(
+        (svc) => !svc?.id || !includedIds.has(svc.id),
+      );
+
+      const deduped = new Map<string, Service>();
+      for (const svc of [...includedServices, ...extraSelected]) {
+        const key = svc?.id ?? svc?.name;
+        if (key) {
+          deduped.set(key, svc);
+        }
+      }
+
+      this.form.controls.services.setValue([...deduped.values()], {
+        emitEvent: false,
+      });
+    } finally {
+      this.isSyncingPackageServices = false;
+    }
+  }
+
+  private ensureIncludedServicesCannotBeRemoved(): void {
+    // If the user tries to unselect a service that belongs to a selected package,
+    // we re-add it immediately.
+    this.syncServicesWithSelectedPackages();
   }
 
   loadClients(): void {

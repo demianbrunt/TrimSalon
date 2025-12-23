@@ -5,7 +5,7 @@
         <button
           class="gradient-option"
           [class.active]="viewMode === option.value"
-          (click)="viewMode = option.value"
+          (click)="setViewMode(option.value)"
         >
           <i [class]="option.icon"></i>
           <span class="hidden md:inline ml-2">{{ option.label }}</span>
@@ -34,6 +34,7 @@
     @if (isMobile) {
       <p-dataView
         #dv
+        styleClass="mobile-card-list"
         [value]="visibleAppointments"
         [paginator]="true"
         [rows]="9"
@@ -84,6 +85,25 @@
                   [allowEmpty]="false"
                   ariaLabel="Filter afspraken"
                 ></p-selectButton>
+
+                <div class="flex gap-2 mt-2">
+                  <p-button
+                    label="Actief"
+                    [text]="showArchived"
+                    [outlined]="showArchived"
+                    [attr.aria-pressed]="!showArchived"
+                    (click)="setShowArchived(false)"
+                    size="small"
+                  ></p-button>
+                  <p-button
+                    label="Archief"
+                    [text]="!showArchived"
+                    [outlined]="!showArchived"
+                    [attr.aria-pressed]="showArchived"
+                    (click)="setShowArchived(true)"
+                    size="small"
+                  ></p-button>
+                </div>
               </div>
             </div>
           </div>
@@ -95,8 +115,8 @@
               <p-card
                 [styleClass]="
                   appointment.completed
-                    ? 'completed-appointment h-full'
-                    : 'h-full'
+                    ? 'mobile-card completed-appointment h-full'
+                    : 'mobile-card h-full'
                 "
               >
                 <ng-template pTemplate="header">
@@ -139,13 +159,6 @@
                   {{ appointment.startTime | date: "HH:mm" }} -
                   {{ appointment.endTime | date: "HH:mm" }}
                 </div>
-                @if (appointment.completed && appointment.actualEndTime) {
-                  <div class="text-sm text-primary mb-2">
-                    <i class="pi pi-check-circle mr-2"></i>
-                    Afgerond om
-                    {{ appointment.actualEndTime | date: "HH:mm" }}
-                  </div>
-                }
                 @if (
                   appointment.completed &&
                   appointment.actualPrice !== null &&
@@ -170,31 +183,41 @@
 
                 <ng-template pTemplate="footer">
                   <div class="flex justify-content-end gap-2">
-                    @if (!appointment.completed) {
+                    @if (appointment.deletedAt) {
                       <p-button
-                        icon="pi pi-check"
-                        severity="success"
+                        icon="pi pi-undo"
                         [text]="true"
                         [rounded]="true"
-                        (click)="completeAppointment(appointment)"
-                        pTooltip="Afronden"
+                        (click)="restoreAppointment(appointment)"
+                        pTooltip="Herstellen"
+                      ></p-button>
+                    } @else {
+                      @if (!appointment.completed) {
+                        <p-button
+                          icon="pi pi-check"
+                          severity="success"
+                          [text]="true"
+                          [rounded]="true"
+                          (click)="completeAppointment(appointment)"
+                          pTooltip="Afronden"
+                        ></p-button>
+                      }
+                      <p-button
+                        icon="pi pi-pencil"
+                        [text]="true"
+                        [rounded]="true"
+                        (click)="showAppointmentForm(appointment)"
+                        pTooltip="Bewerken"
+                      ></p-button>
+                      <p-button
+                        icon="pi pi-inbox"
+                        severity="danger"
+                        [text]="true"
+                        [rounded]="true"
+                        (click)="deleteAppointment(appointment)"
+                        pTooltip="Archiveren"
                       ></p-button>
                     }
-                    <p-button
-                      icon="pi pi-pencil"
-                      [text]="true"
-                      [rounded]="true"
-                      (click)="showAppointmentForm(appointment)"
-                      pTooltip="Bewerken"
-                    ></p-button>
-                    <p-button
-                      icon="pi pi-trash"
-                      severity="danger"
-                      [text]="true"
-                      [rounded]="true"
-                      (click)="deleteAppointment(appointment)"
-                      pTooltip="Verwijderen"
-                    ></p-button>
                   </div>
                 </ng-template>
               </p-card>
@@ -232,25 +255,45 @@
           >
             <ng-template pTemplate="caption">
               <div class="flex flex-column gap-2">
-                <div class="flex justify-content-between align-items-center">
-                  <app-table-header
-                    placeholder="Zoek afspraak"
-                    [table]="dt"
-                    (addClick)="showAppointmentForm()"
-                  ></app-table-header>
-                </div>
+                <app-table-header
+                  placeholder="Zoek afspraak"
+                  [table]="dt"
+                  (addClick)="showAppointmentForm()"
+                >
+                  <div
+                    header-actions
+                    class="flex flex-wrap gap-2 align-items-center"
+                  >
+                    <p-selectButton
+                      [options]="statusFilterOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      [ngModel]="statusFilter"
+                      (ngModelChange)="setStatusFilter($event)"
+                      [allowEmpty]="false"
+                      ariaLabel="Filter afspraken"
+                    ></p-selectButton>
 
-                <div class="flex flex-wrap gap-2 align-items-center">
-                  <p-selectButton
-                    [options]="statusFilterOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    [ngModel]="statusFilter"
-                    (ngModelChange)="setStatusFilter($event)"
-                    [allowEmpty]="false"
-                    ariaLabel="Filter afspraken"
-                  ></p-selectButton>
-                </div>
+                    <div class="flex gap-2">
+                      <p-button
+                        label="Actief"
+                        [text]="showArchived"
+                        [outlined]="showArchived"
+                        [attr.aria-pressed]="!showArchived"
+                        (click)="setShowArchived(false)"
+                        size="small"
+                      ></p-button>
+                      <p-button
+                        label="Archief"
+                        [text]="!showArchived"
+                        [outlined]="!showArchived"
+                        [attr.aria-pressed]="showArchived"
+                        (click)="setShowArchived(true)"
+                        size="small"
+                      ></p-button>
+                    </div>
+                  </div>
+                </app-table-header>
               </div>
             </ng-template>
             <ng-template pTemplate="header">
@@ -289,6 +332,14 @@
                       pTooltip="Agressief dier"
                     ></i>
                   }
+                  @if (appointment.completed) {
+                    <p-tag
+                      value="Afgerond"
+                      severity="success"
+                      [rounded]="true"
+                      styleClass="ml-2"
+                    ></p-tag>
+                  }
                 </td>
                 <td>
                   <div class="flex flex-wrap gap-1">
@@ -316,27 +367,36 @@
                 </td>
                 <td>
                   <div class="flex justify-content-end gap-2">
-                    @if (!appointment.completed) {
+                    @if (appointment.deletedAt) {
                       <p-button
-                        icon="pi pi-check"
-                        severity="success"
+                        icon="pi pi-undo"
                         styleClass="p-button-text p-button-rounded"
-                        (click)="completeAppointment(appointment)"
-                        pTooltip="Afronden"
+                        (click)="restoreAppointment(appointment)"
+                        pTooltip="Herstellen"
+                      ></p-button>
+                    } @else {
+                      @if (!appointment.completed) {
+                        <p-button
+                          icon="pi pi-check"
+                          severity="success"
+                          styleClass="p-button-text p-button-rounded"
+                          (click)="completeAppointment(appointment)"
+                          pTooltip="Afronden"
+                        ></p-button>
+                      }
+                      <p-button
+                        icon="pi pi-pencil"
+                        styleClass="p-button-text p-button-rounded"
+                        (click)="showAppointmentForm(appointment)"
+                        pTooltip="Bewerken"
+                      ></p-button>
+                      <p-button
+                        icon="pi pi-inbox"
+                        styleClass="p-button-text p-button-rounded p-button-danger"
+                        (click)="deleteAppointment(appointment)"
+                        pTooltip="Archiveren"
                       ></p-button>
                     }
-                    <p-button
-                      icon="pi pi-pencil"
-                      styleClass="p-button-text p-button-rounded"
-                      (click)="showAppointmentForm(appointment)"
-                      pTooltip="Bewerken"
-                    ></p-button>
-                    <p-button
-                      icon="pi pi-trash"
-                      styleClass="p-button-text p-button-rounded p-button-danger"
-                      (click)="deleteAppointment(appointment)"
-                      pTooltip="Verwijderen"
-                    ></p-button>
                   </div>
                 </td>
               </tr>

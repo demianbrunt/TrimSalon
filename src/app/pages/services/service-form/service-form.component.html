@@ -237,18 +237,18 @@
     <ng-template pTemplate="footer">
       <div class="flex justify-content-end gap-2 sticky-footer-actions">
         <p-button
-          label="Annuleren"
-          icon="pi pi-times"
-          styleClass="p-button-text"
-          (click)="cancel()"
-          type="button"
-        ></p-button>
-        <p-button
           label="Opslaan"
           icon="pi pi-check"
           (click)="submit()"
           [disabled]="form.invalid || isSaving"
           [loading]="isSaving"
+        ></p-button>
+        <p-button
+          label="Annuleren"
+          icon="pi pi-times"
+          styleClass="p-button-text"
+          (click)="cancel()"
+          type="button"
         ></p-button>
       </div>
     </ng-template>

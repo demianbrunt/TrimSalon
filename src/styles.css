@@ -47,6 +47,33 @@ body {
     width: 100% !important;
   }
 
+  /* Shared mobile list item styling (cards) */
+  .mobile-card {
+    border-radius: 0.75rem !important;
+    border: 1px solid var(--surface-border) !important;
+    background: var(--p-surface-0, var(--surface-card, #ffffff)) !important;
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.06),
+      0 8px 20px rgba(0, 0, 0, 0.06) !important;
+  }
+
+  /* Give stacked card lists a subtle contrasting backdrop to separate items */
+  .p-dataview.mobile-card-list .p-dataview-content {
+    background: var(--surface-ground) !important;
+    padding: 0.35rem !important;
+    padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .p-dataview.mobile-card-list .col-12.p-2 {
+    padding: 0.35rem !important;
+  }
+
+  /* Account for fixed mobile search header (app-table-header) when used */
+  .p-dataview.mobile-card-list.mobile-card-list--fixed-header
+    .p-dataview-content {
+    padding-top: 0.75rem !important;
+  }
+
   .responsive-card .p-card-body {
     padding: 1rem !important;
   }
@@ -127,7 +154,7 @@ body {
   /* Content padding for fixed header and paginator */
   .p-dataview-content {
     padding-top: 40px !important;
-    padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(env(safe-area-inset-bottom)) !important;
   }
 
   /* Style view toggle bar */
@@ -279,7 +306,7 @@ body::before {
 /* Mobile styles */
 @media (max-width: 768px) {
   .main-container {
-    padding-bottom: calc(75px + env(safe-area-inset-bottom));
+    padding-bottom: calc(env(safe-area-inset-bottom));
   }
 }
 

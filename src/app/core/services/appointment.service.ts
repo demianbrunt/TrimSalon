@@ -25,7 +25,11 @@ export class AppointmentService extends BaseService<Appointment> {
   }
 
   override delete(id: string): Observable<void> {
-    return super.delete(id).pipe(tap(() => this.triggerSync()));
+    return super.archive(id).pipe(tap(() => this.triggerSync()));
+  }
+
+  override restore(id: string): Observable<void> {
+    return super.restore(id).pipe(tap(() => this.triggerSync()));
   }
 
   private triggerSync() {

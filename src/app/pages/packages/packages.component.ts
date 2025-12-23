@@ -66,6 +66,8 @@ export class PackagesComponent implements OnInit {
   sortOrder = 1;
   scrollableHeight = '50vh';
 
+  showArchived = false;
+
   get isMobile() {
     return this.mobileService.isMobile;
   }
@@ -106,13 +108,28 @@ export class PackagesComponent implements OnInit {
   }
 
   loadPackages(): void {
-    this.packageService.getData$().subscribe((data) => (this.packages = data));
+    this.packageService
+      .getData$()
+      .subscribe(
+        (data) =>
+          (this.packages = data.filter((pkg) =>
+            this.showArchived ? !!pkg.deletedAt : !pkg.deletedAt,
+          )),
+      );
   }
 
   loadServices(): void {
     this.serviceService
       .getData$()
-      .subscribe((data) => (this.allServices = data));
+      .subscribe(
+        (data) => (this.allServices = data.filter((s) => !s.deletedAt)),
+      );
+  }
+
+  setShowArchived(show: boolean): void {
+    if (this.showArchived === show) return;
+    this.showArchived = show;
+    this.loadPackages();
   }
 
   showPackageForm(pkg?: Package): void {
@@ -126,14 +143,16 @@ export class PackagesComponent implements OnInit {
   deletePackage(pkg: Package): void {
     this.confirmationService
       .open(
-        'Bevestiging',
-        `Weet je zeker dat je <b>${pkg.name}</b> wilt verwijderen? Dit kan <u>niet</u> ongedaan worden gemaakt.`,
+        'Bevestiging Archiveren',
+        `Weet je zeker dat je <b>${pkg.name}</b> wilt archiveren? Je kunt dit later terugzetten vanuit het archief.`,
+        'Archiveren',
+        'Annuleren',
       )
       .then((confirmed) => {
         if (confirmed) {
           this.packageService.delete(pkg.id!).subscribe({
             next: () => {
-              this.toastrService.success('Succes', 'Pakket verwijderd');
+              this.toastrService.success('Succes', 'Pakket is gearchiveerd');
               this.loadPackages();
             },
             error: (err) => {
@@ -141,6 +160,29 @@ export class PackagesComponent implements OnInit {
             },
           });
         }
+      });
+  }
+
+  restorePackage(pkg: Package): void {
+    this.confirmationService
+      .open(
+        'Bevestiging Herstellen',
+        `Weet je zeker dat je <b>${pkg.name}</b> wilt herstellen?`,
+        'Herstellen',
+        'Annuleren',
+      )
+      .then((confirmed) => {
+        if (!confirmed) return;
+
+        this.packageService.restore(pkg.id!).subscribe({
+          next: () => {
+            this.toastrService.success('Succes', 'Pakket is hersteld');
+            this.loadPackages();
+          },
+          error: (err) => {
+            this.toastrService.error('Fout', err.message);
+          },
+        });
       });
   }
 

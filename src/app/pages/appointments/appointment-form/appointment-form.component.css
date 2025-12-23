@@ -35,6 +35,10 @@
     margin-bottom: 1rem;
   }
 
+  .appointment-form .sticky-footer-actions {
+    align-items: center;
+  }
+
   .form-section h3 {
     font-size: 1.1rem;
   }
@@ -60,6 +64,32 @@
 /* Enhanced dropdown and multiselect styling */
 .appointment-form .formgrid.grid {
   row-gap: 0.75rem;
+}
+
+/* Prevent PrimeNG inputs (notably datepickers) from overflowing grid columns */
+.appointment-form .formgrid.grid > .field {
+  min-width: 0;
+}
+
+.appointment-form :ng-deep .p-datepicker {
+  width: 100%;
+  max-width: 100%;
+}
+
+.appointment-form :ng-deep .p-datepicker .p-inputtext {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.appointment-form .formgrid.grid .field {
+  min-width: 0;
+}
+
+.appointment-form :ng-deep .p-datepicker,
+.appointment-form :ng-deep .p-datepicker .p-inputtext {
+  width: 100%;
+  max-width: 100%;
 }
 
 .appointment-form .appointment-form__readonly-input {
@@ -90,14 +120,30 @@
   margin-bottom: 0.5rem;
 }
 
+.appointment-form .sticky-footer-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.appointment-form .sticky-footer-actions__left {
+  justify-self: start;
+}
+
+.appointment-form .sticky-footer-actions__center {
+  justify-self: center;
+}
+
+.appointment-form .sticky-footer-actions__right {
+  justify-self: end;
+}
+
 @media (max-width: 480px) {
   .appointment-form .sticky-footer-actions {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   }
 
   .appointment-form .sticky-footer-actions :ng-deep .p-button {
-    width: 100%;
     justify-content: center;
   }
 }

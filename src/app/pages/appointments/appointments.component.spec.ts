@@ -9,6 +9,7 @@ import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Subject, of } from 'rxjs';
 import { TOAST_TITLE } from '../../core/constants/toast-titles';
 import { DEFAULT_APP_SETTINGS } from '../../core/models/app-settings.model';
+import { APPOINTMENT_STATUS } from '../../core/models/appointment-status';
 import { Appointment } from '../../core/models/appointment.model';
 import { Invoice, PaymentStatus } from '../../core/models/invoice.model';
 import { AppDialogService } from '../../core/services/app-dialog.service';
@@ -115,6 +116,18 @@ describe('AppointmentsComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should show a completed indicator in the desktop table', () => {
+    component.appointments = [{ ...appointment, completed: true }];
+    component.statusFilter = APPOINTMENT_STATUS.all;
+    fixture.detectChanges();
+
+    const dogCell = fixture.nativeElement.querySelector(
+      'p-table tbody tr td:nth-child(2)',
+    ) as HTMLElement | null;
+
+    expect(dogCell?.textContent).toContain('Afgerond');
   });
 
   it('should create invoice as PAID when completing appointment as paid', fakeAsync(() => {

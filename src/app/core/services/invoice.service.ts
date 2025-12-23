@@ -12,6 +12,10 @@ export class InvoiceService extends BaseService<Invoice> {
     super(FIRESTORE_COLLECTION.invoices);
   }
 
+  override delete(id: string): Observable<void> {
+    return this.archive(id);
+  }
+
   getInvoicesForAppointment$(appointmentId: string): Observable<Invoice[]> {
     return this.getData$().pipe(
       map((invoices) =>
