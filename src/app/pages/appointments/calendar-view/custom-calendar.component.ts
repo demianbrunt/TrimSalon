@@ -105,7 +105,6 @@ export class CustomCalendarComponent implements AfterViewInit {
   selectedDate = signal(new Date());
   currentTime = signal(new Date()); // Signal for current time updates
 
-  swipeTransition = signal<'left' | 'right' | null>(null);
   swipeIndicator = signal<'left' | 'right' | null>(null);
 
   swipeIndicatorLabel = computed(() => {
@@ -422,7 +421,6 @@ export class CustomCalendarComponent implements AfterViewInit {
   }
 
   handleSwipe(direction: 'left' | 'right'): void {
-    this.swipeTransition.set(direction);
     this.swipeIndicator.set(direction);
 
     if (direction === 'left') {
@@ -431,7 +429,6 @@ export class CustomCalendarComponent implements AfterViewInit {
       this.previousPeriod();
     }
 
-    window.setTimeout(() => this.swipeTransition.set(null), 220);
     window.setTimeout(() => this.swipeIndicator.set(null), 800);
   }
 

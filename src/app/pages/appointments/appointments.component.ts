@@ -106,7 +106,7 @@ export class AppointmentsComponent implements OnInit {
   appointments: Appointment[] = [];
   // PrimeNG sorting is still available in the desktop table, but we apply a
   // sensible default ordering for the initial render (and for mobile DataView).
-  sortField = 'startTime';
+  sortField: string | undefined = 'startTime';
   sortOrder = 1;
   isInitialized = false;
 
@@ -275,6 +275,8 @@ export class AppointmentsComponent implements OnInit {
     this.page = 1;
     this.updateListQueryParams();
 
+    this.updateDefaultSort();
+
     this.loadAppointments();
   }
 
@@ -283,6 +285,9 @@ export class AppointmentsComponent implements OnInit {
     this.showArchived = show;
     this.page = 1;
     this.updateListQueryParams();
+
+    this.updateDefaultSort();
+
     this.loadAppointments();
   }
 
@@ -586,7 +591,7 @@ export class AppointmentsComponent implements OnInit {
           : items;
 
     // Always return a new array so PrimeNG change detection stays predictable.
-    return [...filtered].sort((a, b) => this.compareAppointments(a, b));
+    return [...filtered].sort((a, b) => this.compareAppointmentsForList(a, b));
   }
 
   setStatusFilter(value: unknown, opts?: { skipUrlUpdate?: boolean }): void {
@@ -609,12 +614,7 @@ export class AppointmentsComponent implements OnInit {
     ) {
       this.statusFilter = nextValue as AppointmentStatus;
 
-      // Update sort order based on filter
-      if (this.statusFilter === APPOINTMENT_STATUS.completed) {
-        this.sortOrder = -1; // Descending (Newest first)
-      } else {
-        this.sortOrder = 1; // Ascending (Oldest/Closest first)
-      }
+      this.updateDefaultSort();
 
       if (!opts?.skipUrlUpdate) {
         this.page = 1;
@@ -624,11 +624,68 @@ export class AppointmentsComponent implements OnInit {
     }
   }
 
-  private compareAppointments(a: Appointment, b: Appointment): number {
-    // Sort based on the current sortOrder (which is set by the filter)
-    // 1 = Ascending (Oldest -> Newest)
-    // -1 = Descending (Newest -> Oldest)
-    return this.compareDateAsc(a.startTime, b.startTime) * this.sortOrder;
+  private updateDefaultSort(): void {
+    if (this.viewMode !== 'list') {
+      return;
+    }
+
+    // In archived view, “recent eerst” is almost always what you want.
+    if (this.showArchived) {
+      this.sortField = 'startTime';
+      this.sortOrder = -1;
+      return;
+    }
+
+    // Completed: most recent first.
+    if (this.statusFilter === APPOINTMENT_STATUS.completed) {
+      this.sortField = 'startTime';
+      this.sortOrder = -1;
+      return;
+    }
+
+    // All: show upcoming first, then past (most recent past first).
+    // PrimeNG's initial sort can't express this split; we provide the order
+    // via `visibleAppointments` and leave initial sort unset.
+    if (this.statusFilter === APPOINTMENT_STATUS.all) {
+      this.sortField = undefined;
+      this.sortOrder = 1;
+      return;
+    }
+
+    // Open: upcoming/soonest first.
+    this.sortField = 'startTime';
+    this.sortOrder = 1;
+  }
+
+  private compareAppointmentsForList(a: Appointment, b: Appointment): number {
+    const now = Date.now();
+
+    const at = a.startTime
+      ? new Date(a.startTime).getTime()
+      : Number.POSITIVE_INFINITY;
+    const bt = b.startTime
+      ? new Date(b.startTime).getTime()
+      : Number.POSITIVE_INFINITY;
+
+    // Archived list: “recent naar oud”.
+    if (this.showArchived) {
+      return bt - at;
+    }
+
+    // All: upcoming first (soonest -> latest), then past (most recent -> oldest).
+    if (this.statusFilter === APPOINTMENT_STATUS.all) {
+      const aUpcoming = at >= now;
+      const bUpcoming = bt >= now;
+
+      if (aUpcoming !== bUpcoming) {
+        return aUpcoming ? -1 : 1;
+      }
+
+      return aUpcoming ? at - bt : bt - at;
+    }
+
+    // Otherwise keep the simple asc/desc based on the current default.
+    return (at - bt) * this.sortOrder;
   }
 
   private compareDateAsc(a?: Date, b?: Date): number {

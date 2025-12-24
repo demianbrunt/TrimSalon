@@ -136,12 +136,38 @@ export class App {
       });
 
     if (this.swUpdate.isEnabled) {
-      // Check for updates every minute
-      setInterval(() => {
+      let lastCheckAtMs = 0;
+      const minCheckIntervalMs = 10_000;
+
+      const checkForUpdate = () => {
+        const now = Date.now();
+        if (now - lastCheckAtMs < minCheckIntervalMs) {
+          return;
+        }
+        lastCheckAtMs = now;
+
         this.swUpdate
           .checkForUpdate()
           .catch((err) => console.error('Error checking for update', err));
-      }, 60 * 1000);
+      };
+
+      // Check immediately on startup.
+      checkForUpdate();
+
+      // When the PWA is reopened or the tab becomes active again, check immediately.
+      window.addEventListener('focus', checkForUpdate, { passive: true });
+      document.addEventListener(
+        'visibilitychange',
+        () => {
+          if (document.visibilityState === 'visible') {
+            checkForUpdate();
+          }
+        },
+        { passive: true },
+      );
+
+      // Periodic check as a fallback.
+      setInterval(checkForUpdate, 60 * 1000);
 
       this.swUpdate.versionUpdates
         .pipe(

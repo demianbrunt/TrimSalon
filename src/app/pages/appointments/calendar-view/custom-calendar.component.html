@@ -1,8 +1,11 @@
 <div
   class="calendar-wrapper"
-  appSwipe
+  appSwipe=""
   (swipeLeft)="handleSwipe('left')"
   (swipeRight)="handleSwipe('right')"
+  (touchstart)="$event.stopPropagation()"
+  (touchmove)="$event.stopPropagation()"
+  (touchend)="$event.stopPropagation()"
 >
   <div
     class="swipe-indicator"
@@ -93,11 +96,7 @@
 
     <div
       class="calendar-scroll"
-      [class.calendar-scroll--swipe-left]="swipeTransition() === 'left'"
-      [class.calendar-scroll--swipe-right]="swipeTransition() === 'right'"
       [class.calendar-scroll--outer-scroll]="viewMode() === 'month'"
-      (touchstart)="$event.stopPropagation()"
-      (touchmove)="$event.stopPropagation()"
     >
       <!-- Week View -->
       @if (viewMode() === "week") {
