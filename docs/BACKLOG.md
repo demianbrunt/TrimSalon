@@ -1,5 +1,7 @@
 # TrimSalon - Backlog
 
+> ℹ️ **Let op (2025-12-24):** De focus is verschoven naar **Firebase Genkit (GenAI)** en **SEO/Analytics**. Items die daar niet aan bijdragen staan onder **Archief / parkeren**.
+
 ## ✅ Fase 1: Critical Fixes (DONE)
 
 - [x] Fix alle `*ngIf` → `@if` compiler errors (6 templates)
@@ -188,6 +190,37 @@
 - [x] Geen XSS kwetsbaarheden gevonden (geen innerHTML gebruik)
 - [ ] Input sanitization checken
 - [ ] CORS configuratie verifiëren
+
+---
+
+## ⭐ Focus (nu): GenAI (Genkit) + SEO/Analytics
+
+### GenAI (Firebase Genkit)
+
+- [ ] Genkit integratie in `functions/` (1 simpele flow, server-side)
+- [ ] Feature flag / settings toggle voor GenAI features
+- [ ] Input/PII minimalisatie + rate limiting / abuse prevention
+
+### SEO (Angular)
+
+- [x] Indexering geblokkeerd (noindex meta + robots.txt) voor WIP publicatie
+- [ ] Route-level titles + meta descriptions (publieke routes)
+- [ ] Robots/sitemap strategie bepalen (publiek vs achter login)
+- [ ] Overweeg prerender/SSR alleen als er publieke landing pages zijn
+
+### Analytics (privacyvriendelijk)
+
+- [ ] Meetplan: welke events/metrics zijn echt nuttig
+- [ ] Implementatiekeuze: cookieless/no-identifiers (liefst zonder banner)
+- [ ] Privacy policy/verklaring aanvullen met analytics uitleg
+
+---
+
+## 🗄️ Archief / parkeren (niet actief)
+
+- Verbeterplan Google Calendar sync / two-way sync
+- Tablet mode & time logging
+- KPI dashboarding (€60/u target)
 
 ---
 

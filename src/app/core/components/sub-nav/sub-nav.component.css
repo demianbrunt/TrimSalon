@@ -42,10 +42,10 @@
   .sub-nav-container {
     flex-direction: column;
     width: 80px;
-    height: calc(100vh - var(--top-nav-height, 70px));
+    height: calc(100vh - var(--top-nav-height, 80px));
     position: fixed;
     left: 0;
-    top: var(--top-nav-height, 70px);
+    top: var(--top-nav-height, 80px);
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
     padding-top: 2rem;
     padding-bottom: 2rem;

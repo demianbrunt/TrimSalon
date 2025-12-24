@@ -47,6 +47,9 @@ import { ToastrService } from './toastr.service';
  */
 @Injectable({ providedIn: 'root' })
 export class AuthenticationService {
+  private static readonly ADMIN_HISTORY_STORAGE_KEY =
+    'trimsalon_admin_ever_logged_in_v1';
+
   private readonly auth: Auth = inject(Auth);
   private readonly firestore: Firestore = inject(Firestore);
   private readonly config: AppConfig = inject(APP_CONFIG);
@@ -57,6 +60,11 @@ export class AuthenticationService {
 
   private readonly _isSigningIn = signal(false);
   private readonly _isSigningOut = signal(false);
+
+  private readonly _adminEverLoggedIn = signal(this.readAdminHistory());
+  adminEverLoggedIn = computed(() =>
+    this.config.devMode ? true : this._adminEverLoggedIn(),
+  );
 
   isSigningIn = this._isSigningIn.asReadonly();
   isSigningOut = this._isSigningOut.asReadonly();
@@ -221,6 +229,8 @@ export class AuthenticationService {
       return false;
     }
 
+    this.markAdminHistory();
+
     const uid = result.user?.uid;
     if (!uid) {
       this.toastr.error('Geen gebruikers-ID gevonden', 'Inloggen mislukt');
@@ -251,6 +261,39 @@ export class AuthenticationService {
     this.router.navigate([returnUrl]);
 
     return true;
+  }
+
+  private readAdminHistory(): boolean {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    try {
+      return (
+        window.localStorage.getItem(
+          AuthenticationService.ADMIN_HISTORY_STORAGE_KEY,
+        ) === '1'
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  private markAdminHistory(): void {
+    this._adminEverLoggedIn.set(true);
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(
+        AuthenticationService.ADMIN_HISTORY_STORAGE_KEY,
+        '1',
+      );
+    } catch {
+      // Ignore storage errors (private mode / blocked storage)
+    }
   }
 
   async signOut(): Promise<void> {

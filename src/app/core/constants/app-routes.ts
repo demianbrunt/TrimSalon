@@ -1,26 +1,26 @@
 export const APP_ROUTE = {
-  appointments: '/appointments',
-  appointmentsNew: '/appointments/new',
+  appointments: '/admin/appointments',
+  appointmentsNew: '/admin/appointments/new',
 
-  clients: '/clients',
-  clientsNew: '/clients/new',
+  clients: '/admin/clients',
+  clientsNew: '/admin/clients/new',
 
-  expenses: '/expenses',
-  expensesNew: '/expenses/new',
+  expenses: '/admin/expenses',
+  expensesNew: '/admin/expenses/new',
 
-  invoices: '/invoices',
-  invoicesNew: '/invoices/new',
+  invoices: '/admin/invoices',
+  invoicesNew: '/admin/invoices/new',
 
-  packages: '/packages',
-  packagesNew: '/packages/new',
+  packages: '/admin/packages',
+  packagesNew: '/admin/packages/new',
 
-  services: '/services',
-  servicesNew: '/services/new',
+  services: '/admin/services',
+  servicesNew: '/admin/services/new',
 
-  settings: '/settings',
+  settings: '/admin/settings',
 
-  signin: '/signin',
-  signedOut: '/signedout',
-  forbidden: '/forbidden',
-  notFound: '/not-found',
+  signin: '/admin/signin',
+  signedOut: '/admin/signedout',
+  forbidden: '/admin/forbidden',
+  notFound: '/admin/not-found',
 } as const;

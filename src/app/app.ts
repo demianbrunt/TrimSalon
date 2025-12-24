@@ -7,7 +7,7 @@ import {
 } from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -92,13 +92,17 @@ import { MobileService } from './core/services/mobile.service';
       [preventOpenDuplicates]="true"
     />
 
-    <div class="main-container">
-      @if (authService.isAuthenticated()) {
-        <app-top-nav></app-top-nav>
+    <a class="sr-only skip-link" href="#app-maincontent"
+      >Skip naar hoofdinhoud</a
+    >
+
+    <div class="main-container" [class.admin-layout]="showAdminChrome()">
+      <app-top-nav></app-top-nav>
+      @if (showAdminChrome()) {
         <app-sub-nav></app-sub-nav>
         <app-breadcrumb></app-breadcrumb>
       }
-      <div class="content-outlet">
+      <div class="content-outlet" id="app-maincontent" tabindex="-1">
         <div
           class="route-animation-host"
           [@routeAnimations]="{
@@ -120,8 +124,17 @@ export class App {
   readonly authService = inject(AuthenticationService);
   readonly MobileService = inject(MobileService);
   readonly swUpdate = inject(SwUpdate);
+  private readonly router = inject(Router);
+
+  private currentUrl = this.router.url;
 
   constructor() {
+    this.router.events
+      .pipe(filter((evt): evt is NavigationEnd => evt instanceof NavigationEnd))
+      .subscribe((evt) => {
+        this.currentUrl = evt.urlAfterRedirects;
+      });
+
     if (this.swUpdate.isEnabled) {
       // Check for updates every minute
       setInterval(() => {
@@ -154,5 +167,15 @@ export class App {
 
   get isMobile() {
     return this.MobileService.isMobile;
+  }
+
+  showAdminChrome(): boolean {
+    return this.authService.isAuthenticated() && this.isAdminRoute();
+  }
+
+  private isAdminRoute(): boolean {
+    return (
+      this.currentUrl === '/admin' || this.currentUrl.startsWith('/admin/')
+    );
   }
 }

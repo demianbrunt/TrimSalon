@@ -1,69 +1,272 @@
 <div class="md:p-4">
-  <p-card styleClass="responsive-card mx-auto w-full max-w-4xl">
-    <ng-template pTemplate="header">
-      <div class="p-3 md:p-4">
-        <h2 class="text-xl md:text-2xl font-bold">Instellingen</h2>
+  @if (isCompactLayout()) {
+    <p-tabs
+      [value]="activeTab()"
+      (valueChange)="onTabChange($event)"
+      styleClass="settings-tabs mx-auto w-full max-w-4xl"
+    >
+      <p-tablist>
+        <p-tab value="general">Algemeen</p-tab>
+        <p-tab value="breeds">Rassen</p-tab>
+      </p-tablist>
+      <p-tabpanels>
+        <p-tabpanel value="general">
+          <ng-container *ngTemplateOutlet="generalSettings"></ng-container>
+        </p-tabpanel>
+        <p-tabpanel value="breeds">
+          <ng-container *ngTemplateOutlet="breedSettings"></ng-container>
+        </p-tabpanel>
+      </p-tabpanels>
+    </p-tabs>
+  } @else {
+    <div class="mx-auto w-full max-w-4xl">
+      <ng-container *ngTemplateOutlet="generalSettings"></ng-container>
+      <div class="mt-4">
+        <ng-container *ngTemplateOutlet="breedSettings"></ng-container>
       </div>
-    </ng-template>
+    </div>
+  }
 
-    <form [formGroup]="form" class="form-content-wrapper" (ngSubmit)="save()">
-      <div class="grid">
-        <div class="col-12">
-          <div class="flex align-items-center gap-2">
-            <p-checkbox
-              inputId="korEnabled"
-              formControlName="korEnabled"
-              [binary]="true"
-            ></p-checkbox>
-            <label for="korEnabled" class="m-0">
-              KOR (geen BTW berekenen)
+  <ng-template #generalSettings>
+    <p-card styleClass="responsive-card w-full">
+      <ng-template pTemplate="header">
+        <div class="px-3 pt-3">
+          <h3 class="text-lg md:text-xl font-bold m-0">Instellingen</h3>
+        </div>
+      </ng-template>
+
+      <form [formGroup]="form" class="form-content-wrapper" (ngSubmit)="save()">
+        <div class="grid">
+          <div class="col-12">
+            <div class="flex align-items-center gap-2">
+              <p-checkbox
+                inputId="korEnabled"
+                formControlName="korEnabled"
+                [binary]="true"
+              ></p-checkbox>
+              <label for="korEnabled" class="m-0">
+                KOR (geen BTW berekenen)
+              </label>
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <label for="defaultVatRate" class="block mb-2"
+              >Standaard BTW (%)</label
+            >
+            <p-inputNumber
+              id="defaultVatRate"
+              formControlName="defaultVatRate"
+              [min]="0"
+              [max]="100"
+              suffix="%"
+              class="w-full"
+              aria-describedby="defaultVatHelp"
+            ></p-inputNumber>
+            <small id="defaultVatHelp" class="text-600">
+              Wordt gebruikt bij nieuwe facturen.
+            </small>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <label for="targetHourlyRate" class="block mb-2">
+              Doel uurtarief (€/uur)
             </label>
+            <p-inputNumber
+              id="targetHourlyRate"
+              formControlName="targetHourlyRate"
+              mode="currency"
+              currency="EUR"
+              locale="nl-NL"
+              class="w-full"
+              [minFractionDigits]="0"
+              [maxFractionDigits]="2"
+            ></p-inputNumber>
           </div>
         </div>
 
+        <div class="flex justify-content-end gap-2 mt-4 sticky-footer-actions">
+          <p-button
+            label="Opslaan"
+            icon="pi pi-check"
+            type="submit"
+            [loading]="isSaving"
+            [disabled]="!form.dirty"
+          ></p-button>
+          <p-button
+            label="Annuleren"
+            icon="pi pi-undo"
+            [outlined]="true"
+            styleClass="p-button-text"
+            (click)="cancel()"
+            type="button"
+          ></p-button>
+        </div>
+      </form>
+    </p-card>
+  </ng-template>
+
+  <ng-template #breedSettings>
+    <p-card styleClass="responsive-card w-full">
+      <ng-template pTemplate="header">
+        <div class="px-3 pt-3">
+          <h3 class="text-lg md:text-xl font-bold m-0">Rassen</h3>
+          <p class="mt-1 mb-0 text-color-secondary text-sm">
+            Zet rassen aan/uit voor de voorpagina en kies de standaard grootte.
+          </p>
+        </div>
+      </ng-template>
+
+      <div class="breed-settings form-content-wrapper">
+        <!-- <div class="grid align-items-end">
         <div class="col-12 md:col-6">
-          <label for="defaultVatRate" class="block mb-2"
-            >Standaard BTW (%)</label
+          <label for="newBreedName" class="block mb-1">Nieuw ras</label>
+          <input
+            id="newBreedName"
+            pInputText
+            class="w-full p-inputtext-sm"
+            [formControl]="addBreedForm.controls.name"
+            autocomplete="off"
+          />
+        </div>
+        <div class="col-12 md:col-3">
+          <label for="newBreedSize" class="block mb-1">Grootte</label>
+          <p-select
+            inputId="newBreedSize"
+            [options]="breedSizeOptions"
+            optionLabel="label"
+            optionValue="value"
+            [formControl]="addBreedForm.controls.size"
+            styleClass="w-full p-inputtext-sm"
+            appendTo="body"
+          ></p-select>
+        </div>
+        <div class="col-12 md:col-3">
+          <p-button
+            label="Toevoegen"
+            icon="pi pi-plus"
+            size="small"
+            type="button"
+            class="w-full"
+            (click)="addBreed()"
+          ></p-button>
+        </div>
+      </div> -->
+
+        <div class="mt-2">
+          <label for="breedFilter" class="block mb-1">Zoeken</label>
+          <input
+            id="breedFilter"
+            pInputText
+            class="p-inputtext-sm w-full"
+            [(ngModel)]="breedFilter"
+            placeholder="Zoek op rasnaam"
+            aria-label="Zoeken op rasnaam"
+          />
+        </div>
+
+        <div class="breed-table-scroll mt-2">
+          <p-table
+            class="breed-table"
+            [value]="filteredBreeds"
+            [loading]="isBreedsLoading"
+            [paginator]="true"
+            [rows]="10"
+            currentPageReportTemplate="{first}-{last} van {totalRecords}"
+            [rowTrackBy]="trackByBreedId"
+            responsiveLayout="scroll"
+            [scrollable]="isCompactLayout()"
+            [scrollHeight]="isCompactLayout() ? 'flex' : undefined"
           >
-          <p-inputNumber
-            id="defaultVatRate"
-            formControlName="defaultVatRate"
-            [min]="0"
-            [max]="100"
-            suffix="%"
-            class="w-full"
-            aria-describedby="defaultVatHelp"
-          ></p-inputNumber>
-          <small id="defaultVatHelp" class="text-600">
-            Wordt gebruikt bij nieuwe facturen.
-          </small>
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Ras</th>
+                <th style="width: 11rem">Grootte</th>
+                <th style="width: 9rem">Status</th>
+                <th style="width: 9rem">Actie</th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-breed>
+              <tr>
+                <td>{{ breed.name }}</td>
+                <td>
+                  <p-select
+                    [options]="breedSizeOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    size="small"
+                    [ngModel]="draftBreedSize(breed)"
+                    (onChange)="setDraftBreedSize(breed, $event.value)"
+                    styleClass="w-full p-inputtext-sm"
+                    appendTo="body"
+                    aria-label="Standaard grootte"
+                    [disabled]="!breed.id || isBreedsSaving"
+                  ></p-select>
+                </td>
+                <td>
+                  @if (!isBreedAccepted(breed)) {
+                    <span class="text-color-secondary">Niet knippen</span>
+                  } @else {
+                    <span class="text-green-600 font-medium">Actief</span>
+                  }
+                </td>
+                <td>
+                  @if (!isBreedAccepted(breed)) {
+                    <p-button
+                      label="Aan"
+                      icon="pi pi-check"
+                      size="small"
+                      type="button"
+                      [disabled]="!breed.id || isBreedsSaving"
+                      (click)="toggleDraftBreedAccepted(breed)"
+                    ></p-button>
+                  } @else {
+                    <p-button
+                      label="Uit"
+                      icon="pi pi-times"
+                      severity="secondary"
+                      size="small"
+                      type="button"
+                      [disabled]="!breed.id || isBreedsSaving"
+                      (click)="toggleDraftBreedAccepted(breed)"
+                    ></p-button>
+                  }
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="4" class="text-center text-color-secondary p-4">
+                  Geen rassen gevonden.
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
         </div>
 
-        <div class="col-12 md:col-6">
-          <label for="targetHourlyRate" class="block mb-2">
-            Doel uurtarief (€/uur)
-          </label>
-          <p-inputNumber
-            id="targetHourlyRate"
-            formControlName="targetHourlyRate"
-            mode="currency"
-            currency="EUR"
-            locale="nl-NL"
-            class="w-full"
-            [minFractionDigits]="0"
-            [maxFractionDigits]="2"
-          ></p-inputNumber>
+        <div
+          class="flex justify-content-end gap-2 mt-3 sticky-footer-actions sticky-footer-actions--above-paginator"
+        >
+          <p-button
+            label="Opslaan"
+            icon="pi pi-check"
+            type="button"
+            [loading]="isBreedsSaving"
+            [disabled]="!hasBreedChanges || isBreedsSaving"
+            (click)="saveBreedChanges()"
+          ></p-button>
+          <p-button
+            label="Annuleren"
+            icon="pi pi-undo"
+            styleClass="p-button-text"
+            [outlined]="true"
+            type="button"
+            (click)="cancelBreedChanges()"
+          ></p-button>
         </div>
       </div>
-
-      <div class="flex justify-content-end gap-2 mt-4 sticky-footer-actions">
-        <p-button
-          label="Opslaan"
-          icon="pi pi-check"
-          type="submit"
-          [loading]="isSaving"
-        ></p-button>
-      </div>
-    </form>
-  </p-card>
+    </p-card>
+  </ng-template>
 </div>

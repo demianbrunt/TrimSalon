@@ -1,5 +1,7 @@
 import { inject, isDevMode } from '@angular/core';
 import {
+  CollectionReference,
+  DocumentData,
   Firestore,
   Timestamp,
   addDoc,
@@ -9,14 +11,16 @@ import {
   deleteField,
   doc,
   docData,
+  query,
   updateDoc,
+  where,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export abstract class BaseService<T extends { id?: string }> {
   protected firestore = inject(Firestore);
-  protected collection;
+  protected collection: CollectionReference<DocumentData>;
   private readonly debug = isDevMode();
 
   constructor(collectionName: string) {
@@ -106,11 +110,11 @@ export abstract class BaseService<T extends { id?: string }> {
    * This relies on the convention: documents may have a `deletedAt` field.
    */
   getActive$(): Observable<T[]> {
-    return this.getData$().pipe(
-      map((items) =>
-        items.filter((i) => !(i as { deletedAt?: unknown }).deletedAt),
-      ),
-    );
+    const activeQuery = query(this.collection, where('deletedAt', '==', null));
+
+    return collectionData(activeQuery, { idField: 'id' }).pipe(
+      map((items) => items.map((item) => this.convertTimestamps(item) as T)),
+    ) as Observable<T[]>;
   }
 
   /**

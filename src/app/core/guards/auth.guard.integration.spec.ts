@@ -35,22 +35,27 @@ describe('authGuard (integration)', () => {
       providers: [
         provideRouter([
           {
-            path: 'clients',
-            component: ClientsStubComponent,
-            canActivate: [authGuard],
+            path: 'admin',
+            children: [
+              {
+                path: 'clients',
+                component: ClientsStubComponent,
+                canActivate: [authGuard],
+              },
+              { path: 'signin', component: SigninStubComponent },
+              { path: 'forbidden', component: ForbiddenStubComponent },
+            ],
           },
-          { path: 'signin', component: SigninStubComponent },
-          { path: 'forbidden', component: ForbiddenStubComponent },
         ]),
         { provide: AuthenticationService, useValue: mockAuthService },
       ],
     }).compileComponents();
 
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/clients');
+    await harness.navigateByUrl('/admin/clients');
 
     const router = TestBed.inject(Router);
-    expect(router.url).toBe('/clients');
+    expect(router.url).toBe('/admin/clients');
   });
 
   it('redirects to /forbidden when navigating to a guarded route while authenticated but not allowed', async () => {
@@ -63,22 +68,27 @@ describe('authGuard (integration)', () => {
       providers: [
         provideRouter([
           {
-            path: 'clients',
-            component: ClientsStubComponent,
-            canActivate: [authGuard],
+            path: 'admin',
+            children: [
+              {
+                path: 'clients',
+                component: ClientsStubComponent,
+                canActivate: [authGuard],
+              },
+              { path: 'signin', component: SigninStubComponent },
+              { path: 'forbidden', component: ForbiddenStubComponent },
+            ],
           },
-          { path: 'signin', component: SigninStubComponent },
-          { path: 'forbidden', component: ForbiddenStubComponent },
         ]),
         { provide: AuthenticationService, useValue: mockAuthService },
       ],
     }).compileComponents();
 
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/clients');
+    await harness.navigateByUrl('/admin/clients');
 
     const router = TestBed.inject(Router);
-    expect(router.url).toBe('/forbidden');
+    expect(router.url).toBe('/admin/forbidden');
   });
 
   it('redirects to /signin with returnUrl when navigating to a guarded route while unauthenticated', async () => {
@@ -91,21 +101,26 @@ describe('authGuard (integration)', () => {
       providers: [
         provideRouter([
           {
-            path: 'clients',
-            component: ClientsStubComponent,
-            canActivate: [authGuard],
+            path: 'admin',
+            children: [
+              {
+                path: 'clients',
+                component: ClientsStubComponent,
+                canActivate: [authGuard],
+              },
+              { path: 'signin', component: SigninStubComponent },
+              { path: 'forbidden', component: ForbiddenStubComponent },
+            ],
           },
-          { path: 'signin', component: SigninStubComponent },
-          { path: 'forbidden', component: ForbiddenStubComponent },
         ]),
         { provide: AuthenticationService, useValue: mockAuthService },
       ],
     }).compileComponents();
 
     const harness = await RouterTestingHarness.create();
-    await harness.navigateByUrl('/clients');
+    await harness.navigateByUrl('/admin/clients');
 
     const router = TestBed.inject(Router);
-    expect(router.url).toBe('/signin?returnUrl=%2Fclients');
+    expect(router.url).toBe('/admin/signin?returnUrl=%2Fadmin%2Fclients');
   });
 });

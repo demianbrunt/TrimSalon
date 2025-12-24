@@ -24,7 +24,7 @@ import { AuthenticationService } from '../../core/services/authentication.servic
     <p-button
       label="Inloggen"
       icon="pi pi-home"
-      (onClick)="router.navigate(['/signin'])"
+      (onClick)="router.navigate(['/admin/signin'])"
       size="large"
     ></p-button>
   </div>`,

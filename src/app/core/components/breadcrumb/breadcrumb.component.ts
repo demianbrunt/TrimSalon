@@ -29,7 +29,7 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
 })
 export class BreadcrumbComponent implements OnInit {
   items: MenuItem[] = [];
-  home: MenuItem = { icon: 'pi pi-home', routerLink: '/appointments' };
+  home: MenuItem = { icon: 'pi pi-home', routerLink: '/admin/appointments' };
 
   private readonly breadcrumbService = inject(BreadcrumbService);
 

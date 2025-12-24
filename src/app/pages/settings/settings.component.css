@@ -2,14 +2,54 @@
   display: block;
 }
 
-@media (max-width: 480px) {
-  .sticky-footer-actions {
-    flex-direction: column;
-    align-items: stretch;
+:host ::ng-deep .settings-tabs .p-tabpanels {
+  padding: 0;
+}
+
+:host ::ng-deep .breed-table .p-datatable-thead > tr > th {
+  padding: 0.5rem 0.5rem;
+}
+
+:host ::ng-deep .breed-table .p-datatable-tbody > tr > td {
+  padding: 0.4rem 0.5rem;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .breed-table .p-button.p-button-sm {
+  padding: 0.35rem 0.6rem;
+}
+
+.p-card-body {
+  padding: 0 !important;
+}
+
+.p-tabpanels {
+  padding: 0 !important;
+}
+
+@media (max-width: 900px) {
+  /*
+    The global `.form-content-wrapper` adds large bottom padding on mobile to
+    keep content clear of fixed footers/paginators.
+    For the Breeds screen we want the p-table body to be the only scroller,
+    so we remove that extra padding to avoid page-level scrolling.
+  */
+  .breed-settings.form-content-wrapper {
+    padding-bottom: 0px;
   }
 
-  .sticky-footer-actions :ng-deep .p-button {
-    width: 100%;
-    justify-content: center;
+  .breed-table-scroll {
+    /* Keep scrolling inside the table (tbody) and avoid scrolling the whole page. */
+    height: clamp(260px, 55vh, 520px);
+    overflow: hidden;
+  }
+
+  :host ::ng-deep .breed-table-scroll .p-datatable {
+    height: 100%;
+  }
+
+  :host ::ng-deep .breed-table-scroll .p-datatable-scrollable-body {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }

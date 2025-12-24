@@ -1,6 +1,7 @@
 export const FIRESTORE_COLLECTION = {
   appointments: 'appointments',
   breeds: 'breeds',
+  bookingRequests: 'booking-requests',
   clients: 'clients',
   expenses: 'expenses',
   invoices: 'invoices',

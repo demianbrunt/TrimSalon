@@ -23,6 +23,62 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
+
+    function isNotDeleted() {
+      return resource.data.deletedAt == null;
+    }
+
+    function isValidPublicBookingRequest() {
+      return request.resource.data.keys().hasOnly([
+          'customerKey',
+          'requestedDate',
+          'dog',
+          'selection',
+          'owner',
+          'createdAt',
+          'status'
+        ])
+        && request.resource.data.customerKey is string
+        && request.resource.data.customerKey.size() >= 12
+        && request.resource.data.requestedDate is timestamp
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.status == 'NEW'
+
+        && request.resource.data.dog is map
+        && request.resource.data.dog.keys().hasOnly([
+          'name',
+          'breedId',
+          'breedName',
+          'size',
+          'ageYears'
+        ])
+        && request.resource.data.dog.name is string
+        && request.resource.data.dog.breedId is string
+        && (request.resource.data.dog.breedName == null || request.resource.data.dog.breedName is string)
+        && (request.resource.data.dog.size == null || request.resource.data.dog.size in ['small', 'medium', 'large'])
+        && (request.resource.data.dog.ageYears == null || request.resource.data.dog.ageYears is int)
+
+        && request.resource.data.selection is map
+        && request.resource.data.selection.keys().hasOnly([
+          'packageId',
+          'packageName',
+          'serviceIds',
+          'serviceNames',
+          'estimatedTotal'
+        ])
+        && (request.resource.data.selection.packageId == null || request.resource.data.selection.packageId is string)
+        && (request.resource.data.selection.packageName == null || request.resource.data.selection.packageName is string)
+        && request.resource.data.selection.serviceIds is list
+        && request.resource.data.selection.serviceIds.size() > 0
+        && request.resource.data.selection.serviceIds.size() <= 20
+        && request.resource.data.selection.serviceNames is list
+        && request.resource.data.selection.estimatedTotal is number
+
+        && request.resource.data.owner is map
+        && request.resource.data.owner.keys().hasOnly(['name', 'phone'])
+        && request.resource.data.owner.name is string
+        && request.resource.data.owner.phone is string;
+    }
     
     // Clients collection - allowed users only
     match /clients/{clientId} {
@@ -40,14 +96,14 @@ service cloud.firestore {
     
     // Services collection - allowed users only
     match /services/{serviceId} {
-      allow read: if isAllowedUser();
+      allow read: if isAllowedUser() || isNotDeleted();
       allow create, update: if isAllowedUser();
       allow delete: if false;
     }
     
     // Packages collection - allowed users only
     match /packages/{packageId} {
-      allow read: if isAllowedUser();
+      allow read: if isAllowedUser() || isNotDeleted();
       allow create, update: if isAllowedUser();
       allow delete: if false;
     }
@@ -75,8 +131,15 @@ service cloud.firestore {
     
     // Breeds collection - allowed users only
     match /breeds/{breedId} {
-      allow read: if isAllowedUser();
+      allow read: if isAllowedUser() || isNotDeleted();
       allow create, update: if isAllowedUser();
+      allow delete: if false;
+    }
+
+    // Public booking requests (public create, admin-only read/manage)
+    match /booking-requests/{requestId} {
+      allow create: if isValidPublicBookingRequest();
+      allow read, update: if isAllowedUser();
       allow delete: if false;
     }
     

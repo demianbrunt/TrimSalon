@@ -23,7 +23,7 @@ import { AuthenticationService } from './../../core/services/authentication.serv
       <p-button
         label="Terug naar de startpagina"
         icon="pi pi-home"
-        routerLink="/signin"
+        routerLink="/admin/signin"
         size="large"
       ></p-button>
     </div>

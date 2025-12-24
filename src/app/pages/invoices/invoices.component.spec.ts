@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { MockActivatedRoute } from '../../../test-helpers/angular-mocks';
 import { DEFAULT_APP_SETTINGS } from '../../core/models/app-settings.model';
-import { PaymentStatus } from '../../core/models/invoice.model';
+import { Invoice, PaymentStatus } from '../../core/models/invoice.model';
 import { AppDialogService } from '../../core/services/app-dialog.service';
 import { AppSettingsService } from '../../core/services/app-settings.service';
 import { AppointmentService } from '../../core/services/appointment.service';
@@ -64,7 +64,9 @@ describe('InvoicesComponent', () => {
     mockInvoiceService.getData$.and.returnValue(of([]));
     mockAppointmentService.getData$.and.returnValue(of([]));
     mockInvoiceService.getInvoicesForAppointment$.and.returnValue(of([]));
-    mockInvoiceService.add.and.returnValue(of({ id: 'created' } as any));
+    mockInvoiceService.add.and.returnValue(
+      of({ id: 'created' } as unknown as Invoice),
+    );
 
     await TestBed.configureTestingModule({
       imports: [InvoicesComponent],

@@ -19,7 +19,7 @@ describe('authGuard', () => {
   let mockRouter: jasmine.SpyObj<Router>;
 
   const route = {} as ActivatedRouteSnapshot;
-  const state = { url: '/clients' } as RouterStateSnapshot;
+  const state = { url: '/admin/clients' } as RouterStateSnapshot;
 
   beforeEach(() => {
     const router = new MockRouter();
@@ -71,9 +71,12 @@ describe('authGuard', () => {
     ) as Observable<boolean | UrlTree>;
     const result = await lastValueFrom(result$);
 
-    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/signin'], {
-      queryParams: { returnUrl: '/clients' },
-    });
+    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(
+      ['/admin', 'signin'],
+      {
+        queryParams: { returnUrl: '/admin/clients' },
+      },
+    );
     expect(result).toBe(expectedTree);
   });
 
@@ -89,7 +92,10 @@ describe('authGuard', () => {
     ) as Observable<boolean | UrlTree>;
     const result = await lastValueFrom(result$);
 
-    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/forbidden']);
+    expect(mockRouter.createUrlTree).toHaveBeenCalledWith([
+      '/admin',
+      'forbidden',
+    ]);
     expect(result).toBe(expectedTree);
   });
 });

@@ -1,137 +1,78 @@
-# Verbeterplan TrimSalon App
+# Verbeterplan (actief): GenAI + SEO/Analytics
 
-Dit document beschrijft het technische plan om de TrimSalon applicatie te professionaliseren, robuuster te maken en datagedreven werken mogelijk te maken.
+Dit document beschrijft het **huidige** verbeterplan voor TrimSalon.
 
-## Fase 1: Google Calendar Sync Optimalisatie (Robuustheid & Presentatie)
+> ℹ️ **Archief-notitie (2025-12-24):** Het eerdere plan over Google Calendar sync / tablet mode / time logging / KPI dashboarding is voorlopig **niet meer relevant** en is uit dit document verwijderd.
 
-**Doel:** De huidige sync betrouwbaar maken en professioneel presenteren.
+## Doelstellingen
 
-### Stap 1.1: Slimmere `appointmentToCalendarEvent` Mapping
+1.  **GenAI toevoegen** via Firebase Genkit (slim, veilig, zonder “AI-spaghetti”).
+2.  **SEO verbeteren** (technisch + content hints) zonder de app “stuk te maken”.
+3.  **Analytics** toevoegen op een privacyvriendelijke manier, bij voorkeur **zonder cookie-banner**.
 
-- **Technisch:** Aanpassing van `functions/src/calendar.ts`.
-- **Kleur:** Implementatie van een standaard `BRAND_COLOR_ID` (bijv. 'Peacock' of 'Grape' uit de Google kleurenset) in plaats van hardcoded waarden. Optioneel onderscheid maken op basis van status (bijv. Grijs voor 'CANCELLED').
-- **Deep Link:** Toevoegen van een directe URL in het `description` veld: `\n\nOpen in App: https://trimsalon-app.web.app/appointments/${appointmentId}`. Dit maakt "1-click" navigatie mogelijk.
-- **Locatie:** Het `location` veld vullen met het adres van de salon.
+## Fase 1: Firebase Genkit (GenAI) integratie
 
-### Stap 1.2: Foutafhandeling & Token Management
+### 1.1 Use-cases (klein beginnen)
 
-- **Technisch:** Verbetering van `try-catch` blokken in de Cloud Function.
-- **Implementatie:**
-  - **Auth Errors (401):** Schrijf status `{ googleSyncStatus: 'NEEDS_REAUTH' }` naar het user document in Firestore. Frontend toont waarschuwing.
-  - **Rate Limits (429):** Specifieke error gooien zodat Cloud Functions de taak automatisch opnieuw probeert (retry policy).
+- **Tekst-assistent** voor:
+  - afspraaknotities samenvatten naar “klantvriendelijke” tekst
+  - concept e-mails (herinnering / nazorg / factuur begeleidende tekst)
+  - korte management-samenvattingen (weekoverzicht)
 
-### Stap 1.3: Idempotentie (Voorkomen van dubbele updates)
+### 1.2 Architectuur (aanrader)
 
-- **Technisch:** Firestore triggers kunnen soms meerdere keren afgaan.
-- **Implementatie:** Vergelijk `change.before.data()` met `change.after.data()`. Als alleen irrelevante velden zijn gewijzigd, breek de functie af om onnodige API calls te voorkomen.
+- **Server-side only** (Cloud Functions) voor prompts + model calls.
+- Frontend praat met een **Callable Function** of HTTPS endpoint.
+- Geen model-API keys in de browser.
 
----
+### 1.3 Data & security afspraken
 
-## Fase 2: Two-Way Sync (De "Heilige Graal")
+- **Minimale context**: stuur alleen wat nodig is (geen volledige klantkaart als het niet hoeft).
+- **PII/gevoelige data**: expliciet beoordelen per use-case.
+- **Rate limiting** / abuse prevention (per user).
+- **Audit logging**: log wat er is aangeroepen (zonder onnodige persoonsgegevens).
 
-**Doel:** Wijzigingen in Google Agenda (tijd/datum) terugschieten naar de TrimSalon app.
+### 1.4 Configuratie
 
-### Stap 2.1: Webhook Setup (Google Channel)
+- Secrets via omgeving/secret manager (geen hardcoded keys).
+- Duidelijke toggles per feature (feature flag / settings).
 
-- **Technisch:** Nieuw Cloud Function endpoint: `api/calendar-webhook`.
-- **Actie:** Aanroepen van `calendar.events.watch` API.
-- **Onderhoud:** Implementatie van een _Scheduled Function_ (Cronjob) om de "watch" periodiek te vernieuwen (verloopt na +/- 1 week).
+## Fase 2: SEO optimalisatie (Angular)
 
-### Stap 2.2: Delta Sync Verwerking
+### 2.1 Technische SEO basis
 
-- **Technisch:** Webhook ontvangt alleen een signaal, geen data.
-- **Implementatie:**
-  1.  Webhook ontvangt signaal.
-  2.  Ophalen `syncToken` uit database.
-  3.  Aanroepen `calendar.events.list` met `syncToken` voor alleen gewijzigde events.
-  4.  Itereren door events en Firestore updaten op basis van `extendedProperties.private.appointmentId`.
+- **Titles/Meta descriptions** per route.
+- **Canonical URLs** waar relevant.
+- **Robots** en sitemap strategie (afhankelijk van publiek vs. “app achter login”).
 
-### Stap 2.3: Loop Prevention
+### 2.2 Prerender/SSR (alleen als nodig)
 
-- **Risico:** Oneindige update loop tussen App en Google.
-- **Oplossing:** Bij update vanuit webhook, zet flag `source: 'google-sync'`. De uitgaande Cloud Function negeert updates met deze bron.
+- Als er **publieke landing pages** zijn: overweeg prerender/SSR zodat crawlers de content echt zien.
+- Als alles achter login zit: focus vooral op **performance**, **structured data** (indien publiek), en correcte metadata.
 
----
+## Fase 3: Analytics (privacyvriendelijk)
 
-## Fase 3: Tablet Mode & Time Logging
+### 3.1 Meetplan
 
-**Doel:** Real-time data verzamelen op de werkvloer voor nauwkeurige analyses.
+- Welke events zijn nuttig?
+  - login success
+  - appointment created/updated
+  - invoice created/sent
+  - errors (frontend + backend)
 
-### Stap 3.1: Tablet UI Component
+### 3.2 Implementatie-keuzes
 
-- **Technisch:** Nieuwe Angular route `/tablet-mode`.
-- **Design:** Minimalistische interface, grote touch-knoppen, geen complexe navigatie.
-- **State:** `BehaviorSubject` in een Service voor "Huidige Actieve Taak".
+- **Cookieless / no-identifiers** waar mogelijk.
+- Overweeg self-hosted analytics (bijv. Matomo) of puur server-side metrics.
 
-### Stap 3.2: Datastructuur voor Tijdregistratie
+### 3.3 Privacy & consent uitgangspunten
 
-- **Model Wijziging:** Uitbreiding `Appointment` model:
-  ```typescript
-  timeLogs: {
-      activity: 'WASHING' | 'DRYING' | 'CUTTING' | 'OTHER';
-      startTime: Timestamp;
-      endTime?: Timestamp;
-      durationMinutes?: number;
-  }[]
-  ```
-- **Logica:** Starten van nieuwe taak sluit automatisch de vorige taak af.
+- Geen tracking cookies / local storage identifiers.
+- Alleen geaggregeerde statistieken, geen cross-site tracking.
+- Transparant in privacyverklaring.
 
----
+## Definition of Done (voor dit plan)
 
-## Fase 4: Dashboarding & KPI's (€60/u Target)
-
-**Doel:** Data omzetten in stuurinformatie.
-
-### Stap 4.1: De "Echte" Uurloon Berekening
-
-- **Technisch:** Cloud Function of Frontend berekening.
-- **Formule:** `(Totale Omzet - Totale Uitgaven) / Totaal Gewerkte Uren (uit timeLogs)`.
-
-### Stap 4.2: Visuele Feedback
-
-- **Component:** Dashboard widget (Gauge/Meter).
-- **Logica:**
-  - < €50: Rood
-  - €50 - €60: Oranje
-  - > €60: Groen
-
----
-
-## Advies Volgorde
-
-1.  **Fase 1:** Directe waarde, professionelere uitstraling, minder fouten.
-2.  **Fase 3:** Essentieel voor data-verzameling (zonder data geen dashboard).
-3.  **Fase 4:** Inzichtelijk maken van de verzamelde data.
-4.  **Fase 2:** Technisch complex, implementeren indien workflow dit vereist.
-
----
-
-## Integratie & Design Guidelines (Zonder "Vermageling")
-
-Om te zorgen dat de nieuwe functionaliteiten naadloos aansluiten bij de huidige app en de gebruikerservaring niet verstoren, hanteren we de volgende regels:
-
-### 1. Design System & Kleuren (PrimeNG)
-
-We wijken niet af van het bestaande thema. Alle nieuwe UI-elementen moeten gebruikmaken van de PrimeNG variabelen:
-
-- **Primaire Kleur:** Gebruik `var(--primary-color)` voor hoofdacties en belangrijke accenten.
-- **Achtergronden:** Gebruik `var(--surface-ground)`, `var(--surface-card)`, etc. voor consistentie.
-- **Google Calendar Kleuren:** We mappen de Google kleuren naar onze eigen palette.
-  - _Google 'Sage' (Groen)_ -> `var(--green-500)` (Succes/Bevestigd)
-  - _Google 'Graphite' (Grijs)_ -> `var(--gray-500)` (Concept/Geannuleerd)
-  - _Google 'Tomato' (Rood)_ -> `var(--red-500)` (Urgent/Fout)
-  - _Standaard:_ `var(--primary-color)` (zodat het altijd matcht met de app).
-
-### 2. Componenten Gebruik
-
-We vinden het wiel niet opnieuw uit. Voor elke nieuwe feature gebruiken we bestaande PrimeNG componenten:
-
-- **Tablet Mode:** Gebruik `p-button` met `size="large"` en `severity="info/success/warning"` voor de grote touch-knoppen.
-- **Dashboard:** Gebruik `p-chart` voor grafieken en `p-meterGroup` of `p-knob` voor de KPI meters.
-- **Layout:** Blijf `PrimeFlex` classes gebruiken (`flex`, `grid`, `p-3`, etc.) voor responsive design.
-
-### 3. Veilige Integratie (Non-Destructive)
-
-- **Tablet Mode:** Dit wordt een volledig losstaande route (`/tablet`). Hierdoor verandert er **niets** aan de bestaande desktop/mobiele weergave die jullie nu gewend zijn.
-- **Sync Updates:** De aanpassingen in de Cloud Functions zijn "backend-only". De frontend merkt hier niets van, behalve dat de data in de agenda er netter uitziet.
-- **Feature Flags:** Voor grote wijzigingen (zoals 2-way sync) bouwen we een "schakelaar" in de instellingen, zodat je het uit kunt zetten als het niet bevalt.
+- GenAI: 1–2 nuttige flows live, veilig en afgeschermd.
+- SEO: metadata op publieke routes correct, en meetbare verbetering (indexing/preview).
+- Analytics: events zichtbaar in dashboard, met privacy-by-design.

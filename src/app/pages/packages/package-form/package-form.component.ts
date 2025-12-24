@@ -68,6 +68,7 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
       FormGroup<{
         breedId: FormControl<string | null>;
         breedName: FormControl<string | null>;
+        sizeOverride: FormControl<'small' | 'medium' | 'large' | null>;
         priceAdjustment: FormControl<number | null>;
         durationAdjustment: FormControl<number | null>;
         reason: FormControl<string | null>;
@@ -77,6 +78,16 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
 
   allServices: Service[] = [];
   allBreeds: Breed[] = [];
+
+  readonly breedSizeOverrideOptions: Array<{
+    label: string;
+    value: 'small' | 'medium' | 'large' | null;
+  }> = [
+    { label: 'Gebruik rasgrootte', value: null },
+    { label: 'Klein', value: 'small' },
+    { label: 'Middel', value: 'medium' },
+    { label: 'Groot', value: 'large' },
+  ];
 
   private readonly packageService = inject(PackageService);
   private readonly serviceService = inject(ServiceService);
@@ -119,6 +130,7 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
           breedOverrides: formValue.breedOverrides?.map((o) => ({
             breedId: o.breedId!,
             breedName: o.breedName!,
+            sizeOverride: o.sizeOverride || undefined,
             priceAdjustment: o.priceAdjustment || undefined,
             durationAdjustment: o.durationAdjustment || undefined,
             reason: o.reason || undefined,
@@ -184,6 +196,7 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
           FormGroup<{
             breedId: FormControl<string | null>;
             breedName: FormControl<string | null>;
+            sizeOverride: FormControl<'small' | 'medium' | 'large' | null>;
             priceAdjustment: FormControl<number | null>;
             durationAdjustment: FormControl<number | null>;
             reason: FormControl<string | null>;
@@ -290,6 +303,7 @@ export class PackageFormComponent extends FormBaseComponent implements OnInit {
     return this.formBuilder.group({
       breedId: [override?.breedId || null, Validators.required],
       breedName: [override?.breedName || null, Validators.required],
+      sizeOverride: [override?.sizeOverride ?? null],
       priceAdjustment: [override?.priceAdjustment || 0],
       durationAdjustment: [override?.durationAdjustment || 0],
       reason: [override?.reason || ''],

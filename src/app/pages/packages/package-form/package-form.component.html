@@ -194,7 +194,21 @@
                   ></p-button>
                 </div>
                 <div class="grid">
-                  <div class="col-12 md:col-4">
+                  <div class="col-12 md:col-3">
+                    <span class="text-color-secondary text-sm block mb-1"
+                      >Grootte</span
+                    >
+                    <p-select
+                      formControlName="sizeOverride"
+                      [options]="breedSizeOverrideOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      styleClass="w-full"
+                      appendTo="body"
+                      aria-label="Grootte override"
+                    ></p-select>
+                  </div>
+                  <div class="col-12 md:col-3">
                     <span class="text-color-secondary text-sm block mb-1"
                       >Prijsaanpassing</span
                     >
@@ -206,7 +220,7 @@
                       placeholder="+/- prijs"
                     ></p-inputNumber>
                   </div>
-                  <div class="col-12 md:col-4">
+                  <div class="col-12 md:col-3">
                     <span class="text-color-secondary text-sm block mb-1"
                       >Tijdsaanpassing</span
                     >
@@ -217,7 +231,7 @@
                       placeholder="+/- tijd"
                     ></p-inputNumber>
                   </div>
-                  <div class="col-12 md:col-4">
+                  <div class="col-12 md:col-3">
                     <span class="text-color-secondary text-sm block mb-1"
                       >Reden</span
                     >
@@ -246,7 +260,7 @@
         ></p-button>
         <p-button
           label="Annuleren"
-          icon="pi pi-times"
+          icon="pi pi-undo"
           styleClass="p-button-text"
           (click)="cancel()"
           type="button"

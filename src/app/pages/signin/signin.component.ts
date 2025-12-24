@@ -47,7 +47,8 @@ export class SignInComponent extends BaseComponent implements OnInit {
   ngOnInit(): void {
     // Check if already authenticated
     if (this.authService.isAuthenticated()) {
-      const returnUrl = this.getFromQueryString('returnUrl') ?? '/appointments';
+      const returnUrl =
+        this.getFromQueryString('returnUrl') ?? '/admin/appointments';
       this.router.navigate([returnUrl]);
       return;
     }
@@ -58,7 +59,8 @@ export class SignInComponent extends BaseComponent implements OnInit {
 
   signIn(): void {
     // Store returnUrl in sessionStorage so we can use it after redirect
-    const returnUrl = this.getFromQueryString('returnUrl') ?? '/appointments';
+    const returnUrl =
+      this.getFromQueryString('returnUrl') ?? '/admin/appointments';
     sessionStorage.setItem('auth_return_url', returnUrl);
 
     // Trigger redirect-based sign in

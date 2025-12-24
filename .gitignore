@@ -57,3 +57,6 @@ functions/.env.*
 
 # Generated runtime config (generated from .env)
 public/runtime-config.json
+
+# Prototype landing (GitHub Spark / React) kept only as reference
+src/app/core/prototype-voorpagina/

@@ -24,16 +24,16 @@ export class SubNavComponent {
   navItems = [
     {
       icon: 'pi pi-calendar',
-      link: '/appointments',
+      link: '/admin/appointments',
       longPressAction: () => this.openGoogleCalendar(),
     },
-    { icon: 'pi pi-address-book', link: '/clients' },
-    { icon: 'pi pi-box', link: '/packages' },
-    { icon: 'pi pi-wrench', link: '/services' },
-    { icon: 'pi pi-wallet', link: '/expenses' },
-    { icon: 'pi pi-file-edit', link: '/invoices' },
-    { icon: 'pi pi-chart-bar', link: '/reports' },
-    { icon: 'pi pi-cog', link: '/settings' },
+    { icon: 'pi pi-address-book', link: '/admin/clients' },
+    { icon: 'pi pi-box', link: '/admin/packages' },
+    { icon: 'pi pi-wrench', link: '/admin/services' },
+    { icon: 'pi pi-wallet', link: '/admin/expenses' },
+    { icon: 'pi pi-file-edit', link: '/admin/invoices' },
+    { icon: 'pi pi-chart-bar', link: '/admin/reports' },
+    { icon: 'pi pi-cog', link: '/admin/settings' },
   ];
 
   openGoogleCalendar(): void {

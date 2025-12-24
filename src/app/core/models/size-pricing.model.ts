@@ -29,6 +29,11 @@ export interface SizePricingValues {
 export interface BreedPricingOverride {
   breedId: string;
   breedName: string; // For display purposes
+  /**
+   * Optional override to treat a breed as a different size for this service/package.
+   * Useful when a specific package should be priced/durationed as e.g. 'large' for a typically 'medium' breed.
+   */
+  sizeOverride?: DogBreedSize;
   priceAdjustment: number; // Additional price (can be negative)
   durationAdjustment: number; // Additional minutes (can be negative)
   reason?: string; // Optional explanation (e.g., "Thick coat, difficult behavior")

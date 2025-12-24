@@ -174,16 +174,16 @@ export class PricingService {
   private getPackagePrice(pkg: Package, breed?: Breed): number {
     // New simplified pricing model
     if (pkg.sizePricing && breed?.size) {
-      let price = getSizeValue(pkg.sizePricing.pricing, breed.size);
+      const override =
+        breed.id && pkg.sizePricing.breedOverrides
+          ? pkg.sizePricing.breedOverrides.find((o) => o.breedId === breed.id)
+          : undefined;
 
-      // Apply breed-specific override if exists
-      if (breed.id && pkg.sizePricing.breedOverrides) {
-        const override = pkg.sizePricing.breedOverrides.find(
-          (o) => o.breedId === breed.id,
-        );
-        if (override && override.priceAdjustment !== undefined) {
-          price += override.priceAdjustment;
-        }
+      const effectiveSize = override?.sizeOverride ?? breed.size;
+      let price = getSizeValue(pkg.sizePricing.pricing, effectiveSize);
+
+      if (override && override.priceAdjustment !== undefined) {
+        price += override.priceAdjustment;
       }
 
       return price;
@@ -204,16 +204,18 @@ export class PricingService {
   private getServicePrice(service: Service, breed?: Breed): number {
     // New simplified pricing model
     if (service.sizePricing && breed?.size) {
-      let price = getSizeValue(service.sizePricing.pricing, breed.size);
+      const override =
+        breed.id && service.sizePricing.breedOverrides
+          ? service.sizePricing.breedOverrides.find(
+              (o) => o.breedId === breed.id,
+            )
+          : undefined;
 
-      // Apply breed-specific override if exists
-      if (breed.id && service.sizePricing.breedOverrides) {
-        const override = service.sizePricing.breedOverrides.find(
-          (o) => o.breedId === breed.id,
-        );
-        if (override && override.priceAdjustment !== undefined) {
-          price += override.priceAdjustment;
-        }
+      const effectiveSize = override?.sizeOverride ?? breed.size;
+      let price = getSizeValue(service.sizePricing.pricing, effectiveSize);
+
+      if (override && override.priceAdjustment !== undefined) {
+        price += override.priceAdjustment;
       }
 
       return price;
@@ -354,16 +356,18 @@ export class PricingService {
       packages.forEach((pkg) => {
         // New simplified pricing model
         if (pkg.sizePricing && breed?.size) {
-          let duration = getSizeValue(pkg.sizePricing.duration, breed.size);
+          const override =
+            breed.id && pkg.sizePricing.breedOverrides
+              ? pkg.sizePricing.breedOverrides.find(
+                  (o) => o.breedId === breed.id,
+                )
+              : undefined;
 
-          // Apply breed-specific duration override
-          if (breed.id && pkg.sizePricing.breedOverrides) {
-            const override = pkg.sizePricing.breedOverrides.find(
-              (o) => o.breedId === breed.id,
-            );
-            if (override && override.durationAdjustment !== undefined) {
-              duration += override.durationAdjustment;
-            }
+          const effectiveSize = override?.sizeOverride ?? breed.size;
+          let duration = getSizeValue(pkg.sizePricing.duration, effectiveSize);
+
+          if (override && override.durationAdjustment !== undefined) {
+            duration += override.durationAdjustment;
           }
 
           totalMinutes += duration;
@@ -382,16 +386,21 @@ export class PricingService {
       services.forEach((service) => {
         // New simplified pricing model
         if (service.sizePricing && breed?.size) {
-          let duration = getSizeValue(service.sizePricing.duration, breed.size);
+          const override =
+            breed.id && service.sizePricing.breedOverrides
+              ? service.sizePricing.breedOverrides.find(
+                  (o) => o.breedId === breed.id,
+                )
+              : undefined;
 
-          // Apply breed-specific duration override
-          if (breed.id && service.sizePricing.breedOverrides) {
-            const override = service.sizePricing.breedOverrides.find(
-              (o) => o.breedId === breed.id,
-            );
-            if (override && override.durationAdjustment !== undefined) {
-              duration += override.durationAdjustment;
-            }
+          const effectiveSize = override?.sizeOverride ?? breed.size;
+          let duration = getSizeValue(
+            service.sizePricing.duration,
+            effectiveSize,
+          );
+
+          if (override && override.durationAdjustment !== undefined) {
+            duration += override.durationAdjustment;
           }
 
           totalMinutes += duration;
