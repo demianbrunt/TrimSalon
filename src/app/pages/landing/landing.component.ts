@@ -1,4 +1,4 @@
-import { CommonModule, DOCUMENT, NgOptimizedImage } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -63,7 +63,6 @@ interface Review {
   imports: [
     CommonModule,
     RouterLink,
-    NgOptimizedImage,
     FormsModule,
     ReactiveFormsModule,
     Button,

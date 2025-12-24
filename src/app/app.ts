@@ -126,6 +126,10 @@ export class App {
   readonly swUpdate = inject(SwUpdate);
   private readonly router = inject(Router);
 
+  private readonly isKarma =
+    typeof window !== 'undefined' &&
+    !!(window as unknown as { __karma__?: unknown }).__karma__;
+
   private currentUrl = this.router.url;
 
   constructor() {
@@ -176,6 +180,10 @@ export class App {
           ),
         )
         .subscribe(() => {
+          if (this.isKarma) {
+            return;
+          }
+
           this.swUpdate.activateUpdate().then(() => document.location.reload());
         });
     }

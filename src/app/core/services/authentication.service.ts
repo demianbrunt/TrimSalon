@@ -158,23 +158,14 @@ export class AuthenticationService {
       provider.addScope(this.config.googleAuth.scope);
       provider.setCustomParameters({ prompt: 'select_account' });
 
-      // Use popup for localhost (redirect doesn't work due to browser security)
-      // Use redirect for production (better UX, mobile-friendly)
-      const isLocal = this.isLocalhost();
-
-      if (isLocal) {
-        // POPUP flow for localhost
-        const userCredential = await this.firebaseAuth.signInWithPopup(
-          this.auth,
-          provider,
-        );
-        return await this.handleAuthResult(userCredential);
-      } else {
-        // REDIRECT flow for production
-        await this.firebaseAuth.signInWithRedirect(this.auth, provider);
-        // Result handled in handleRedirectResult() after redirect back
-        return true;
-      }
+      // Use popup for both localhost and production
+      // signInWithRedirect is increasingly unreliable in modern browsers due to storage partitioning
+      // (causing "missing initial state" errors)
+      const userCredential = await this.firebaseAuth.signInWithPopup(
+        this.auth,
+        provider,
+      );
+      return await this.handleAuthResult(userCredential);
     } catch (error: unknown) {
       console.error('Sign-in error:', error);
       const code = (error as { code?: string })?.code;

@@ -591,7 +591,10 @@ export class AppointmentsComponent implements OnInit {
           : items;
 
     // Always return a new array so PrimeNG change detection stays predictable.
-    return [...filtered].sort((a, b) => this.compareAppointmentsForList(a, b));
+    const now = Date.now();
+    return [...filtered].sort((a, b) =>
+      this.compareAppointmentsForList(a, b, now),
+    );
   }
 
   setStatusFilter(value: unknown, opts?: { skipUrlUpdate?: boolean }): void {
@@ -657,9 +660,11 @@ export class AppointmentsComponent implements OnInit {
     this.sortOrder = 1;
   }
 
-  private compareAppointmentsForList(a: Appointment, b: Appointment): number {
-    const now = Date.now();
-
+  private compareAppointmentsForList(
+    a: Appointment,
+    b: Appointment,
+    now: number,
+  ): number {
     const at = a.startTime
       ? new Date(a.startTime).getTime()
       : Number.POSITIVE_INFINITY;
@@ -667,9 +672,18 @@ export class AppointmentsComponent implements OnInit {
       ? new Date(b.startTime).getTime()
       : Number.POSITIVE_INFINITY;
 
+    const aEnd = a.endTime
+      ? new Date(a.endTime).getTime()
+      : Number.POSITIVE_INFINITY;
+    const bEnd = b.endTime
+      ? new Date(b.endTime).getTime()
+      : Number.POSITIVE_INFINITY;
+
     // Archived list: “recent naar oud”.
     if (this.showArchived) {
-      return bt - at;
+      const result = bt - at;
+      if (result !== 0) return result;
+      return bEnd - aEnd;
     }
 
     // All: upcoming first (soonest -> latest), then past (most recent -> oldest).
@@ -681,11 +695,17 @@ export class AppointmentsComponent implements OnInit {
         return aUpcoming ? -1 : 1;
       }
 
-      return aUpcoming ? at - bt : bt - at;
+      const result = aUpcoming ? at - bt : bt - at;
+      if (result !== 0) return result;
+
+      // Tie-breaker to keep list order stable.
+      return aUpcoming ? aEnd - bEnd : bEnd - aEnd;
     }
 
     // Otherwise keep the simple asc/desc based on the current default.
-    return (at - bt) * this.sortOrder;
+    const result = (at - bt) * this.sortOrder;
+    if (result !== 0) return result;
+    return (aEnd - bEnd) * this.sortOrder;
   }
 
   private compareDateAsc(a?: Date, b?: Date): number {

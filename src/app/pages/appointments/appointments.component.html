@@ -79,6 +79,8 @@
           [rows]="mobileRows"
           [first]="(page - 1) * mobileRows"
           (onPage)="onMobilePage($event)"
+          [sortField]="sortField"
+          [sortOrder]="sortOrder"
           [filterBy]="'client.name, dog.name'"
         >
           <ng-template #header>

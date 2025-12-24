@@ -11,6 +11,38 @@ const envPath = path.join(repoRoot, ".env");
 // Load .env if present; environment variables still take precedence.
 dotenv.config({ path: envPath, override: false });
 
+async function readDotenvFileVars(dotenvPath) {
+  try {
+    const text = await fs.readFile(dotenvPath, { encoding: "utf8" });
+    const out = new Map();
+
+    for (const rawLine of text.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith("#")) continue;
+
+      const eq = line.indexOf("=");
+      if (eq <= 0) continue;
+
+      const key = line.slice(0, eq).trim();
+      let value = line.slice(eq + 1).trim();
+
+      // Strip optional surrounding quotes.
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+
+      out.set(key, value);
+    }
+
+    return out;
+  } catch {
+    return new Map();
+  }
+}
+
 function readEnv(name) {
   return String(process.env[name] ?? "").trim();
 }
@@ -23,6 +55,17 @@ function parseBool(value, fallback = false) {
   return fallback;
 }
 
+function readReCaptchaProvider() {
+  const raw = readEnv("RECAPTCHA_PROVIDER");
+  const v = raw.toLowerCase();
+  if (!v) return "v3";
+  if (v === "v3" || v === "enterprise") return v;
+  console.warn(
+    `[runtime-config] Invalid RECAPTCHA_PROVIDER='${raw}'. Expected 'v3' or 'enterprise'. Defaulting to 'v3'.`,
+  );
+  return "v3";
+}
+
 const allowEmpty = parseBool(readEnv("ALLOW_EMPTY_RUNTIME_CONFIG"), false);
 
 const runtimeConfig = {
@@ -33,13 +76,14 @@ const runtimeConfig = {
     storageBucket: readEnv("FIREBASE_STORAGE_BUCKET"),
     messagingSenderId: readEnv("FIREBASE_MESSAGING_SENDER_ID"),
     appId: readEnv("FIREBASE_APP_ID"),
-    measurementId: readEnv("FIREBASE_MEASUREMENT_ID"),
   },
   app: {
     googleAuth: {
       clientId: readEnv("GOOGLE_OAUTH_CLIENT_ID"),
       scope: "https://www.googleapis.com/auth/calendar",
     },
+    reCaptchaSiteKey: readEnv("RECAPTCHA_SITE_KEY"),
+    reCaptchaProvider: readReCaptchaProvider(),
     devMode: parseBool(readEnv("APP_DEV_MODE"), false),
   },
 };
@@ -52,7 +96,22 @@ const required = [
   "FIREBASE_MESSAGING_SENDER_ID",
   "FIREBASE_APP_ID",
   "GOOGLE_OAUTH_CLIENT_ID",
+  "RECAPTCHA_SITE_KEY",
 ];
+
+// Helpful diagnostics: if a key exists in both the OS environment and .env, the OS
+// environment wins (dotenv override=false). This can lead to deploying a wrong
+// App Check site key by accident.
+const dotenvVars = await readDotenvFileVars(envPath);
+for (const key of required) {
+  const envValue = String(process.env[key] ?? "").trim();
+  const fileValue = String(dotenvVars.get(key) ?? "").trim();
+  if (envValue && fileValue && envValue !== fileValue) {
+    console.warn(
+      `[runtime-config] ${key} is set in both the OS environment and .env. Using the OS environment value.`,
+    );
+  }
+}
 
 const missing = required.filter((k) => !readEnv(k));
 if (missing.length && !allowEmpty) {

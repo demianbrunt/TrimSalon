@@ -7,7 +7,6 @@ export interface FirebaseClientConfig {
   storageBucket: string;
   messagingSenderId: string;
   appId: string;
-  measurementId?: string;
 }
 
 export interface RuntimeConfigFile {
@@ -17,6 +16,8 @@ export interface RuntimeConfigFile {
       clientId: string;
       scope: string;
     };
+    reCaptchaSiteKey?: string;
+    reCaptchaProvider?: 'v3' | 'enterprise';
     devMode?: boolean;
   };
 }
@@ -109,6 +110,8 @@ export class RuntimeConfigService {
           clientId: '',
           scope: 'https://www.googleapis.com/auth/calendar',
         },
+        reCaptchaSiteKey: '',
+        reCaptchaProvider: 'v3',
         devMode: false,
       }
     );
@@ -146,7 +149,6 @@ export class RuntimeConfigService {
         storageBucket: obj.firebase?.storageBucket ?? '',
         messagingSenderId: obj.firebase?.messagingSenderId ?? '',
         appId: obj.firebase?.appId ?? '',
-        measurementId: obj.firebase?.measurementId,
       },
       app: {
         googleAuth: {
@@ -155,6 +157,12 @@ export class RuntimeConfigService {
             obj.app?.googleAuth?.scope ??
             'https://www.googleapis.com/auth/calendar',
         },
+        reCaptchaSiteKey: obj.app?.reCaptchaSiteKey,
+        reCaptchaProvider:
+          ((): RuntimeConfigFile['app']['reCaptchaProvider'] => {
+            const provider = obj.app?.reCaptchaProvider;
+            return provider === 'enterprise' ? 'enterprise' : 'v3';
+          })(),
         devMode: obj.app?.devMode ?? false,
       },
     };

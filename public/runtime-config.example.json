@@ -5,14 +5,15 @@
     "projectId": "",
     "storageBucket": "",
     "messagingSenderId": "",
-    "appId": "",
-    "measurementId": ""
+    "appId": ""
   },
   "app": {
     "googleAuth": {
       "clientId": "",
       "scope": "https://www.googleapis.com/auth/calendar"
     },
+    "reCaptchaSiteKey": "",
+    "reCaptchaProvider": "v3",
     "devMode": false
   }
 }

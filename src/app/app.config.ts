@@ -15,10 +15,17 @@ import { ConfirmationDialogService } from './core/services/confirmation-dialog.s
 import { GlobalErrorHandler } from './core/services/global-error-handler.service';
 
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
+import {
+  initializeAppCheck,
+  provideAppCheck,
+  ReCaptchaEnterpriseProvider,
+  ReCaptchaV3Provider,
+} from '@angular/fire/app-check';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { getFunctions, provideFunctions } from '@angular/fire/functions';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { getApp } from 'firebase/app';
 
 import Aura from '@primeuix/themes/aura';
 
@@ -36,9 +43,15 @@ const DEFAULT_APP_CONFIG: AppConfig = {
     clientId: '',
     scope: 'https://www.googleapis.com/auth/calendar',
   },
+  reCaptchaSiteKey: '',
   // DEV MODE: Disabled - always require proper authentication
   devMode: false,
 };
+
+const isKarma =
+  typeof window !== 'undefined' &&
+  typeof (window as unknown as { __karma__?: unknown }).__karma__ !==
+    'undefined';
 
 registerLocaleData(localeNl);
 
@@ -71,6 +84,31 @@ export const commonProviders = [
     const runtimeConfig = inject(RuntimeConfigService);
     return initializeApp(runtimeConfig.getFirebaseConfigOrThrow());
   }),
+  ...(isKarma
+    ? []
+    : [
+        provideAppCheck(() => {
+          const runtimeConfig = inject(RuntimeConfigService);
+          const appConfig = runtimeConfig.getAppConfigOrDefault();
+          const siteKey = appConfig.reCaptchaSiteKey;
+          const provider = appConfig.reCaptchaProvider ?? 'v3';
+
+          if (!siteKey) {
+            throw new Error(
+              'App Check is enabled but RECAPTCHA_SITE_KEY is missing from runtime-config.json. ' +
+                'Add it and redeploy (or disable App Check enforcement until rollout completes).',
+            );
+          }
+
+          return initializeAppCheck(getApp(), {
+            provider:
+              provider === 'enterprise'
+                ? new ReCaptchaEnterpriseProvider(siteKey)
+                : new ReCaptchaV3Provider(siteKey),
+            isTokenAutoRefreshEnabled: true,
+          });
+        }),
+      ]),
   provideAuth(() => {
     const auth = getAuth();
     return auth;
@@ -96,6 +134,8 @@ export const commonProviders = [
             app.googleAuth.clientId || DEFAULT_APP_CONFIG.googleAuth.clientId,
           scope: app.googleAuth.scope || DEFAULT_APP_CONFIG.googleAuth.scope,
         },
+        reCaptchaSiteKey:
+          app.reCaptchaSiteKey || DEFAULT_APP_CONFIG.reCaptchaSiteKey,
         devMode: app.devMode ?? DEFAULT_APP_CONFIG.devMode,
       };
     },

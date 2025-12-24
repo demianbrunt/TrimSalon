@@ -27,7 +27,7 @@ const googleapis_1 = require("googleapis");
 exports.googleClientId = (0, params_1.defineSecret)("GOOGLE_CLIENT_ID");
 exports.googleClientSecret = (0, params_1.defineSecret)("GOOGLE_CLIENT_SECRET");
 // App configuration
-const APP_BASE_URL = "https://trimsalon-9b823.web.app";
+const APP_BASE_URL = "https://trim.demianbrunt.nl";
 const SALON_NAME = "Marlie's Trimsalon";
 /**
  * Google Calendar color IDs mapped to appointment statuses.
@@ -59,15 +59,26 @@ function appointmentToCalendarEvent(appointment, includeId = false) {
         ? "Teefje"
         : "";
   const services =
-    appointment.services?.map((s) => s.name).join(", ") || "Geen services";
+    appointment.services?.map((s) => s.name).join(", ") || "Geen werkzaamheden";
   const packages = appointment.packages?.map((p) => p.name).join(", ") || "";
   const phone = appointment.client?.phone || "";
   const email = appointment.client?.email || "";
+  const formatTime = (isoString) => {
+    try {
+      return new Date(isoString).toLocaleTimeString("nl-NL", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "Europe/Amsterdam",
+      });
+    } catch {
+      return isoString;
+    }
+  };
   const timeRange =
     appointment.startTime && appointment.endTime
-      ? `${appointment.startTime} → ${appointment.endTime}`
+      ? `${formatTime(appointment.startTime)} - ${formatTime(appointment.endTime)}`
       : appointment.startTime
-        ? `${appointment.startTime}`
+        ? `${formatTime(appointment.startTime)}`
         : "";
   // Professional title format
   const summary = `🐕 ${dogName} - ${clientName}`;
@@ -76,8 +87,10 @@ function appointmentToCalendarEvent(appointment, includeId = false) {
     appointment.dog?.isAggressive
       ? "⚠️ WAARSCHUWING: HOND IS AGRESSIEF ⚠️"
       : "",
-    gender ? `⚧ Geslacht: ${gender}` : "",
-    `📋 Services: ${services}`,
+    gender
+      ? `⚧ Geslacht: ${gender}${appointment.dog?.isNeutered ? " (Gecastreerd)" : ""}`
+      : "",
+    `📋 Werkzaamheden: ${services}`,
     packages ? `📦 Pakketten: ${packages}` : "",
     breed ? `🐾 Ras: ${breed}` : "",
     phone ? `📞 Telefoon: ${phone}` : "",
