@@ -200,22 +200,13 @@ body {
 
   .p-dataview.mobile-card-list .p-dataview-content {
     background: var(--surface-ground) !important;
-    padding: 0.35rem !important;
     padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
-  }
-
-  .p-dataview.mobile-card-list .col-12.p-2 {
-    padding: 0.35rem !important;
   }
 
   /* Mobile table header is sticky (in flow), so no extra padding is needed */
   .p-dataview.mobile-card-list.mobile-card-list--fixed-header
     .p-dataview-content {
     padding-top: 0.35rem !important;
-  }
-
-  .responsive-card .p-card-body {
-    padding: 1rem !important;
   }
 
   .responsive-card .p-card-content {

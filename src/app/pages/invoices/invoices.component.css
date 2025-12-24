@@ -1,8 +1,4 @@
 @media (max-width: 768px) {
-  ::ng-deep .p-dataview .p-dataview-content {
-    padding: 0.5rem !important;
-  }
-
   .col-12.p-2 {
     padding: 0.5rem !important;
   }

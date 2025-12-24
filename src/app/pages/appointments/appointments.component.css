@@ -143,12 +143,7 @@
 
 @media (max-width: 768px) {
   ::ng-deep .p-dataview.mobile-card-list .p-dataview-content {
-    padding: 0.5rem !important;
     padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
-  }
-
-  ::ng-deep .p-dataview.mobile-card-list .col-12.p-2 {
-    padding: 0.5rem !important;
   }
 
   ::ng-deep .p-tag {

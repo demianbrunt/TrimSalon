@@ -22,7 +22,6 @@ import {
 import { SwipeDirective } from '../../core/directives/swipe.directive';
 import { Client } from '../../core/models/client.model';
 import { Dog } from '../../core/models/dog.model';
-import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ClientService } from '../../core/services/client.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
@@ -59,6 +58,12 @@ import {
   templateUrl: './clients.component.html',
 })
 export class ClientsComponent implements OnInit {
+  /**
+   * Overzichtspagina voor klanten.
+   *
+   * Beheert lijst-state (zoeken, pagina, archief-toggle) en route query params.
+   * Data komt uit `ClientService`.
+   */
   clients: Client[] = [];
   sortField = 'name';
   sortOrder = 1;
@@ -90,7 +95,6 @@ export class ClientsComponent implements OnInit {
 
   private readonly clientService = inject(ClientService);
   private readonly toastrService = inject(ToastrService);
-  private readonly dialogService = inject(AppDialogService);
   private readonly confirmationDialogService = inject(
     ConfirmationDialogService,
   );
@@ -180,12 +184,19 @@ export class ClientsComponent implements OnInit {
     });
   }
 
-  loadClients(): void {
-    const source$ = this.showArchived
+  /**
+   * Bepaalt welke datastroom gebruikt wordt:
+   * - actief: normale klantenlijst
+   * - archief: geanonimiseerde klanten
+   */
+  private getClientsSource$() {
+    return this.showArchived
       ? this.clientService.getAnonymized$()
       : this.clientService.getData$();
+  }
 
-    source$.subscribe({
+  loadClients(): void {
+    this.getClientsSource$().subscribe({
       next: (data) => {
         this.clients = data;
         this.isIntialized = true;
@@ -198,11 +209,9 @@ export class ClientsComponent implements OnInit {
 
   async onPullToRefresh(evt: PullToRefreshEvent): Promise<void> {
     try {
-      const source$ = this.showArchived
-        ? this.clientService.getAnonymized$()
-        : this.clientService.getData$();
-
-      this.clients = await firstValueFrom(source$.pipe(take(1)));
+      this.clients = await firstValueFrom(
+        this.getClientsSource$().pipe(take(1)),
+      );
       this.isIntialized = true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
