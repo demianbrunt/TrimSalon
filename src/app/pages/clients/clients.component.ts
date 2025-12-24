@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -22,6 +22,13 @@ import { ClientService } from '../../core/services/client.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
+import {
+  readBooleanParam,
+  readNumberParam,
+  readStringParam,
+  sanitizePage,
+  toQueryParams,
+} from '../../core/utils/list-query-params';
 
 @Component({
   standalone: true,
@@ -49,6 +56,13 @@ export class ClientsComponent implements OnInit {
   sortOrder = 1;
   isIntialized = false;
 
+  showArchived = false;
+
+  searchQuery = '';
+  page = 1;
+  readonly mobileRows = 9;
+  readonly desktopRows = 10;
+
   getDogAge(dog: Dog): string | null {
     if (dog.dateOfBirth) {
       const birthDate = new Date(dog.dateOfBirth);
@@ -73,6 +87,7 @@ export class ClientsComponent implements OnInit {
     ConfirmationDialogService,
   );
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
 
@@ -81,6 +96,11 @@ export class ClientsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const queryParamMap = this.route.snapshot.queryParamMap;
+    this.searchQuery = readStringParam(queryParamMap, 'q', '');
+    this.page = sanitizePage(readNumberParam(queryParamMap, 'page', 1));
+    this.showArchived = readBooleanParam(queryParamMap, 'archived', false);
+
     this.loadClients();
     this.breadcrumbService.setItems([
       {
@@ -89,8 +109,62 @@ export class ClientsComponent implements OnInit {
     ]);
   }
 
+  onSearchQueryChange(value: string): void {
+    this.searchQuery = value;
+    this.page = 1;
+    this.updateListQueryParams();
+  }
+
+  setShowArchived(show: boolean): void {
+    if (this.showArchived === show) return;
+    this.showArchived = show;
+    this.page = 1;
+    this.updateListQueryParams();
+    this.loadClients();
+  }
+
+  onMobilePage(event: { page?: number; first?: number; rows?: number }): void {
+    const nextPage =
+      typeof event.page === 'number'
+        ? event.page + 1
+        : typeof event.first === 'number' && typeof event.rows === 'number'
+          ? Math.floor(event.first / event.rows) + 1
+          : 1;
+    this.page = sanitizePage(nextPage);
+    this.updateListQueryParams();
+  }
+
+  onDesktopPage(event: { page?: number; first?: number; rows?: number }): void {
+    this.onMobilePage(event);
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.page = 1;
+    this.showArchived = false;
+    this.updateListQueryParams();
+    this.loadClients();
+  }
+
+  private updateListQueryParams(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: toQueryParams({
+        q: this.searchQuery,
+        page: this.page,
+        archived: this.showArchived,
+      }),
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   loadClients(): void {
-    this.clientService.getData$().subscribe({
+    const source$ = this.showArchived
+      ? this.clientService.getAnonymized$()
+      : this.clientService.getData$();
+
+    source$.subscribe({
       next: (data) => {
         this.clients = data;
         this.isIntialized = true;

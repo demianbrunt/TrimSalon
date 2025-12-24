@@ -120,30 +120,21 @@
   margin-bottom: 0.5rem;
 }
 
-.appointment-form .sticky-footer-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+.appointment-form__footer-actions {
+  display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
 }
 
-.appointment-form .sticky-footer-actions__left {
-  justify-self: start;
+.appointment-form__footer-left {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
-.appointment-form .sticky-footer-actions__center {
-  justify-self: center;
-}
-
-.appointment-form .sticky-footer-actions__right {
-  justify-self: end;
-}
-
-@media (max-width: 480px) {
-  .appointment-form .sticky-footer-actions {
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  }
-
-  .appointment-form .sticky-footer-actions :ng-deep .p-button {
-    justify-content: center;
-  }
+.appointment-form__footer-right {
+  margin-left: auto;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }

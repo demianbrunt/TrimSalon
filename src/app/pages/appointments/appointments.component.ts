@@ -1,23 +1,40 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  inject,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DataViewModule } from 'primeng/dataview';
+import { DataView, DataViewModule } from 'primeng/dataview';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { TableModule } from 'primeng/table';
+import { Table, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
-import { combineLatest, map, Observable, of, switchMap, take } from 'rxjs';
+import {
+  combineLatest,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  Observable,
+  of,
+  Subject,
+  switchMap,
+  take,
+} from 'rxjs';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { TOAST_TITLE } from '../../core/constants/toast-titles';
 import {
@@ -32,6 +49,13 @@ import { ConfirmationDialogService } from '../../core/services/confirmation-dial
 import { InvoiceService } from '../../core/services/invoice.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
+import {
+  readBooleanParam,
+  readNumberParam,
+  readStringParam,
+  sanitizePage,
+  toQueryParams,
+} from '../../core/utils/list-query-params';
 import { Appointment } from './../../core/models/appointment.model';
 import { CustomCalendarComponent } from './calendar-view/custom-calendar.component';
 import { CompleteAppointmentDialogComponent } from './complete-appointment-dialog/complete-appointment-dialog.component';
@@ -79,6 +103,12 @@ export class AppointmentsComponent implements OnInit {
   isInitialized = false;
 
   mobileFiltersOpen = false;
+  desktopFiltersOpen = false;
+
+  searchQuery = '';
+  page = 1;
+  readonly mobileRows = 9;
+  readonly desktopRows = 10;
 
   statusFilter: AppointmentStatus = APPOINTMENT_STATUS.open;
 
@@ -107,22 +137,73 @@ export class AppointmentsComponent implements OnInit {
 
   showArchived = false;
 
+  private readonly searchQueryInput$ = new Subject<string>();
+
   private readonly appointmentService = inject(AppointmentService);
   private readonly invoiceService = inject(InvoiceService);
   private readonly appSettingsService = inject(AppSettingsService);
   private readonly toastrService = inject(ToastrService);
   private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
   private readonly dialogService = inject(AppDialogService);
+  private readonly destroyRef = inject(DestroyRef);
   private dialogRef: DynamicDialogRef | undefined;
+
+  @ViewChild('dv')
+  set dataViewRef(value: DataView | undefined) {
+    if (!value) return;
+    if (this.searchQuery) {
+      value.filter(this.searchQuery, 'contains');
+    }
+  }
+
+  @ViewChild('dt')
+  set tableRef(value: Table | undefined) {
+    if (!value) return;
+    if (this.searchQuery) {
+      value.filterGlobal(this.searchQuery, 'contains');
+    }
+  }
 
   get isMobile() {
     return this.mobileService.isMobile;
   }
 
   ngOnInit(): void {
+    const queryParamMap = this.route.snapshot.queryParamMap;
+
+    this.searchQuery = readStringParam(queryParamMap, 'q', '');
+    this.page = sanitizePage(readNumberParam(queryParamMap, 'page', 1));
+    this.showArchived = readBooleanParam(queryParamMap, 'archived', false);
+
+    const mode = readStringParam(queryParamMap, 'mode', 'list');
+    if (mode === 'calendar') {
+      this.viewMode = 'calendar';
+      this.showArchived = false;
+    }
+
+    const status = readStringParam(
+      queryParamMap,
+      'status',
+      APPOINTMENT_STATUS.open,
+    );
+    this.setStatusFilter(status, { skipUrlUpdate: true });
+
+    this.searchQueryInput$
+      .pipe(
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((value) => {
+        this.searchQuery = value;
+        this.page = 1;
+        this.updateListQueryParams();
+      });
+
     this.loadAppointments();
     this.breadcrumbService.setItems([
       {
@@ -160,13 +241,68 @@ export class AppointmentsComponent implements OnInit {
       this.showArchived = false;
     }
 
+    this.page = 1;
+    this.updateListQueryParams();
+
     this.loadAppointments();
   }
 
   setShowArchived(show: boolean): void {
     if (this.showArchived === show) return;
     this.showArchived = show;
+    this.page = 1;
+    this.updateListQueryParams();
     this.loadAppointments();
+  }
+
+  onSearchQueryInput(value: string): void {
+    this.searchQueryInput$.next(value);
+  }
+
+  onSearchQueryChange(value: string): void {
+    this.searchQuery = value;
+    this.page = 1;
+    this.updateListQueryParams();
+  }
+
+  onMobilePage(event: { page?: number; first?: number; rows?: number }): void {
+    const nextPage =
+      typeof event.page === 'number'
+        ? event.page + 1
+        : typeof event.first === 'number' && typeof event.rows === 'number'
+          ? Math.floor(event.first / event.rows) + 1
+          : 1;
+    this.page = sanitizePage(nextPage);
+    this.updateListQueryParams();
+  }
+
+  onDesktopPage(event: { page?: number; first?: number; rows?: number }): void {
+    this.onMobilePage(event);
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.mobileFiltersOpen = false;
+    this.desktopFiltersOpen = false;
+    this.page = 1;
+    this.setShowArchived(false);
+    this.setStatusFilter(APPOINTMENT_STATUS.open, { skipUrlUpdate: true });
+    this.updateListQueryParams();
+  }
+
+  private updateListQueryParams(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: toQueryParams({
+        q: this.searchQuery,
+        page: this.page,
+        archived: this.viewMode === 'calendar' ? false : this.showArchived,
+        status: this.statusFilter,
+        mode: this.viewMode === 'calendar' ? 'calendar' : null,
+      }),
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   showAppointmentForm(appointment?: Appointment): void {
@@ -393,7 +529,7 @@ export class AppointmentsComponent implements OnInit {
     return [...filtered].sort((a, b) => this.compareAppointments(a, b));
   }
 
-  setStatusFilter(value: unknown): void {
+  setStatusFilter(value: unknown, opts?: { skipUrlUpdate?: boolean }): void {
     const nextValue =
       typeof value === 'string'
         ? value
@@ -418,6 +554,11 @@ export class AppointmentsComponent implements OnInit {
         this.sortOrder = -1; // Descending (Newest first)
       } else {
         this.sortOrder = 1; // Ascending (Oldest/Closest first)
+      }
+
+      if (!opts?.skipUrlUpdate) {
+        this.page = 1;
+        this.updateListQueryParams();
       }
       return;
     }

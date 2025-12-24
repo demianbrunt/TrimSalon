@@ -46,7 +46,9 @@
       styleClass="mobile-card-list mobile-card-list--fixed-header"
       [value]="expenses"
       [paginator]="true"
-      [rows]="9"
+      [rows]="mobileRows"
+      [first]="(page - 1) * mobileRows"
+      (onPage)="onMobilePage($event)"
       [sortField]="sortField"
       [sortOrder]="sortOrder"
       [filterBy]="'description,type'"
@@ -55,9 +57,21 @@
         <app-table-header
           placeholder="Zoek uitgave"
           [table]="dv"
+          [query]="searchQuery"
+          (queryChange)="onSearchQueryChange($event)"
           [showAdd]="false"
           (addClick)="createExpense()"
-        ></app-table-header>
+        >
+          <p-button
+            header-actions
+            label="Reset"
+            icon="pi pi-filter-slash"
+            [text]="true"
+            (click)="resetFilters()"
+            size="small"
+            ariaLabel="Reset filters"
+          ></p-button>
+        </app-table-header>
       </ng-template>
       <ng-template #emptymessage></ng-template>
       <ng-template #list let-expenses>
@@ -135,7 +149,9 @@
         #dt
         [value]="expenses"
         [(selection)]="selectedExpense"
-        [rows]="10"
+        [rows]="desktopRows"
+        [first]="(page - 1) * desktopRows"
+        (onPage)="onDesktopPage($event)"
         [paginator]="true"
         [rowsPerPageOptions]="[10, 25, 50]"
         [showCurrentPageReport]="true"
@@ -148,8 +164,20 @@
           <app-table-header
             placeholder="Zoek uitgave"
             [table]="dt"
+            [query]="searchQuery"
+            (queryChange)="onSearchQueryChange($event)"
             (addClick)="createExpense()"
-          ></app-table-header>
+          >
+            <p-button
+              header-actions
+              label="Reset"
+              icon="pi pi-filter-slash"
+              [text]="true"
+              (click)="resetFilters()"
+              size="small"
+              ariaLabel="Reset filters"
+            ></p-button>
+          </app-table-header>
         </ng-template>
         <ng-template pTemplate="header">
           <tr>

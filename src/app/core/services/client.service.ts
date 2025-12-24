@@ -19,6 +19,17 @@ export class ClientService extends BaseService<Client> {
       .pipe(map((clients) => clients.filter((c) => !c.isAnonymized)));
   }
 
+  /**
+   * "Archief" clients are clients that were anonymized.
+   *
+   * We keep them out of the default list, but still allow viewing them.
+   */
+  getAnonymized$(): Observable<Client[]> {
+    return super
+      .getData$()
+      .pipe(map((clients) => clients.filter((c) => Boolean(c.isAnonymized))));
+  }
+
   override delete(id: string): Observable<void> {
     return this.getById(id).pipe(
       switchMap((client) => {

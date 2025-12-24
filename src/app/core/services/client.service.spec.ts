@@ -1,22 +1,68 @@
-import { TestBed } from '@angular/core/testing';
-import { Firestore } from '@angular/fire/firestore';
+import { firstValueFrom, of } from 'rxjs';
+import { BaseService } from './base.service';
 import { ClientService } from './client.service';
-import { createMockFirestore } from '../../../test-helpers/firebase-mocks';
 
 describe('ClientService', () => {
-  beforeEach(() => {
-    const mockFirestore = createMockFirestore();
+  let service: ClientService;
 
-    TestBed.configureTestingModule({
-      providers: [
-        ClientService,
-        { provide: Firestore, useValue: mockFirestore },
-      ],
-    });
+  beforeEach(() => {
+    service = Object.create(ClientService.prototype) as ClientService;
   });
 
   it('should be defined', () => {
     expect(ClientService).toBeDefined();
+  });
+
+  it('should exclude anonymized clients from getData$', async () => {
+    spyOn(BaseService.prototype, 'getData$').and.returnValue(
+      of([
+        {
+          id: '1',
+          name: 'Alice',
+          email: 'a@example.com',
+          phone: '123',
+          dogs: [],
+          isAnonymized: false,
+        },
+        {
+          id: '2',
+          name: 'Geanonimiseerde Klant',
+          email: '',
+          phone: '',
+          dogs: [],
+          isAnonymized: true,
+        },
+      ]),
+    );
+
+    const result = await firstValueFrom(service.getData$());
+    expect(result.map((c) => c.id)).toEqual(['1']);
+  });
+
+  it('should return only anonymized clients from getAnonymized$', async () => {
+    spyOn(BaseService.prototype, 'getData$').and.returnValue(
+      of([
+        {
+          id: '1',
+          name: 'Alice',
+          email: 'a@example.com',
+          phone: '123',
+          dogs: [],
+          isAnonymized: false,
+        },
+        {
+          id: '2',
+          name: 'Geanonimiseerde Klant',
+          email: '',
+          phone: '',
+          dogs: [],
+          isAnonymized: true,
+        },
+      ]),
+    );
+
+    const result = await firstValueFrom(service.getAnonymized$());
+    expect(result.map((c) => c.id)).toEqual(['2']);
   });
 
   // Note: Testing Firebase services properly requires either:

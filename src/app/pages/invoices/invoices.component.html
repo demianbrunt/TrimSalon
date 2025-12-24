@@ -4,7 +4,9 @@
     styleClass="mobile-card-list mobile-card-list--fixed-header"
     [value]="invoices"
     [paginator]="true"
-    [rows]="9"
+    [rows]="mobileRows"
+    [first]="(page - 1) * mobileRows"
+    (onPage)="onMobilePage($event)"
     [sortField]="sortField"
     [sortOrder]="sortOrder"
     [filterBy]="'invoiceNumber, client.name'"
@@ -13,6 +15,8 @@
       <app-table-header
         placeholder="Zoek factuur"
         [table]="dv"
+        [query]="searchQuery"
+        (queryChange)="onSearchQueryChange($event)"
         [showAdd]="false"
         (addClick)="showInvoiceForm()"
       >
@@ -32,6 +36,14 @@
             [attr.aria-pressed]="showArchived"
             (click)="setShowArchived(true)"
             size="small"
+          ></p-button>
+          <p-button
+            label="Reset"
+            icon="pi pi-filter-slash"
+            [text]="true"
+            (click)="resetFilters()"
+            size="small"
+            ariaLabel="Reset filters"
           ></p-button>
         </div>
       </app-table-header>
@@ -144,7 +156,9 @@
         #dt
         [value]="invoices"
         [paginator]="true"
-        [rows]="10"
+        [rows]="desktopRows"
+        [first]="(page - 1) * desktopRows"
+        (onPage)="onDesktopPage($event)"
         [sortField]="sortField"
         [sortOrder]="sortOrder"
         [filterDelay]="0"
@@ -156,6 +170,8 @@
             <app-table-header
               placeholder="Zoek factuur"
               [table]="dt"
+              [query]="searchQuery"
+              (queryChange)="onSearchQueryChange($event)"
               (addClick)="showInvoiceForm()"
             >
               <div header-actions class="flex gap-2">
@@ -174,6 +190,14 @@
                   [attr.aria-pressed]="showArchived"
                   (click)="setShowArchived(true)"
                   size="small"
+                ></p-button>
+                <p-button
+                  label="Reset"
+                  icon="pi pi-filter-slash"
+                  [text]="true"
+                  (click)="resetFilters()"
+                  size="small"
+                  ariaLabel="Reset filters"
                 ></p-button>
               </div>
             </app-table-header>

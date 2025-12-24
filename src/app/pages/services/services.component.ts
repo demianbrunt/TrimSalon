@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -20,6 +20,13 @@ import { ConfirmationDialogService } from '../../core/services/confirmation-dial
 import { MobileService } from '../../core/services/mobile.service';
 import { ServiceService } from '../../core/services/service.service';
 import { ToastrService } from '../../core/services/toastr.service';
+import {
+  readBooleanParam,
+  readNumberParam,
+  readStringParam,
+  sanitizePage,
+  toQueryParams,
+} from '../../core/utils/list-query-params';
 
 @Component({
   standalone: true,
@@ -48,11 +55,17 @@ export class ServicesComponent implements OnInit {
 
   showArchived = false;
 
+  searchQuery = '';
+  page = 1;
+  readonly mobileRows = 9;
+  readonly desktopRows = 10;
+
   private readonly serviceService = inject(ServiceService);
   private readonly toastrService = inject(ToastrService);
   private readonly dialogService = inject(AppDialogService);
   private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
 
@@ -61,6 +74,11 @@ export class ServicesComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const queryParamMap = this.route.snapshot.queryParamMap;
+    this.searchQuery = readStringParam(queryParamMap, 'q', '');
+    this.showArchived = readBooleanParam(queryParamMap, 'archived', false);
+    this.page = sanitizePage(readNumberParam(queryParamMap, 'page', 1));
+
     this.loadServices();
     this.breadcrumbService.setItems([
       {
@@ -81,7 +99,51 @@ export class ServicesComponent implements OnInit {
   setShowArchived(show: boolean): void {
     if (this.showArchived === show) return;
     this.showArchived = show;
+    this.page = 1;
+    this.updateListQueryParams();
     this.loadServices();
+  }
+
+  onSearchQueryChange(value: string): void {
+    this.searchQuery = value;
+    this.page = 1;
+    this.updateListQueryParams();
+  }
+
+  onMobilePage(event: { page?: number; first?: number; rows?: number }): void {
+    const nextPage =
+      typeof event.page === 'number'
+        ? event.page + 1
+        : typeof event.first === 'number' && typeof event.rows === 'number'
+          ? Math.floor(event.first / event.rows) + 1
+          : 1;
+    this.page = sanitizePage(nextPage);
+    this.updateListQueryParams();
+  }
+
+  onDesktopPage(event: { page?: number; first?: number; rows?: number }): void {
+    this.onMobilePage(event);
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.showArchived = false;
+    this.page = 1;
+    this.updateListQueryParams();
+    this.loadServices();
+  }
+
+  private updateListQueryParams(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: toQueryParams({
+        q: this.searchQuery,
+        page: this.page,
+        archived: this.showArchived,
+      }),
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   showServiceForm(service?: Service): void {

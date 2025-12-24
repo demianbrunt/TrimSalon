@@ -4,9 +4,10 @@ import {
   fakeAsync,
   tick,
 } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Subject, of } from 'rxjs';
+import { MockActivatedRoute } from '../../../test-helpers/angular-mocks';
 import { TOAST_TITLE } from '../../core/constants/toast-titles';
 import { DEFAULT_APP_SETTINGS } from '../../core/models/app-settings.model';
 import { APPOINTMENT_STATUS } from '../../core/models/appointment-status';
@@ -94,6 +95,7 @@ describe('AppointmentsComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AppointmentsComponent],
       providers: [
+        { provide: ActivatedRoute, useValue: new MockActivatedRoute() },
         { provide: AppointmentService, useValue: mockAppointmentService },
         { provide: InvoiceService, useValue: mockInvoiceService },
         { provide: AppSettingsService, useValue: mockAppSettingsService },

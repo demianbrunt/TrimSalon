@@ -694,8 +694,10 @@
 
     <!-- NAVIGATION BUTTONS -->
     <div class="mt-5 pt-3 border-top-1 border-gray-200">
-      <div class="sticky-footer-actions gap-2">
-        <div class="sticky-footer-actions__left flex align-items-center gap-2">
+      <div class="sticky-footer-actions gap-2 appointment-form__footer-actions">
+        <div
+          class="appointment-form__footer-left flex align-items-center gap-2"
+        >
           <p-button
             *ngIf="!isEditMode && currentStep > 0"
             label="Vorige"
@@ -706,17 +708,9 @@
           ></p-button>
         </div>
 
-        <div class="sticky-footer-actions__center flex align-items-center">
-          <p-button
-            label="Annuleren"
-            icon="pi pi-times"
-            styleClass="p-button-text"
-            type="button"
-            (onClick)="cancel()"
-          ></p-button>
-        </div>
-
-        <div class="sticky-footer-actions__right flex align-items-center gap-2">
+        <div
+          class="appointment-form__footer-right flex align-items-center gap-2"
+        >
           <p-button
             *ngIf="!isEditMode && currentStep < steps.length - 1"
             label="Volgende"
@@ -740,6 +734,14 @@
             (onClick)="submit()"
             [loading]="isLoading"
             [disabled]="form.invalid"
+          ></p-button>
+
+          <p-button
+            label="Annuleren"
+            icon="pi pi-times"
+            styleClass="p-button-text"
+            type="button"
+            (onClick)="cancel()"
           ></p-button>
         </div>
       </div>

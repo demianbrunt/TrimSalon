@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DataViewModule } from 'primeng/dataview';
@@ -17,6 +17,12 @@ import { ConfirmationDialogService } from '../../core/services/confirmation-dial
 import { ExpenseService } from '../../core/services/expense.service';
 import { MobileService } from '../../core/services/mobile.service';
 import { ToastrService } from '../../core/services/toastr.service';
+import {
+  readNumberParam,
+  readStringParam,
+  sanitizePage,
+  toQueryParams,
+} from '../../core/utils/list-query-params';
 
 @Component({
   standalone: true,
@@ -44,6 +50,11 @@ export class ExpensesComponent implements OnInit {
   scrollableHeight = '50vh';
   totalExpenses = 0;
 
+  searchQuery = '';
+  page = 1;
+  readonly mobileRows = 9;
+  desktopRows = 10;
+
   get isMobile() {
     return this.mobileService.isMobile;
   }
@@ -52,6 +63,7 @@ export class ExpensesComponent implements OnInit {
   private readonly breadcrumbService = inject(BreadcrumbService);
   private readonly mobileService = inject(MobileService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly toastrService = inject(ToastrService);
   private readonly confirmationDialogService = inject(
     ConfirmationDialogService,
@@ -59,8 +71,59 @@ export class ExpensesComponent implements OnInit {
   private readonly dialogService = inject(AppDialogService);
 
   ngOnInit(): void {
+    const queryParamMap = this.route.snapshot.queryParamMap;
+    this.searchQuery = readStringParam(queryParamMap, 'q', '');
+    this.page = sanitizePage(readNumberParam(queryParamMap, 'page', 1));
+    this.desktopRows = Math.max(
+      1,
+      Math.floor(readNumberParam(queryParamMap, 'rows', this.desktopRows)),
+    );
+
     this.breadcrumbService.setItems([{ label: 'Uitgaven' }]);
     this.loadExpenses();
+  }
+
+  onSearchQueryChange(value: string): void {
+    this.searchQuery = value;
+    this.page = 1;
+    this.updateListQueryParams();
+  }
+
+  onMobilePage(event: { page?: number; first?: number; rows?: number }): void {
+    const nextPage =
+      typeof event.page === 'number'
+        ? event.page + 1
+        : typeof event.first === 'number' && typeof event.rows === 'number'
+          ? Math.floor(event.first / event.rows) + 1
+          : 1;
+    this.page = sanitizePage(nextPage);
+    this.updateListQueryParams();
+  }
+
+  onDesktopPage(event: { page?: number; first?: number; rows?: number }): void {
+    if (typeof event.rows === 'number' && Number.isFinite(event.rows)) {
+      this.desktopRows = Math.max(1, Math.floor(event.rows));
+    }
+    this.onMobilePage(event);
+  }
+
+  resetFilters(): void {
+    this.searchQuery = '';
+    this.page = 1;
+    this.updateListQueryParams();
+  }
+
+  private updateListQueryParams(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: toQueryParams({
+        q: this.searchQuery,
+        page: this.page,
+        rows: this.desktopRows,
+      }),
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   loadExpenses(): void {

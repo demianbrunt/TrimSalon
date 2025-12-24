@@ -4,7 +4,9 @@
     styleClass="mobile-card-list mobile-card-list--fixed-header"
     [value]="clients"
     [paginator]="true"
-    [rows]="9"
+    [rows]="mobileRows"
+    [first]="(page - 1) * mobileRows"
+    (onPage)="onMobilePage($event)"
     [sortField]="sortField"
     [sortOrder]="sortOrder"
     [filterBy]="'name,dogs.name,dogs.breed.name'"
@@ -13,9 +15,39 @@
       <app-table-header
         placeholder="Zoek klant of hond"
         [table]="dv"
+        [query]="searchQuery"
+        (queryChange)="onSearchQueryChange($event)"
         [showAdd]="false"
         (addClick)="showClientForm()"
-      ></app-table-header>
+      >
+        <div header-actions class="flex gap-2 align-items-center">
+          <p-button
+            label="Actief"
+            icon="pi pi-check"
+            [text]="showArchived"
+            (click)="setShowArchived(false)"
+            size="small"
+            ariaLabel="Toon actieve klanten"
+          ></p-button>
+          <p-button
+            label="Archief"
+            icon="pi pi-archive"
+            [text]="!showArchived"
+            (click)="setShowArchived(true)"
+            size="small"
+            ariaLabel="Toon gearchiveerde klanten"
+          ></p-button>
+
+          <p-button
+            label="Reset"
+            icon="pi pi-filter-slash"
+            [text]="true"
+            (click)="resetFilters()"
+            size="small"
+            ariaLabel="Reset filters"
+          ></p-button>
+        </div>
+      </app-table-header>
     </ng-template>
     <ng-template #emptymessage></ng-template>
     <ng-template #list let-clients>
@@ -108,6 +140,7 @@
                   icon="pi pi-pencil"
                   [text]="true"
                   [rounded]="true"
+                  [disabled]="client.isAnonymized"
                   (click)="showClientForm(client)"
                   pTooltip="Bewerken"
                 ></p-button>
@@ -116,6 +149,7 @@
                   severity="danger"
                   [text]="true"
                   [rounded]="true"
+                  [disabled]="client.isAnonymized"
                   (click)="deleteClient(client)"
                   pTooltip="Anonimiseren"
                 ></p-button>
@@ -146,7 +180,9 @@
         #dt
         [value]="clients"
         [paginator]="true"
-        [rows]="10"
+        [rows]="desktopRows"
+        [first]="(page - 1) * desktopRows"
+        (onPage)="onDesktopPage($event)"
         [sortField]="sortField"
         [sortOrder]="sortOrder"
         [filterDelay]="0"
@@ -157,8 +193,38 @@
           <app-table-header
             placeholder="Zoek klant of hond"
             [table]="dt"
+            [query]="searchQuery"
+            (queryChange)="onSearchQueryChange($event)"
             (addClick)="showClientForm()"
-          ></app-table-header>
+          >
+            <div header-actions class="flex gap-2 align-items-center">
+              <p-button
+                label="Actief"
+                icon="pi pi-check"
+                [text]="showArchived"
+                (click)="setShowArchived(false)"
+                size="small"
+                ariaLabel="Toon actieve klanten"
+              ></p-button>
+              <p-button
+                label="Archief"
+                icon="pi pi-archive"
+                [text]="!showArchived"
+                (click)="setShowArchived(true)"
+                size="small"
+                ariaLabel="Toon gearchiveerde klanten"
+              ></p-button>
+
+              <p-button
+                label="Reset"
+                icon="pi pi-filter-slash"
+                [text]="true"
+                (click)="resetFilters()"
+                size="small"
+                ariaLabel="Reset filters"
+              ></p-button>
+            </div>
+          </app-table-header>
         </ng-template>
         <ng-template pTemplate="header">
           <tr>
@@ -260,12 +326,14 @@
                 <p-button
                   icon="pi pi-pencil"
                   styleClass="p-button-text p-button-rounded"
+                  [disabled]="client.isAnonymized"
                   (click)="showClientForm(client)"
                   pTooltip="Bewerken"
                 ></p-button>
                 <p-button
                   icon="pi pi-trash"
                   styleClass="p-button-text p-button-rounded p-button-danger"
+                  [disabled]="client.isAnonymized"
                   (click)="deleteClient(client)"
                   pTooltip="Anonimiseren"
                 ></p-button>

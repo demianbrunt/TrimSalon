@@ -4,7 +4,9 @@
     styleClass="mobile-card-list mobile-card-list--fixed-header"
     [value]="packages"
     [paginator]="true"
-    [rows]="9"
+    [rows]="mobileRows"
+    [first]="(page - 1) * mobileRows"
+    (onPage)="onMobilePage($event)"
     [sortField]="sortField"
     [sortOrder]="sortOrder"
     [filterBy]="'name,services.name'"
@@ -13,6 +15,8 @@
       <app-table-header
         placeholder="Zoek pakket"
         [table]="dv"
+        [query]="searchQuery"
+        (queryChange)="onSearchQueryChange($event)"
         [showAdd]="false"
         (addClick)="showPackageForm()"
       >
@@ -32,6 +36,14 @@
             [attr.aria-pressed]="showArchived"
             (click)="setShowArchived(true)"
             size="small"
+          ></p-button>
+          <p-button
+            label="Reset"
+            icon="pi pi-filter-slash"
+            [text]="true"
+            (click)="resetFilters()"
+            size="small"
+            ariaLabel="Reset filters"
           ></p-button>
         </div>
       </app-table-header>
@@ -146,7 +158,9 @@
         #dt
         [value]="packages"
         [paginator]="true"
-        [rows]="10"
+        [rows]="desktopRows"
+        [first]="(page - 1) * desktopRows"
+        (onPage)="onDesktopPage($event)"
         [sortField]="sortField"
         [sortOrder]="sortOrder"
         [filterDelay]="0"
@@ -158,6 +172,8 @@
             <app-table-header
               placeholder="Zoek pakket"
               [table]="dt"
+              [query]="searchQuery"
+              (queryChange)="onSearchQueryChange($event)"
               (addClick)="showPackageForm()"
             >
               <div header-actions class="flex gap-2">
@@ -176,6 +192,14 @@
                   [attr.aria-pressed]="showArchived"
                   (click)="setShowArchived(true)"
                   size="small"
+                ></p-button>
+                <p-button
+                  label="Reset"
+                  icon="pi pi-filter-slash"
+                  [text]="true"
+                  (click)="resetFilters()"
+                  size="small"
+                  ariaLabel="Reset filters"
                 ></p-button>
               </div>
             </app-table-header>

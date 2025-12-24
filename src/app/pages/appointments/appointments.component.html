@@ -37,7 +37,9 @@
         styleClass="mobile-card-list"
         [value]="visibleAppointments"
         [paginator]="true"
-        [rows]="9"
+        [rows]="mobileRows"
+        [first]="(page - 1) * mobileRows"
+        (onPage)="onMobilePage($event)"
         [filterBy]="'client.name, dog.name'"
       >
         <ng-template #header>
@@ -48,9 +50,13 @@
                 <input
                   pInputText
                   type="text"
-                  #searchInput
                   pSize="small"
-                  (input)="dv.filter(searchInput.value, 'contains')"
+                  [ngModelOptions]="{ standalone: true }"
+                  [(ngModel)]="searchQuery"
+                  (input)="
+                    dv.filter(searchQuery, 'contains');
+                    onSearchQueryInput(searchQuery)
+                  "
                   placeholder="Zoek afspraak"
                   class="w-full"
                   aria-label="Zoek afspraak"
@@ -102,6 +108,14 @@
                     [attr.aria-pressed]="showArchived"
                     (click)="setShowArchived(true)"
                     size="small"
+                  ></p-button>
+                  <p-button
+                    label="Reset"
+                    icon="pi pi-filter-slash"
+                    [text]="true"
+                    (click)="resetFilters()"
+                    size="small"
+                    ariaLabel="Reset filters"
                   ></p-button>
                 </div>
               </div>
@@ -246,7 +260,9 @@
             #dt
             [value]="visibleAppointments"
             [paginator]="true"
-            [rows]="10"
+            [rows]="desktopRows"
+            [first]="(page - 1) * desktopRows"
+            (onPage)="onDesktopPage($event)"
             [sortField]="sortField"
             [sortOrder]="sortOrder"
             [filterDelay]="0"
@@ -258,22 +274,14 @@
                 <app-table-header
                   placeholder="Zoek afspraak"
                   [table]="dt"
+                  [query]="searchQuery"
+                  (queryChange)="onSearchQueryChange($event)"
                   (addClick)="showAppointmentForm()"
                 >
                   <div
                     header-actions
                     class="flex flex-wrap gap-2 align-items-center"
                   >
-                    <p-selectButton
-                      [options]="statusFilterOptions"
-                      optionLabel="label"
-                      optionValue="value"
-                      [ngModel]="statusFilter"
-                      (ngModelChange)="setStatusFilter($event)"
-                      [allowEmpty]="false"
-                      ariaLabel="Filter afspraken"
-                    ></p-selectButton>
-
                     <div class="flex gap-2">
                       <p-button
                         label="Actief"
@@ -292,8 +300,45 @@
                         size="small"
                       ></p-button>
                     </div>
+
+                    <p-button
+                      label="Filters"
+                      icon="pi pi-filter"
+                      [text]="true"
+                      size="small"
+                      (click)="desktopFiltersOpen = !desktopFiltersOpen"
+                      [attr.aria-expanded]="desktopFiltersOpen"
+                      aria-controls="appointmentsDesktopFilters"
+                    ></p-button>
+
+                    <p-button
+                      label="Reset"
+                      icon="pi pi-filter-slash"
+                      [text]="true"
+                      (click)="resetFilters()"
+                      size="small"
+                      ariaLabel="Reset filters"
+                    ></p-button>
                   </div>
                 </app-table-header>
+
+                <div
+                  id="appointmentsDesktopFilters"
+                  class="appointments-desktop-filters"
+                  [hidden]="!desktopFiltersOpen"
+                >
+                  <div class="appointments-desktop-filters__inner">
+                    <p-selectButton
+                      [options]="statusFilterOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      [ngModel]="statusFilter"
+                      (ngModelChange)="setStatusFilter($event)"
+                      [allowEmpty]="false"
+                      ariaLabel="Filter afspraken"
+                    ></p-selectButton>
+                  </div>
+                </div>
               </div>
             </ng-template>
             <ng-template pTemplate="header">

@@ -241,6 +241,27 @@
   z-index: 1050;
 }
 
+.appointments-desktop-filters {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.75rem;
+  background-color: var(--p-surface-0, var(--surface-card, #fff));
+}
+
+.appointments-desktop-filters__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+:host ::ng-deep .appointments-desktop-filters .p-selectbutton {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 :host ::ng-deep .appointments-fab-container .p-button {
   padding: 0;
   border-radius: 9999px;

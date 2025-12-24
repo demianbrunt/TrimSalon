@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { DialogService } from 'primeng/dynamicdialog';
 import { of } from 'rxjs';
+import { MockActivatedRoute } from '../../../test-helpers/angular-mocks';
 import { PaymentStatus } from '../../core/models/invoice.model';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
@@ -51,6 +52,7 @@ describe('InvoicesComponent', () => {
     await TestBed.configureTestingModule({
       imports: [InvoicesComponent],
       providers: [
+        { provide: ActivatedRoute, useValue: new MockActivatedRoute() },
         { provide: InvoiceService, useValue: mockInvoiceService },
         { provide: ToastrService, useValue: mockToastrService },
         { provide: Router, useValue: mockRouter },

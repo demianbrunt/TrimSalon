@@ -1,11 +1,23 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  inject,
+  Input,
+  OnChanges,
+  OnInit,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ButtonModule } from 'primeng/button';
 import { DataView } from 'primeng/dataview';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { Table } from 'primeng/table';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
 import { MobileService } from '../../services/mobile.service';
 
 @Component({
@@ -33,7 +45,8 @@ import { MobileService } from '../../services/mobile.service';
           type="text"
           #searchInput
           pSize="small"
-          (input)="filter(searchInput.value)"
+          [value]="query"
+          (input)="onQueryInput(searchInput.value)"
           [placeholder]="placeholder"
           class="w-full"
         />
@@ -54,8 +67,12 @@ import { MobileService } from '../../services/mobile.service';
     </div>
   `,
 })
-export class TableHeaderComponent {
+export class TableHeaderComponent implements OnInit, OnChanges {
   private readonly mobileService = inject(MobileService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly queryInput$ = new Subject<string>();
+
+  private appliedQuery = '';
 
   get isMobile() {
     return this.mobileService.isMobile;
@@ -66,7 +83,10 @@ export class TableHeaderComponent {
   @Input() addLabel = 'Nieuw';
   @Input() showAdd = true;
   @Input({ required: true }) table!: Table | DataView;
+  @Input() query = '';
+  @Input() queryDebounceMs = 250;
   @Output() addClick = new EventEmitter<void>();
+  @Output() queryChange = new EventEmitter<string>();
 
   filter(value: string): void {
     if (this.table instanceof Table) {
@@ -74,5 +94,39 @@ export class TableHeaderComponent {
     } else {
       this.table.filter(value, 'contains');
     }
+  }
+
+  ngOnInit(): void {
+    this.queryInput$
+      .pipe(
+        debounceTime(this.queryDebounceMs),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((value) => {
+        this.queryChange.emit(value);
+      });
+
+    if (this.query) {
+      this.applyQuery(this.query);
+    }
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!('query' in changes)) return;
+    if (this.appliedQuery === this.query) return;
+    this.applyQuery(this.query);
+  }
+
+  onQueryInput(value: string): void {
+    this.query = value;
+    this.applyQuery(value);
+    this.queryInput$.next(value);
+  }
+
+  private applyQuery(value: string): void {
+    this.query = value;
+    this.appliedQuery = value;
+    this.filter(value);
   }
 }
