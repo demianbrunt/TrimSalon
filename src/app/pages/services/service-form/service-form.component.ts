@@ -75,10 +75,10 @@ export class ServiceFormComponent extends FormBaseComponent implements OnInit {
 
   allBreeds: Breed[] = [];
 
-  readonly breedSizeOverrideOptions: Array<{
+  readonly breedSizeOverrideOptions: {
     label: string;
     value: 'small' | 'medium' | 'large' | null;
-  }> = [
+  }[] = [
     { label: 'Gebruik rasgrootte', value: null },
     { label: 'Klein', value: 'small' },
     { label: 'Middel', value: 'medium' },
