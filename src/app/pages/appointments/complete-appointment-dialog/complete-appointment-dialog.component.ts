@@ -283,6 +283,14 @@ interface CompleteAppointmentFormControls {
     `,
   ],
 })
+/**
+ * Dialoog om een afspraak af te ronden.
+ *
+ * Verantwoordelijkheden:
+ * - basis afrond-invoer (eindtijd, prijs, notities)
+ * - optioneel markeren als betaald (incl. betaaldatum)
+ * - eventueel doorsturen naar het volledige bewerkscherm
+ */
 export class CompleteAppointmentDialogComponent implements OnInit {
   private readonly config = inject(DynamicDialogConfig);
   private readonly ref = inject(DynamicDialogRef);

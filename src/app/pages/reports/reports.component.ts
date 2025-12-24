@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+import type { jsPDF as JsPDF } from 'jspdf';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { DatePicker } from 'primeng/datepicker';
@@ -168,8 +167,13 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
     return `${value.toFixed(1)}%`;
   }
 
-  exportToPDF(): void {
-    const doc = new jsPDF() as jsPDF & {
+  async exportToPDF(): Promise<void> {
+    const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
+      import('jspdf'),
+      import('jspdf-autotable'),
+    ]);
+
+    const doc = new jsPDF() as JsPDF & {
       lastAutoTable?: {
         finalY: number;
       };

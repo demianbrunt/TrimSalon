@@ -18,11 +18,6 @@ import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getAuth, provideAuth } from '@angular/fire/auth';
 import { getFirestore, provideFirestore } from '@angular/fire/firestore';
 import { getFunctions, provideFunctions } from '@angular/fire/functions';
-import { getMessaging, provideMessaging } from '@angular/fire/messaging';
-import {
-  getRemoteConfig,
-  provideRemoteConfig,
-} from '@angular/fire/remote-config';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import Aura from '@primeuix/themes/aura';
@@ -80,7 +75,6 @@ export const commonProviders = [
     const auth = getAuth();
     return auth;
   }),
-  provideRemoteConfig(() => getRemoteConfig()),
   provideFirestore(() => {
     const firestore = getFirestore();
     return firestore;
@@ -89,7 +83,6 @@ export const commonProviders = [
     const functions = getFunctions(undefined, 'europe-west1');
     return functions;
   }),
-  provideMessaging(() => getMessaging()),
   provideHttpClient(withFetch()),
   provideAnimations(),
   {

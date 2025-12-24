@@ -20,7 +20,6 @@ import {
 } from '../../core/directives/pull-to-refresh.directive';
 import { SwipeDirective } from '../../core/directives/swipe.directive';
 import { Service } from '../../core/models/service.model';
-import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { MobileService } from '../../core/services/mobile.service';
@@ -56,6 +55,12 @@ import {
   templateUrl: './services.component.html',
 })
 export class ServicesComponent implements OnInit {
+  /**
+   * Overzichtspagina voor werkzaamheden.
+   *
+   * Beheert alleen lijst-state (zoeken, pagina, archief-toggle) en route query params.
+   * Datastromen komen uit `ServiceService`.
+   */
   services: Service[] = [];
   sortField = 'name';
   sortOrder = 1;
@@ -70,7 +75,6 @@ export class ServicesComponent implements OnInit {
 
   private readonly serviceService = inject(ServiceService);
   private readonly toastrService = inject(ToastrService);
-  private readonly dialogService = inject(AppDialogService);
   private readonly confirmationService = inject(ConfirmationDialogService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -97,9 +101,7 @@ export class ServicesComponent implements OnInit {
 
   loadServices(): void {
     this.serviceService.getData$().subscribe((data) => {
-      this.services = data.filter((service) =>
-        this.showArchived ? !!service.deletedAt : !service.deletedAt,
-      );
+      this.services = this.filterByArchivedState(data);
       this.isInitialized = true;
     });
   }
@@ -110,9 +112,7 @@ export class ServicesComponent implements OnInit {
         this.serviceService.getData$().pipe(take(1)),
       );
 
-      this.services = data.filter((service) =>
-        this.showArchived ? !!service.deletedAt : !service.deletedAt,
-      );
+      this.services = this.filterByArchivedState(data);
       this.isInitialized = true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
@@ -173,6 +173,18 @@ export class ServicesComponent implements OnInit {
 
     this.page = clamped;
     this.updateListQueryParams();
+  }
+
+  /**
+   * Past de archief-filter toe op een lijst van werkzaamheden.
+   *
+   * `showArchived = false` => alleen actieve items.
+   * `showArchived = true`  => alleen gearchiveerde items.
+   */
+  private filterByArchivedState(data: Service[]): Service[] {
+    return data.filter((service) =>
+      this.showArchived ? !!service.deletedAt : !service.deletedAt,
+    );
   }
 
   private updateListQueryParams(): void {

@@ -17,7 +17,6 @@ import {
 } from '../../core/directives/pull-to-refresh.directive';
 import { SwipeDirective } from '../../core/directives/swipe.directive';
 import { Expense, ExpenseType } from '../../core/models/expense.model';
-import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { ExpenseService } from '../../core/services/expense.service';
@@ -50,6 +49,14 @@ import {
   templateUrl: './expenses.component.html',
   styleUrls: ['./expenses.component.css'],
 })
+/**
+ * Uitgaven-overzicht.
+ *
+ * Verantwoordelijkheden:
+ * - lijst laden + soft-deletes verbergen
+ * - zoeken/pagineren en query params synchroniseren
+ * - totalen berekenen en verwijderen bevestigen
+ */
 export class ExpensesComponent implements OnInit {
   expenses: Expense[] = [];
   selectedExpense: Expense | null = null;
@@ -76,7 +83,10 @@ export class ExpensesComponent implements OnInit {
   private readonly confirmationDialogService = inject(
     ConfirmationDialogService,
   );
-  private readonly dialogService = inject(AppDialogService);
+
+  private filterActiveExpenses(expenses: Expense[]): Expense[] {
+    return expenses.filter((e) => !e.deletedAt);
+  }
 
   ngOnInit(): void {
     const queryParamMap = this.route.snapshot.queryParamMap;
@@ -152,7 +162,7 @@ export class ExpensesComponent implements OnInit {
 
   loadExpenses(): void {
     this.expenseService.getData$().subscribe((expenses) => {
-      this.expenses = expenses.filter((e) => !e.deletedAt);
+      this.expenses = this.filterActiveExpenses(expenses);
       this.calculateTotalExpenses();
     });
   }
@@ -162,7 +172,7 @@ export class ExpensesComponent implements OnInit {
       const expenses = await firstValueFrom(
         this.expenseService.getData$().pipe(take(1)),
       );
-      this.expenses = expenses.filter((e) => !e.deletedAt);
+      this.expenses = this.filterActiveExpenses(expenses);
       this.calculateTotalExpenses();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';

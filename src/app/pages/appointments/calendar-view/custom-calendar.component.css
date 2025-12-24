@@ -181,22 +181,9 @@
   overflow: auto;
 }
 
-:host ::ng-deep .calendar-scroll .p-datatable {
+:host ::ng-deep .calendar-scroll :is(.p-datatable, .p-datatable-wrapper) {
   flex: 1 1 auto;
   min-height: 0;
-}
-
-:host ::ng-deep .calendar-scroll .p-datatable-wrapper {
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.calendar-scroll--swipe-left {
-  animation: calendar-swipe-left 200ms ease;
-}
-
-.calendar-scroll--swipe-right {
-  animation: calendar-swipe-right 200ms ease;
 }
 
 .swipe-indicator {
@@ -215,19 +202,12 @@
   backdrop-filter: blur(8px);
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
   opacity: 0;
+  transition: opacity 200ms ease;
   pointer-events: none;
 }
 
 .swipe-indicator.show {
   opacity: 1;
-}
-
-.swipe-indicator.left.show {
-  animation: swipe-left 0.75s ease;
-}
-
-.swipe-indicator.right.show {
-  animation: swipe-right 0.75s ease;
 }
 
 .swipe-indicator .pi {
@@ -238,90 +218,6 @@
   font-size: 0.9rem;
   font-weight: 600;
   line-height: 1;
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-@keyframes swipe-left {
-  0% {
-    opacity: 0;
-    transform: translate(calc(-50% + 10px), -8px);
-  }
-  20% {
-    opacity: 1;
-    transform: translate(calc(-50% + 2px), -2px);
-  }
-  80% {
-    opacity: 1;
-    transform: translate(calc(-50% - 8px), 0);
-  }
-  100% {
-    opacity: 0.9;
-    transform: translate(calc(-50% - 12px), -2px);
-  }
-}
-
-@keyframes swipe-right {
-  0% {
-    opacity: 0;
-    transform: translate(calc(-50% - 10px), -8px);
-  }
-  20% {
-    opacity: 1;
-    transform: translate(calc(-50% - 2px), -2px);
-  }
-  80% {
-    opacity: 1;
-    transform: translate(calc(-50% + 8px), 0);
-  }
-  100% {
-    opacity: 0.9;
-    transform: translate(calc(-50% + 12px), -2px);
-  }
-}
-
-@keyframes calendar-swipe-left {
-  0% {
-    transform: translateX(10px);
-    opacity: 0.96;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes calendar-swipe-right {
-  0% {
-    transform: translateX(-10px);
-    opacity: 0.96;
-  }
-  100% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .calendar-scroll--swipe-left,
-  .calendar-scroll--swipe-right {
-    animation: none;
-  }
-
-  .swipe-indicator.left.show,
-  .swipe-indicator.right.show {
-    animation: none;
-  }
 }
 
 @media (max-width: 768px) {
@@ -369,16 +265,22 @@
   width: 100%;
 }
 
-:host ::ng-deep .p-datatable .p-datatable-thead > tr > th,
-:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+:host
+  ::ng-deep
+  .p-datatable
+  :is(.p-datatable-thead > tr > th, .p-datatable-tbody > tr > td) {
   padding: 0.5rem;
   border: 1px solid #dee2e6 !important;
 }
 
-:host ::ng-deep .p-datatable .p-datatable-thead > tr > th:not(.time-col),
-:host ::ng-deep .p-datatable .p-datatable-tbody > tr > td:not(.time-col) {
+:host
+  ::ng-deep
+  .p-datatable
+  :is(.p-datatable-thead > tr > th, .p-datatable-tbody > tr > td):not(
+    .time-col
+  ) {
   width: calc((100% - 60px) / 7);
-  min-width: 0; /* Allow equal distribution */
+  min-width: 0;
 }
 
 .time-col {
@@ -408,12 +310,6 @@
   position: relative;
 }
 
-/*
-  Day view uses a single day column.
-  When an appointment is rendered with a rowspan, the covered rows omit the day-cell,
-  which can cause those rows to collapse (no fixed height), breaking minute-accurate
-  positioning (e.g., 09:00–10:45 should leave a visible gap).
-*/
 :host ::ng-deep .day-view-table .p-datatable-tbody > tr {
   height: var(--hour-row-height);
 }
@@ -458,25 +354,12 @@
 .month-cell {
   height: 180px;
   min-height: 180px;
-  width: 14.28%; /* 100% / 7 days */
+  width: 14.28%;
   vertical-align: top;
   cursor: pointer;
   background-color: var(--surface-card);
   overflow-y: auto;
   overflow-x: hidden;
-}
-
-.month-cell::-webkit-scrollbar {
-  width: 3px;
-}
-
-.month-cell::-webkit-scrollbar-thumb {
-  background-color: var(--surface-300);
-  border-radius: 3px;
-}
-
-.month-cell::-webkit-scrollbar-track {
-  background-color: transparent;
 }
 
 .month-cell:hover {
@@ -519,8 +402,10 @@
     --hour-row-height: 34px;
   }
 
-  :host ::ng-deep .p-datatable .p-datatable-thead > tr > th,
-  :host ::ng-deep .p-datatable .p-datatable-tbody > tr > td {
+  :host
+    ::ng-deep
+    .p-datatable
+    :is(.p-datatable-thead > tr > th, .p-datatable-tbody > tr > td) {
     padding: 0.125rem !important;
   }
 
@@ -540,13 +425,7 @@
   }
 
   .day-cell {
-    height: var(--hour-row-height);
-    min-height: var(--hour-row-height);
     padding: 0 !important;
-  }
-
-  .day-cell--spanning {
-    height: auto;
   }
 
   .month-cell {
@@ -566,11 +445,7 @@
     line-height: 1.1;
   }
 
-  :host ::ng-deep .apt-card .text-xs {
-    font-size: 0.65rem !important;
-  }
-
-  :host ::ng-deep .apt-card .pi-exclamation-triangle {
+  :host ::ng-deep .apt-card :is(.text-xs, .pi-exclamation-triangle) {
     font-size: 0.65rem !important;
   }
 
@@ -598,15 +473,6 @@
     width: 50px;
     min-width: 50px;
     font-size: 0.8rem;
-  }
-
-  .day-cell {
-    height: var(--hour-row-height);
-    min-height: var(--hour-row-height);
-  }
-
-  .day-cell--spanning {
-    height: auto;
   }
 
   .month-cell {
