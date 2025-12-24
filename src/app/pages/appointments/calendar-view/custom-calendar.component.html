@@ -4,11 +4,26 @@
   (swipeLeft)="handleSwipe('left')"
   (swipeRight)="handleSwipe('right')"
 >
+  <div
+    class="swipe-indicator"
+    [class.left]="swipeIndicator() === 'left'"
+    [class.right]="swipeIndicator() === 'right'"
+    [class.show]="swipeIndicator() !== null"
+    aria-hidden="true"
+  >
+    <i
+      class="pi"
+      [class.pi-arrow-left]="swipeIndicator() === 'right'"
+      [class.pi-arrow-right]="swipeIndicator() === 'left'"
+      aria-hidden="true"
+    ></i>
+    <span class="swipe-label">{{ swipeIndicatorLabel() }}</span>
+  </div>
+
   <p-card>
     <!-- Header - Optimized for Mobile -->
-    <div class="calendar-header mb-2">
-      <!-- Desktop Navigation -->
-      <div class="calendar-nav hidden md:flex gap-2 align-items-center">
+    <div class="calendar-header" #calendarHeader>
+      <div class="calendar-date">
         <p-button
           icon="pi pi-chevron-left"
           (onClick)="previousPeriod()"
@@ -18,13 +33,17 @@
           [text]="true"
           size="small"
         />
-        <p-button
-          label="Vandaag"
-          (onClick)="goToToday()"
-          pTooltip="Ga naar vandaag"
-          [text]="true"
-          size="small"
-        />
+
+        <div class="date-display">
+          <div class="date-main">
+            <span class="date-main__text">{{ currentPeriodMainTitle() }}</span>
+            @if (viewMode() === "day" && isCurrentPeriodToday()) {
+              <p-badge value="Vandaag" severity="success" styleClass="ml-2" />
+            }
+          </div>
+          <div class="date-sub">{{ currentPeriodSubTitle() }}</div>
+        </div>
+
         <p-button
           icon="pi pi-chevron-right"
           (onClick)="nextPeriod()"
@@ -36,72 +55,50 @@
         />
       </div>
 
-      <!-- Mobile Navigation -->
-      <div class="calendar-nav-mobile md:hidden flex gap-1 align-items-center">
-        <p-button
-          icon="pi pi-chevron-left"
-          (onClick)="previousPeriod()"
-          ariaLabel="Vorige periode"
-          pTooltip="Vorige"
-          [rounded]="true"
-          [text]="true"
-          size="small"
-        />
+      <div class="calendar-actions flex align-items-center gap-2">
+        <ng-content select="[header-actions]"></ng-content>
+
         <p-button
           icon="pi pi-calendar"
           (onClick)="goToToday()"
           ariaLabel="Ga naar vandaag"
-          [rounded]="true"
-          [text]="true"
-          size="small"
           pTooltip="Ga naar vandaag"
-        />
-        <p-button
-          icon="pi pi-chevron-right"
-          (onClick)="nextPeriod()"
-          ariaLabel="Volgende periode"
-          pTooltip="Volgende"
           [rounded]="true"
           [text]="true"
           size="small"
         />
-      </div>
-
-      <!-- Title - Enhanced Date Display -->
-      <div class="date-display">
-        <div class="date-main">
-          <span class="date-main__text">{{ currentPeriodMainTitle() }}</span>
-          @if (viewMode() === "day" && isCurrentPeriodToday()) {
-            <p-badge value="Vandaag" severity="success" styleClass="ml-2" />
-          }
-        </div>
-        <div class="date-sub">{{ currentPeriodSubTitle() }}</div>
-      </div>
-
-      <!-- Right Side Actions -->
-      <div class="calendar-actions flex align-items-center gap-2">
-        <!-- Projected Content -->
-        <ng-content select="[header-actions]"></ng-content>
-
-        <!-- View Toggle - Icon Only on Mobile -->
-        <p-selectButton
-          [options]="viewModeOptions"
-          [(ngModel)]="viewMode"
-          optionLabel="label"
-          optionValue="value"
-          styleClass="view-toggle-compact"
-          size="small"
-          [allowEmpty]="false"
-        >
-          <ng-template let-item>
-            <i [class]="item.icon"></i>
-            <span class="hidden md:inline ml-2">{{ item.label }}</span>
-          </ng-template>
-        </p-selectButton>
       </div>
     </div>
 
-    <div class="calendar-scroll">
+    <div class="calendar-mode-bar" aria-label="Kalenderweergave">
+      <div
+        class="calendar-mode-toggle"
+        role="group"
+        aria-label="Dag, week of maand"
+      >
+        @for (option of viewModeOptions; track option.value) {
+          <button
+            type="button"
+            class="calendar-mode-option"
+            [class.active]="viewMode() === option.value"
+            (click)="setViewMode(option.value)"
+            [attr.aria-pressed]="viewMode() === option.value"
+          >
+            <i [class]="option.icon" aria-hidden="true"></i>
+            <span class="hidden md:inline ml-2">{{ option.label }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <div
+      class="calendar-scroll"
+      [class.calendar-scroll--swipe-left]="swipeTransition() === 'left'"
+      [class.calendar-scroll--swipe-right]="swipeTransition() === 'right'"
+      [class.calendar-scroll--outer-scroll]="viewMode() === 'month'"
+      (touchstart)="$event.stopPropagation()"
+      (touchmove)="$event.stopPropagation()"
+    >
       <!-- Week View -->
       @if (viewMode() === "week") {
         <p-table
@@ -133,43 +130,79 @@
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-slot>
-            <tr [class.current-time-row]="isCurrentHour(slot.hour)">
+            <tr [class.current-time-row]="isCurrentSlot(slot.slotIndex)">
               <td class="time-col">{{ slot.label }}</td>
               @for (day of weekDays(); track day.date.getTime()) {
-                <td
-                  class="day-cell p-1 relative"
-                  [class.is-today]="day.isToday"
-                  (click)="onCellClick(day.date, slot.hour)"
-                  tabindex="0"
-                  role="button"
-                >
-                  <!-- Current Time Line -->
-                  @if (day.isToday && isCurrentHour(slot.hour)) {
-                    <div
-                      class="current-time-line"
-                      [style.top.%]="getCurrentMinutePercentage()"
-                    ></div>
-                  }
+                @let spanning =
+                  getSpanningAppointmentForCell(day.date, slot.slotIndex);
+                @if (spanning) {
+                  <td
+                    class="day-cell day-cell--spanning p-1 relative"
+                    [class.is-today]="day.isToday"
+                    (click)="onCellClick(day.date, slot)"
+                    tabindex="0"
+                    role="button"
+                    [attr.rowspan]="spanning.rowSpan"
+                  >
+                    <!-- Current Time Line -->
+                    @if (
+                      day.isToday &&
+                      isCurrentTimeWithinSpan(slot.slotIndex, spanning.rowSpan)
+                    ) {
+                      <div
+                        class="current-time-line"
+                        [style.top.%]="
+                          getCurrentTimeOffsetPercentageWithinSpan(
+                            slot.slotIndex,
+                            spanning.rowSpan
+                          )
+                        "
+                      ></div>
+                    }
 
-                  @for (
-                    apt of getAppointmentsForDayHour(day.date, slot.hour);
-                    track apt.id
-                  ) {
                     <div
-                      class="apt-card p-1 md:p-2 mb-1 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
-                      [class.border-green-500]="apt.completed"
-                      [class.surface-green-50]="apt.completed"
-                      (click)="onAppointmentClick($event, apt)"
+                      class="apt-card apt-card--positioned p-1 md:p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                      [class.border-green-500]="spanning.appointment.completed"
+                      [class.surface-green-50]="spanning.appointment.completed"
+                      [style.top.%]="
+                        getAppointmentTopPctInSpan(
+                          spanning.appointment,
+                          slot.slotIndex,
+                          spanning.rowSpan
+                        )
+                      "
+                      [style.height.%]="
+                        getAppointmentHeightPctInSpan(
+                          spanning.appointment,
+                          slot.slotIndex,
+                          spanning.rowSpan
+                        )
+                      "
+                      (click)="onAppointmentClick($event, spanning.appointment)"
+                      (contextmenu)="
+                        onAppointmentContextMenu($event, spanning.appointment)
+                      "
+                      (pointerdown)="
+                        onAppointmentPointerDown($event, spanning.appointment)
+                      "
+                      (pointermove)="onAppointmentPointerMove($event)"
+                      (pointerup)="onAppointmentPointerUp()"
+                      (pointercancel)="onAppointmentPointerCancel()"
+                      (pointerleave)="onAppointmentPointerCancel()"
                       tabindex="0"
                       role="button"
-                      [pTooltip]="apt.client.name + ' - ' + apt.dog.name"
+                      [pTooltip]="
+                        spanning.appointment.client.name +
+                        ' - ' +
+                        spanning.appointment.dog.name
+                      "
                     >
                       <div class="font-semibold text-xs md:text-sm">
-                        {{ apt.client.name }}
+                        {{ spanning.appointment.client.name }}
                       </div>
                       <div class="text-xs flex align-items-center gap-1">
-                        <span>{{ apt.dog.name }}</span>
-                        @if (apt.dog.isAggressive) {
+                        <span>{{ spanning.appointment.dog.name }}</span>
+                        @if (spanning.appointment.dog.isAggressive) {
                           <i
                             class="pi pi-exclamation-triangle text-red-600 font-bold mr-1"
                             pTooltip="LET OP: AGRESSIEF"
@@ -178,11 +211,27 @@
                       </div>
                       <div class="apt-meta text-2xs md:text-xs">
                         <p-tag
+                          (contextmenu)="
+                            onAppointmentContextMenu(
+                              $event,
+                              spanning.appointment
+                            )
+                          "
+                          (pointerdown)="
+                            onAppointmentPointerDown(
+                              $event,
+                              spanning.appointment
+                            )
+                          "
+                          (pointermove)="onAppointmentPointerMove($event)"
+                          (pointerup)="onAppointmentPointerUp()"
+                          (pointercancel)="onAppointmentPointerCancel()"
+                          (pointerleave)="onAppointmentPointerCancel()"
                           severity="info"
                           styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
-                          [value]="getBreedLabel(apt)"
+                          [value]="getBreedLabel(spanning.appointment)"
                         ></p-tag>
-                        @let gender = getGenderLabel(apt);
+                        @let gender = getGenderLabel(spanning.appointment);
                         @if (gender) {
                           <p-tag
                             severity="secondary"
@@ -192,7 +241,7 @@
                             <span>{{ gender.text }}</span>
                           </p-tag>
                         }
-                        @let ageLabel = getAgeLabel(apt);
+                        @let ageLabel = getAgeLabel(spanning.appointment);
                         @if (ageLabel) {
                           <p-tag
                             severity="secondary"
@@ -200,7 +249,7 @@
                             [value]="ageLabel"
                           ></p-tag>
                         }
-                        @let svcNames = getServiceNames(apt);
+                        @let svcNames = getServiceNames(spanning.appointment);
                         @if (svcNames) {
                           <p-tag
                             severity="secondary"
@@ -208,7 +257,7 @@
                             [value]="svcNames"
                           ></p-tag>
                         }
-                        @let pkgNames = getPackageNames(apt);
+                        @let pkgNames = getPackageNames(spanning.appointment);
                         @if (pkgNames) {
                           <p-tag
                             severity="secondary"
@@ -216,7 +265,7 @@
                             [value]="pkgNames"
                           ></p-tag>
                         }
-                        @if (hasNotes(apt)) {
+                        @if (hasNotes(spanning.appointment)) {
                           <p-tag
                             severity="warn"
                             styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs flex align-items-center gap-1"
@@ -227,12 +276,168 @@
                         }
                       </div>
                       <div class="text-xs mt-1 hidden md:block">
-                        {{ apt.startTime | date: "HH:mm" }} -
-                        {{ apt.endTime | date: "HH:mm" }}
+                        {{ spanning.appointment.startTime | date: "HH:mm" }} -
+                        {{ spanning.appointment.endTime | date: "HH:mm" }}
                       </div>
                     </div>
-                  }
-                </td>
+                  </td>
+                } @else if (
+                  isSlotCoveredBySpanningAppointment(day.date, slot.slotIndex)
+                ) {
+                  <!-- Covered by rowspan above -->
+                } @else {
+                  <td
+                    class="day-cell p-1 relative"
+                    [class.is-today]="day.isToday"
+                    (click)="onCellClick(day.date, slot)"
+                    tabindex="0"
+                    role="button"
+                  >
+                    <!-- Current Time Line -->
+                    @if (day.isToday && isCurrentSlot(slot.slotIndex)) {
+                      <div
+                        class="current-time-line"
+                        [style.top.%]="getCurrentSlotMinutePercentage()"
+                      ></div>
+                    }
+
+                    @let slotApts =
+                      getAppointmentsForDaySlot(day.date, slot.slotIndex);
+
+                    @if (slotApts.length === 1) {
+                      @let apt = slotApts[0];
+                      <div
+                        class="apt-card apt-card--positioned p-1 md:p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                        [class.border-green-500]="apt.completed"
+                        [class.surface-green-50]="apt.completed"
+                        [style.top.%]="getAppointmentTopPctInHour(apt)"
+                        [style.height.%]="getAppointmentHeightPctInHour(apt)"
+                        (click)="onAppointmentClick($event, apt)"
+                        (contextmenu)="onAppointmentContextMenu($event, apt)"
+                        (pointerdown)="onAppointmentPointerDown($event, apt)"
+                        (pointermove)="onAppointmentPointerMove($event)"
+                        (pointerup)="onAppointmentPointerUp()"
+                        (pointercancel)="onAppointmentPointerCancel()"
+                        (pointerleave)="onAppointmentPointerCancel()"
+                        tabindex="0"
+                        role="button"
+                        [pTooltip]="apt.client.name + ' - ' + apt.dog.name"
+                      >
+                        <div class="font-semibold text-xs md:text-sm">
+                          {{ apt.client.name }}
+                        </div>
+                        <div class="text-xs flex align-items-center gap-1">
+                          <span>{{ apt.dog.name }}</span>
+                          @if (apt.dog.isAggressive) {
+                            <i
+                              class="pi pi-exclamation-triangle text-red-600 font-bold mr-1"
+                              pTooltip="LET OP: AGRESSIEF"
+                            ></i>
+                          }
+                        </div>
+                        <div class="text-xs mt-1 hidden md:block">
+                          {{ apt.startTime | date: "HH:mm" }} -
+                          {{ apt.endTime | date: "HH:mm" }}
+                        </div>
+                      </div>
+                    } @else {
+                      @for (apt of slotApts; track apt.id) {
+                        <div
+                          class="apt-card p-1 md:p-2 mb-1 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                          [class.border-green-500]="apt.completed"
+                          [class.surface-green-50]="apt.completed"
+                          (click)="onAppointmentClick($event, apt)"
+                          (contextmenu)="onAppointmentContextMenu($event, apt)"
+                          (pointerdown)="onAppointmentPointerDown($event, apt)"
+                          (pointermove)="onAppointmentPointerMove($event)"
+                          (pointerup)="onAppointmentPointerUp()"
+                          (pointercancel)="onAppointmentPointerCancel()"
+                          (pointerleave)="onAppointmentPointerCancel()"
+                          tabindex="0"
+                          role="button"
+                          [pTooltip]="apt.client.name + ' - ' + apt.dog.name"
+                        >
+                          <div class="font-semibold text-xs md:text-sm">
+                            {{ apt.client.name }}
+                          </div>
+                          <div class="text-xs flex align-items-center gap-1">
+                            <span>{{ apt.dog.name }}</span>
+                            @if (apt.dog.isAggressive) {
+                              <i
+                                class="pi pi-exclamation-triangle text-red-600 font-bold mr-1"
+                                pTooltip="LET OP: AGRESSIEF"
+                              ></i>
+                            }
+                          </div>
+                          <div class="apt-meta text-2xs md:text-xs">
+                            <p-tag
+                              (contextmenu)="
+                                onAppointmentContextMenu($event, apt)
+                              "
+                              (pointerdown)="
+                                onAppointmentPointerDown($event, apt)
+                              "
+                              (pointermove)="onAppointmentPointerMove($event)"
+                              (pointerup)="onAppointmentPointerUp()"
+                              (pointercancel)="onAppointmentPointerCancel()"
+                              (pointerleave)="onAppointmentPointerCancel()"
+                              severity="info"
+                              styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
+                              [value]="getBreedLabel(apt)"
+                            ></p-tag>
+                            @let gender = getGenderLabel(apt);
+                            @if (gender) {
+                              <p-tag
+                                severity="secondary"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs flex align-items-center gap-1"
+                              >
+                                <i [class]="gender.icon" aria-hidden="true"></i>
+                                <span>{{ gender.text }}</span>
+                              </p-tag>
+                            }
+                            @let ageLabel = getAgeLabel(apt);
+                            @if (ageLabel) {
+                              <p-tag
+                                severity="secondary"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
+                                [value]="ageLabel"
+                              ></p-tag>
+                            }
+                            @let svcNames = getServiceNames(apt);
+                            @if (svcNames) {
+                              <p-tag
+                                severity="secondary"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
+                                [value]="svcNames"
+                              ></p-tag>
+                            }
+                            @let pkgNames = getPackageNames(apt);
+                            @if (pkgNames) {
+                              <p-tag
+                                severity="secondary"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
+                                [value]="pkgNames"
+                              ></p-tag>
+                            }
+                            @if (hasNotes(apt)) {
+                              <p-tag
+                                severity="warn"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs flex align-items-center gap-1"
+                              >
+                                <i class="pi pi-pencil" aria-hidden="true"></i>
+                                <span>Notities</span>
+                              </p-tag>
+                            }
+                          </div>
+                          <div class="text-xs mt-1 hidden md:block">
+                            {{ apt.startTime | date: "HH:mm" }} -
+                            {{ apt.endTime | date: "HH:mm" }}
+                          </div>
+                        </div>
+                      }
+                    }
+                  </td>
+                }
               }
             </tr>
           </ng-template>
@@ -257,33 +462,56 @@
             </tr>
           </ng-template>
           <ng-template pTemplate="body" let-slot>
-            <tr [class.current-time-row]="isCurrentHour(slot.hour)">
+            <tr [class.current-time-row]="isCurrentSlot(slot.slotIndex)">
               <td class="time-col">{{ slot.label }}</td>
-              <td
-                class="day-cell p-1 relative"
-                [class.is-today]="isToday(selectedDate())"
-                (click)="onCellClick(selectedDate(), slot.hour)"
-                tabindex="0"
-                role="button"
-              >
-                <!-- Current Time Line -->
-                @if (isToday(selectedDate()) && isCurrentHour(slot.hour)) {
-                  <div
-                    class="current-time-line"
-                    [style.top.%]="getCurrentMinutePercentage()"
-                  ></div>
-                }
+              @let spanning =
+                getSpanningAppointmentForCell(selectedDate(), slot.slotIndex);
 
-                <div class="flex flex-column md:flex-row gap-1 md:gap-2">
-                  @for (
-                    apt of getAppointmentsForDayHour(selectedDate(), slot.hour);
-                    track apt.id
+              @if (spanning) {
+                <td
+                  class="day-cell day-cell--spanning p-1 relative"
+                  [class.is-today]="isToday(selectedDate())"
+                  (click)="onCellClick(selectedDate(), slot)"
+                  tabindex="0"
+                  role="button"
+                  [attr.rowspan]="spanning.rowSpan"
+                >
+                  <!-- Current Time Line -->
+                  @if (
+                    isToday(selectedDate()) &&
+                    isCurrentTimeWithinSpan(slot.slotIndex, spanning.rowSpan)
                   ) {
                     <div
-                      class="flex-1 p-1 md:p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
-                      [class.border-green-500]="apt.completed"
-                      [class.surface-green-50]="apt.completed"
-                      (click)="onAppointmentClick($event, apt)"
+                      class="current-time-line"
+                      [style.top.%]="
+                        getCurrentTimeOffsetPercentageWithinSpan(
+                          slot.slotIndex,
+                          spanning.rowSpan
+                        )
+                      "
+                    ></div>
+                  }
+
+                  <div class="flex flex-column md:flex-row gap-1 md:gap-2">
+                    <div
+                      class="flex-1 apt-card--positioned p-1 md:p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                      [class.border-green-500]="spanning.appointment.completed"
+                      [class.surface-green-50]="spanning.appointment.completed"
+                      [style.top.%]="
+                        getAppointmentTopPctInSpan(
+                          spanning.appointment,
+                          slot.slotIndex,
+                          spanning.rowSpan
+                        )
+                      "
+                      [style.height.%]="
+                        getAppointmentHeightPctInSpan(
+                          spanning.appointment,
+                          slot.slotIndex,
+                          spanning.rowSpan
+                        )
+                      "
+                      (click)="onAppointmentClick($event, spanning.appointment)"
                       tabindex="0"
                       role="button"
                     >
@@ -292,11 +520,11 @@
                       >
                         <div class="flex-1">
                           <div class="font-semibold text-xs md:text-sm">
-                            {{ apt.client.name }}
+                            {{ spanning.appointment.client.name }}
                           </div>
                           <div class="text-xs flex align-items-center gap-1">
-                            <span>{{ apt.dog.name }}</span>
-                            @if (apt.dog.isAggressive) {
+                            <span>{{ spanning.appointment.dog.name }}</span>
+                            @if (spanning.appointment.dog.isAggressive) {
                               <i
                                 class="pi pi-exclamation-triangle text-red-600 font-bold mr-1"
                                 pTooltip="LET OP: AGRESSIEF"
@@ -304,8 +532,9 @@
                             }
                           </div>
                           <div class="text-xs mt-1">
-                            {{ apt.startTime | date: "HH:mm" }} -
-                            {{ apt.endTime | date: "HH:mm" }}
+                            {{ spanning.appointment.startTime | date: "HH:mm" }}
+                            -
+                            {{ spanning.appointment.endTime | date: "HH:mm" }}
                           </div>
                         </div>
                       </div>
@@ -313,9 +542,9 @@
                         <p-tag
                           severity="info"
                           styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
-                          [value]="getBreedLabel(apt)"
+                          [value]="getBreedLabel(spanning.appointment)"
                         ></p-tag>
-                        @let gender = getGenderLabel(apt);
+                        @let gender = getGenderLabel(spanning.appointment);
                         @if (gender) {
                           <p-tag
                             severity="secondary"
@@ -325,7 +554,7 @@
                             <span>{{ gender.text }}</span>
                           </p-tag>
                         }
-                        @let ageLabel = getAgeLabel(apt);
+                        @let ageLabel = getAgeLabel(spanning.appointment);
                         @if (ageLabel) {
                           <p-tag
                             severity="secondary"
@@ -333,7 +562,7 @@
                             [value]="ageLabel"
                           ></p-tag>
                         }
-                        @let svcNames = getServiceNames(apt);
+                        @let svcNames = getServiceNames(spanning.appointment);
                         @if (svcNames) {
                           <p-tag
                             severity="secondary"
@@ -341,7 +570,7 @@
                             [value]="svcNames"
                           ></p-tag>
                         }
-                        @let pkgNames = getPackageNames(apt);
+                        @let pkgNames = getPackageNames(spanning.appointment);
                         @if (pkgNames) {
                           <p-tag
                             severity="secondary"
@@ -349,7 +578,7 @@
                             [value]="pkgNames"
                           ></p-tag>
                         }
-                        @if (hasNotes(apt)) {
+                        @if (hasNotes(spanning.appointment)) {
                           <p-tag
                             severity="warn"
                             styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs flex align-items-center gap-1"
@@ -360,9 +589,162 @@
                         }
                       </div>
                     </div>
+                  </div>
+                </td>
+              } @else if (
+                isSlotCoveredBySpanningAppointment(
+                  selectedDate(),
+                  slot.slotIndex
+                )
+              ) {
+                <!-- Covered by rowspan above -->
+              } @else {
+                <td
+                  class="day-cell p-1 relative"
+                  [class.is-today]="isToday(selectedDate())"
+                  (click)="onCellClick(selectedDate(), slot)"
+                  tabindex="0"
+                  role="button"
+                >
+                  <!-- Current Time Line -->
+                  @if (
+                    isToday(selectedDate()) && isCurrentSlot(slot.slotIndex)
+                  ) {
+                    <div
+                      class="current-time-line"
+                      [style.top.%]="getCurrentSlotMinutePercentage()"
+                    ></div>
                   }
-                </div>
-              </td>
+
+                  <div class="flex flex-column md:flex-row gap-1 md:gap-2">
+                    @let slotApts =
+                      getAppointmentsForDaySlot(selectedDate(), slot.slotIndex);
+
+                    @if (slotApts.length === 1) {
+                      @let apt = slotApts[0];
+                      <div
+                        class="flex-1 apt-card--positioned p-1 md:p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                        [class.border-green-500]="apt.completed"
+                        [class.surface-green-50]="apt.completed"
+                        [style.top.%]="getAppointmentTopPctInHour(apt)"
+                        [style.height.%]="getAppointmentHeightPctInHour(apt)"
+                        (click)="onAppointmentClick($event, apt)"
+                        tabindex="0"
+                        role="button"
+                      >
+                        <div
+                          class="flex justify-content-between align-items-start"
+                        >
+                          <div class="flex-1">
+                            <div class="font-semibold text-xs md:text-sm">
+                              {{ apt.client.name }}
+                            </div>
+                            <div class="text-xs flex align-items-center gap-1">
+                              <span>{{ apt.dog.name }}</span>
+                              @if (apt.dog.isAggressive) {
+                                <i
+                                  class="pi pi-exclamation-triangle text-red-600 font-bold mr-1"
+                                  pTooltip="LET OP: AGRESSIEF"
+                                ></i>
+                              }
+                            </div>
+                            <div class="text-xs mt-1">
+                              {{ apt.startTime | date: "HH:mm" }} -
+                              {{ apt.endTime | date: "HH:mm" }}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    } @else {
+                      @for (apt of slotApts; track apt.id) {
+                        <div
+                          class="flex-1 p-1 md:p-2 border-left-3 border-primary surface-50 border-round cursor-pointer hover:surface-100 transition-colors transition-duration-150"
+                          [class.border-green-500]="apt.completed"
+                          [class.surface-green-50]="apt.completed"
+                          (click)="onAppointmentClick($event, apt)"
+                          tabindex="0"
+                          role="button"
+                        >
+                          <div
+                            class="flex justify-content-between align-items-start"
+                          >
+                            <div class="flex-1">
+                              <div class="font-semibold text-xs md:text-sm">
+                                {{ apt.client.name }}
+                              </div>
+                              <div
+                                class="text-xs flex align-items-center gap-1"
+                              >
+                                <span>{{ apt.dog.name }}</span>
+                                @if (apt.dog.isAggressive) {
+                                  <i
+                                    class="pi pi-exclamation-triangle text-red-600 font-bold mr-1"
+                                    pTooltip="LET OP: AGRESSIEF"
+                                  ></i>
+                                }
+                              </div>
+                              <div class="text-xs mt-1">
+                                {{ apt.startTime | date: "HH:mm" }} -
+                                {{ apt.endTime | date: "HH:mm" }}
+                              </div>
+                            </div>
+                          </div>
+                          <div class="apt-meta text-2xs md:text-xs mt-2">
+                            <p-tag
+                              severity="info"
+                              styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
+                              [value]="getBreedLabel(apt)"
+                            ></p-tag>
+                            @let gender = getGenderLabel(apt);
+                            @if (gender) {
+                              <p-tag
+                                severity="secondary"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs flex align-items-center gap-1"
+                              >
+                                <i [class]="gender.icon" aria-hidden="true"></i>
+                                <span>{{ gender.text }}</span>
+                              </p-tag>
+                            }
+                            @let ageLabel = getAgeLabel(apt);
+                            @if (ageLabel) {
+                              <p-tag
+                                severity="secondary"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
+                                [value]="ageLabel"
+                              ></p-tag>
+                            }
+                            @let svcNames = getServiceNames(apt);
+                            @if (svcNames) {
+                              <p-tag
+                                severity="secondary"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
+                                [value]="svcNames"
+                              ></p-tag>
+                            }
+                            @let pkgNames = getPackageNames(apt);
+                            @if (pkgNames) {
+                              <p-tag
+                                severity="secondary"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs"
+                                [value]="pkgNames"
+                              ></p-tag>
+                            }
+                            @if (hasNotes(apt)) {
+                              <p-tag
+                                severity="warn"
+                                styleClass="p-tag-rounded px-2 py-1 text-2xs md:text-xs flex align-items-center gap-1"
+                              >
+                                <i class="pi pi-pencil" aria-hidden="true"></i>
+                                <span>Notities</span>
+                              </p-tag>
+                            }
+                          </div>
+                        </div>
+                      }
+                    }
+                  </div>
+                </td>
+              }
             </tr>
           </ng-template>
         </p-table>

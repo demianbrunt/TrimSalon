@@ -1,13 +1,15 @@
 <div class="md:p-4">
-  <p-card>
+  <p-card styleClass="responsive-card reports-shell">
     <ng-template pTemplate="header">
-      <div class="p-4">
-        <h2 class="text-2xl font-bold mb-3">Rapportages & Analytics</h2>
+      <div class="p-3 md:p-4">
+        <h2 class="text-xl md:text-2xl font-bold mb-2 md:mb-3">
+          Rapportages & Analytics
+        </h2>
         <div
           class="flex flex-column md:flex-row gap-3 align-items-start md:align-items-center"
         >
           <!-- Period Selection -->
-          <div class="flex gap-2 flex-wrap">
+          <div class="flex gap-2 flex-wrap w-full md:w-auto">
             <p-button
               label="Week"
               (onClick)="setQuickPeriod('week')"
@@ -36,37 +38,41 @@
           </div>
 
           <!-- Custom Date Range -->
-          <div class="flex gap-2 align-items-center">
+          <div class="flex gap-2 align-items-center flex-wrap w-full md:w-auto">
             <p-datepicker
               [(ngModel)]="startDate"
               (onSelect)="onDateChange()"
               dateFormat="dd-mm-yy"
               placeholder="Startdatum"
               [showIcon]="true"
+              styleClass="w-full md:w-auto"
             ></p-datepicker>
-            <span>tot</span>
+            <span class="text-500">tot</span>
             <p-datepicker
               [(ngModel)]="endDate"
               (onSelect)="onDateChange()"
               dateFormat="dd-mm-yy"
               placeholder="Einddatum"
               [showIcon]="true"
+              styleClass="w-full md:w-auto"
             ></p-datepicker>
           </div>
 
           <!-- Export Buttons -->
-          <div class="flex gap-2 ml-auto">
+          <div
+            class="flex gap-2 ml-auto flex-wrap w-full md:w-auto justify-content-start md:justify-content-end"
+          >
             <p-button
               label="PDF"
               icon="pi pi-file-pdf"
               (onClick)="exportToPDF()"
-              styleClass="p-button-sm p-button-outlined"
+              styleClass="p-button-sm p-button-outlined w-full md:w-auto"
             ></p-button>
             <p-button
               label="Excel"
               icon="pi pi-file-excel"
               (onClick)="exportToExcel()"
-              styleClass="p-button-sm p-button-outlined p-button-success"
+              styleClass="p-button-sm p-button-outlined p-button-success w-full md:w-auto"
             ></p-button>
           </div>
         </div>
@@ -77,7 +83,7 @@
     <div class="grid">
       <!-- Revenue Summary Cards -->
       <div class="col-12 md:col-6 lg:col-3">
-        <p-card>
+        <p-card styleClass="reports-kpi-card">
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Totale Omzet</div>
             <div class="text-3xl font-bold text-primary">
@@ -88,7 +94,7 @@
       </div>
 
       <div class="col-12 md:col-6 lg:col-3">
-        <p-card>
+        <p-card styleClass="reports-kpi-card">
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Aantal Afspraken</div>
             <div class="text-3xl font-bold text-primary">
@@ -99,7 +105,7 @@
       </div>
 
       <div class="col-12 md:col-6 lg:col-3">
-        <p-card>
+        <p-card styleClass="reports-kpi-card">
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Gemiddelde Omzet</div>
             <div class="text-3xl font-bold text-primary">
@@ -112,7 +118,7 @@
       </div>
 
       <div class="col-12 md:col-6 lg:col-3">
-        <p-card>
+        <p-card styleClass="reports-kpi-card">
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Bezettingsgraad</div>
             <div class="text-3xl font-bold text-primary">
@@ -124,7 +130,7 @@
 
       <!-- Profit/Loss Summary Cards -->
       <div class="col-12 md:col-6 lg:col-3">
-        <p-card>
+        <p-card styleClass="reports-kpi-card">
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Totale Uitgaven</div>
             <div class="text-3xl font-bold text-red-500">
@@ -138,7 +144,7 @@
       </div>
 
       <div class="col-12 md:col-6 lg:col-3">
-        <p-card>
+        <p-card styleClass="reports-kpi-card">
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Netto Winst</div>
             <div
@@ -163,7 +169,7 @@
       </div>
 
       <div class="col-12 md:col-6 lg:col-3">
-        <p-card>
+        <p-card styleClass="reports-kpi-card">
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Winstmarge</div>
             <div
@@ -191,7 +197,7 @@
       </div>
 
       <div class="col-12 md:col-6 lg:col-3">
-        <p-card>
+        <p-card styleClass="reports-kpi-card">
           <div class="text-center">
             <div class="text-500 font-semibold mb-2">Effectief Uurloon</div>
             <div

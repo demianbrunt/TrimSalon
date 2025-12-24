@@ -1,4 +1,9 @@
-<div class="sub-nav-container">
+<div
+  class="sub-nav-container"
+  appSwipe
+  (swipeRight)="goBack()"
+  (swipeLeft)="goForward()"
+>
   @for (item of navItems; track item.link) {
     <p-button
       [routerLink]="item.link"

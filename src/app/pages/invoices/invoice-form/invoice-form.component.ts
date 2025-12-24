@@ -230,10 +230,23 @@ export class InvoiceFormComponent extends FormBaseComponent implements OnInit {
         'Succes',
         `Factuur ${this.isEditMode ? 'bijgewerkt' : 'aangemaakt'}`,
       );
-      this.router.navigate(['/invoices']);
+      this.router.navigate(['/invoices'], {
+        queryParamsHandling: 'preserve',
+      });
     } catch (err) {
       this.toastr.error('Fout', (err as Error).message);
     }
+  }
+
+  override cancel() {
+    return super.cancel().then((confirmed) => {
+      if (confirmed) {
+        this.router.navigate(['/invoices'], {
+          queryParamsHandling: 'preserve',
+        });
+      }
+      return confirmed;
+    });
   }
 
   /**

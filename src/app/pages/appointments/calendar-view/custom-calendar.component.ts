@@ -4,6 +4,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -12,12 +13,10 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
@@ -40,8 +39,20 @@ interface DayData {
 }
 
 interface TimeSlot {
+  slotIndex: number;
   hour: number;
+  minute: number;
   label: string;
+}
+
+interface SpanningAppointmentCell {
+  appointment: Appointment;
+  rowSpan: number;
+}
+
+interface SlotPosition {
+  topPct: number;
+  heightPct: number;
 }
 
 @Component({
@@ -50,11 +61,9 @@ interface TimeSlot {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    FormsModule,
     BadgeModule,
     ButtonModule,
     CardModule,
-    SelectButtonModule,
     SwipeDirective,
     TableModule,
     TagModule,
@@ -67,21 +76,55 @@ export class CustomCalendarComponent implements AfterViewInit {
   // Inputs & Outputs
   appointments = input<Appointment[]>([]);
   appointmentClick = output<Appointment>();
-  dateClick = output<{ date: Date; hour?: number }>();
+  dateClick = output<{ date: Date; hour?: number; minute?: number }>();
 
   @ViewChild('calendarTable') calendarTable?: ElementRef;
+  @ViewChild('calendarHeader', { read: ElementRef })
+  calendarHeader?: ElementRef<HTMLElement>;
 
   // Dependency injection
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private mobileService = inject(MobileService);
+  private destroyRef = inject(DestroyRef);
+  private hostElementRef = inject(ElementRef<HTMLElement>);
+
+  private headerResizeObserver: ResizeObserver | null = null;
+
+  private longPressTimerId: number | null = null;
+  private longPressStartPoint: { x: number; y: number } | null = null;
+  private suppressNextAppointmentClick = false;
 
   // Signals
   private appointmentsSignal = computed(() => this.appointments());
 
+  private readonly slotMinutes = 60;
+  private readonly slotsPerDay = (24 * 60) / this.slotMinutes;
+
   viewMode = signal<'week' | 'day' | 'month'>('day');
   selectedDate = signal(new Date());
   currentTime = signal(new Date()); // Signal for current time updates
+
+  swipeTransition = signal<'left' | 'right' | null>(null);
+  swipeIndicator = signal<'left' | 'right' | null>(null);
+
+  swipeIndicatorLabel = computed(() => {
+    const direction = this.swipeIndicator();
+    if (!direction) return '';
+
+    const mode = this.viewMode();
+    const isNext = direction === 'left';
+
+    if (mode === 'day') {
+      return isNext ? 'Volgende dag' : 'Vorige dag';
+    }
+
+    if (mode === 'week') {
+      return isNext ? 'Volgende week' : 'Vorige week';
+    }
+
+    return isNext ? 'Volgende maand' : 'Vorige maand';
+  });
 
   // Optimized Appointment Map for O(1) lookup
   private appointmentsMap = computed(() => {
@@ -91,8 +134,9 @@ export class CustomCalendarComponent implements AfterViewInit {
     appointments.forEach((apt) => {
       if (!apt.startTime) return;
       const date = apt.startTime;
-      // Key format: YYYY-M-D-H (using simple values to avoid padding overhead)
-      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${date.getHours()}`;
+      const slotIndex = this.getSlotIndex(date);
+      // Key format: YYYY-M-D-slotIndex (using simple values to avoid padding overhead)
+      const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${slotIndex}`;
 
       if (!map.has(key)) {
         map.set(key, []);
@@ -109,10 +153,15 @@ export class CustomCalendarComponent implements AfterViewInit {
   ];
 
   dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
-  timeSlots: TimeSlot[] = Array.from({ length: 24 }, (_, i) => ({
-    hour: i,
-    label: `${i.toString().padStart(2, '0')}:00`,
-  }));
+  timeSlots: TimeSlot[] = Array.from({ length: this.slotsPerDay }, (_, i) => {
+    const hour = i;
+    return {
+      slotIndex: i,
+      hour,
+      minute: 0,
+      label: `${hour.toString().padStart(2, '0')}:00`,
+    };
+  });
 
   getBreedLabel(apt: Appointment): string {
     return apt.dog?.breed?.name || 'Onbekend';
@@ -373,11 +422,17 @@ export class CustomCalendarComponent implements AfterViewInit {
   }
 
   handleSwipe(direction: 'left' | 'right'): void {
+    this.swipeTransition.set(direction);
+    this.swipeIndicator.set(direction);
+
     if (direction === 'left') {
       this.nextPeriod();
     } else {
       this.previousPeriod();
     }
+
+    window.setTimeout(() => this.swipeTransition.set(null), 220);
+    window.setTimeout(() => this.swipeIndicator.set(null), 800);
   }
 
   goToToday(): void {
@@ -385,8 +440,42 @@ export class CustomCalendarComponent implements AfterViewInit {
     setTimeout(() => this.scrollToCurrentTime(), 100);
   }
 
+  setViewMode(mode: 'week' | 'day' | 'month'): void {
+    if (this.viewMode() === mode) {
+      return;
+    }
+
+    this.viewMode.set(mode);
+
+    if (mode !== 'month') {
+      setTimeout(() => this.scrollToCurrentTime(), 100);
+    }
+  }
+
   ngAfterViewInit(): void {
+    this.updateStickyOffsets();
+
+    const headerEl = this.calendarHeader?.nativeElement;
+    if (headerEl && typeof ResizeObserver !== 'undefined') {
+      this.headerResizeObserver = new ResizeObserver(() => {
+        this.updateStickyOffsets();
+      });
+      this.headerResizeObserver.observe(headerEl);
+      this.destroyRef.onDestroy(() => this.headerResizeObserver?.disconnect());
+    }
+
     setTimeout(() => this.scrollToCurrentTime(), 300);
+  }
+
+  private updateStickyOffsets(): void {
+    const headerEl = this.calendarHeader?.nativeElement;
+    if (!headerEl) return;
+
+    const height = Math.ceil(headerEl.getBoundingClientRect().height);
+    this.hostElementRef.nativeElement.style.setProperty(
+      '--calendar-controls-sticky-height',
+      `${height}px`,
+    );
   }
 
   private scrollToCurrentTime(): void {
@@ -403,7 +492,7 @@ export class CustomCalendarComponent implements AfterViewInit {
     const rows = table.querySelectorAll('tbody tr');
     const rowsArray = Array.from(rows) as Element[];
     const targetRow = rowsArray.find((row) => {
-      const timeCell = row.querySelector('.time-cell');
+      const timeCell = row.querySelector('.time-col');
       if (!timeCell) return false;
       const hourText = timeCell.textContent?.trim();
       const hour = parseInt(hourText?.split(':')[0] || '0');
@@ -412,26 +501,337 @@ export class CustomCalendarComponent implements AfterViewInit {
 
     if (targetRow) {
       (targetRow as HTMLElement).scrollIntoView({
-        behavior: 'smooth',
+        behavior: this.prefersReducedMotion() ? 'auto' : 'smooth',
         block: 'center',
       });
     }
   }
 
+  private prefersReducedMotion(): boolean {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  private openGoogleCalendarForAppointment(appointment: Appointment): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const eventId = appointment.googleCalendarEventId;
+
+    // Best-effort: open the event editor when we have an event id.
+    // If not, fall back to opening the day view.
+    const start = appointment.startTime ?? this.selectedDate();
+
+    const url = eventId
+      ? `https://calendar.google.com/calendar/u/0/r/eventedit/${encodeURIComponent(eventId)}`
+      : `https://calendar.google.com/calendar/u/0/r/day/${start.getFullYear()}/${start.getMonth() + 1}/${start.getDate()}`;
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  onAppointmentPointerDown(
+    event: PointerEvent,
+    appointment: Appointment,
+  ): void {
+    // Only treat touch/pen as long-press candidates.
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') {
+      return;
+    }
+
+    this.clearLongPress();
+    this.longPressStartPoint = { x: event.clientX, y: event.clientY };
+
+    this.longPressTimerId = window.setTimeout(() => {
+      this.suppressNextAppointmentClick = true;
+      this.openGoogleCalendarForAppointment(appointment);
+      this.clearLongPress();
+    }, 450);
+  }
+
+  onAppointmentPointerMove(event: PointerEvent): void {
+    if (!this.longPressStartPoint) {
+      return;
+    }
+
+    const dx = Math.abs(event.clientX - this.longPressStartPoint.x);
+    const dy = Math.abs(event.clientY - this.longPressStartPoint.y);
+    if (dx > 10 || dy > 10) {
+      this.clearLongPress();
+    }
+  }
+
+  onAppointmentPointerUp(): void {
+    this.clearLongPress();
+  }
+
+  onAppointmentPointerCancel(): void {
+    this.clearLongPress();
+  }
+
+  private clearLongPress(): void {
+    if (this.longPressTimerId !== null) {
+      window.clearTimeout(this.longPressTimerId);
+      this.longPressTimerId = null;
+    }
+    this.longPressStartPoint = null;
+  }
+
   // Event handlers
-  onCellClick(date: Date, hour?: number): void {
-    this.dateClick.emit({ date, hour });
+  onCellClick(date: Date, slot?: TimeSlot): void {
+    if (!slot) {
+      this.dateClick.emit({ date });
+      return;
+    }
+
+    this.dateClick.emit({ date, hour: slot.hour, minute: slot.minute });
   }
 
   onAppointmentClick(event: Event, appointment: Appointment): void {
+    if (this.suppressNextAppointmentClick) {
+      this.suppressNextAppointmentClick = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     event.stopPropagation();
     this.appointmentClick.emit(appointment);
   }
 
+  onAppointmentContextMenu(event: MouseEvent, appointment: Appointment): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.openGoogleCalendarForAppointment(appointment);
+  }
+
+  getSpanningAppointmentForCell(
+    date: Date,
+    slotIndex: number,
+  ): SpanningAppointmentCell | null {
+    const dayAppointments = this.getAppointmentsForDay(date).filter(
+      (apt) => !!apt.startTime,
+    );
+
+    const startingThisSlot = dayAppointments.filter((apt) => {
+      const start = apt.startTime;
+      if (!start) return false;
+      return this.getSlotIndex(start) === slotIndex;
+    });
+
+    // If multiple appointments start in the same slot, we can't safely use a rowspan.
+    if (startingThisSlot.length !== 1) {
+      return null;
+    }
+
+    const appointment = startingThisSlot[0]!;
+    const rowSpan = this.getRowSpanSlots(appointment);
+    if (rowSpan <= 1) {
+      return null;
+    }
+
+    if (!this.canRenderAsRowSpan(appointment, dayAppointments)) {
+      return null;
+    }
+
+    return { appointment, rowSpan };
+  }
+
+  isSlotCoveredBySpanningAppointment(date: Date, slotIndex: number): boolean {
+    const dayAppointments = this.getAppointmentsForDay(date).filter(
+      (apt) => !!apt.startTime,
+    );
+
+    return dayAppointments.some((apt) => {
+      const start = apt.startTime;
+      if (!start) return false;
+
+      const rowSpan = this.getRowSpanSlots(apt);
+      if (rowSpan <= 1) return false;
+      if (!this.canRenderAsRowSpan(apt, dayAppointments)) return false;
+
+      const startSlot = this.getSlotIndex(start);
+      return slotIndex > startSlot && slotIndex < startSlot + rowSpan;
+    });
+  }
+
   // Helper methods
-  getAppointmentsForDayHour(date: Date, hour: number): Appointment[] {
-    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${hour}`;
+  getAppointmentsForDaySlot(date: Date, slotIndex: number): Appointment[] {
+    const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}-${slotIndex}`;
     return this.appointmentsMap().get(key) || [];
+  }
+
+  private getRowSpanSlots(apt: Appointment): number {
+    const start = apt.startTime;
+    if (!start) return 1;
+
+    const end = this.getEffectiveEndTime(apt);
+    if (!end) return 1;
+
+    if (end.getTime() <= start.getTime()) {
+      return 1;
+    }
+
+    const dayEnd = new Date(start);
+    dayEnd.setHours(24, 0, 0, 0);
+    const effectiveEnd = end.getTime() > dayEnd.getTime() ? dayEnd : end;
+
+    const startOffsetMinutes = start.getMinutes();
+    const ms = effectiveEnd.getTime() - start.getTime();
+    const durationMinutes = ms / 60000;
+    const slots = Math.ceil(
+      (startOffsetMinutes + durationMinutes) / this.slotMinutes,
+    );
+
+    const startSlot = this.getSlotIndex(start);
+    const remainingSlots = this.slotsPerDay - startSlot;
+
+    return Math.min(remainingSlots, Math.max(1, slots));
+  }
+
+  private getSlotPositionWithinSpan(
+    apt: Appointment,
+    spanStartSlot: number,
+    rowSpan: number,
+  ): SlotPosition {
+    const start = apt.startTime;
+    if (!start) return { topPct: 0, heightPct: 100 };
+
+    const end = this.getEffectiveEndTime(apt);
+    if (!end) return { topPct: 0, heightPct: 100 };
+
+    const spanStart = new Date(start);
+    spanStart.setHours(spanStartSlot, 0, 0, 0);
+
+    const dayEnd = new Date(start);
+    dayEnd.setHours(24, 0, 0, 0);
+    const effectiveEnd = end.getTime() > dayEnd.getTime() ? dayEnd : end;
+
+    const totalSpanMinutes = rowSpan * this.slotMinutes;
+    const topMinutes = Math.max(
+      0,
+      Math.min(
+        totalSpanMinutes,
+        (start.getTime() - spanStart.getTime()) / 60000,
+      ),
+    );
+    const durationMinutes = Math.max(
+      0,
+      Math.min(
+        totalSpanMinutes - topMinutes,
+        (effectiveEnd.getTime() - start.getTime()) / 60000,
+      ),
+    );
+
+    return {
+      topPct: (topMinutes / totalSpanMinutes) * 100,
+      heightPct: (durationMinutes / totalSpanMinutes) * 100,
+    };
+  }
+
+  getAppointmentTopPctInSpan(
+    apt: Appointment,
+    spanStartSlot: number,
+    rowSpan: number,
+  ): number {
+    return this.getSlotPositionWithinSpan(apt, spanStartSlot, rowSpan).topPct;
+  }
+
+  getAppointmentHeightPctInSpan(
+    apt: Appointment,
+    spanStartSlot: number,
+    rowSpan: number,
+  ): number {
+    return this.getSlotPositionWithinSpan(apt, spanStartSlot, rowSpan)
+      .heightPct;
+  }
+
+  getAppointmentTopPctInHour(apt: Appointment): number {
+    const start = apt.startTime;
+    if (!start) return 0;
+    return (start.getMinutes() / 60) * 100;
+  }
+
+  getAppointmentHeightPctInHour(apt: Appointment): number {
+    const start = apt.startTime;
+    if (!start) return 100;
+    const end = this.getEffectiveEndTime(apt);
+    if (!end) return 100;
+
+    const endClamped = new Date(end);
+    endClamped.setSeconds(0, 0);
+
+    const durationMinutes = Math.max(
+      0,
+      (endClamped.getTime() - start.getTime()) / 60000,
+    );
+    return (Math.min(60, durationMinutes) / 60) * 100;
+  }
+
+  isCurrentTimeWithinSpan(spanStartSlot: number, rowSpan: number): boolean {
+    const nowSlot = this.getSlotIndex(this.currentTime());
+    return nowSlot >= spanStartSlot && nowSlot < spanStartSlot + rowSpan;
+  }
+
+  getCurrentTimeOffsetPercentageWithinSpan(
+    spanStartSlot: number,
+    rowSpan: number,
+  ): number {
+    const now = this.currentTime();
+    const nowSlot = this.getSlotIndex(now);
+    const minutesFromSpanStart =
+      (nowSlot - spanStartSlot) * this.slotMinutes + now.getMinutes();
+    const total = rowSpan * this.slotMinutes;
+    return (minutesFromSpanStart / total) * 100;
+  }
+
+  private getSlotIndex(date: Date): number {
+    const totalMinutes = date.getHours() * 60 + date.getMinutes();
+    return Math.max(
+      0,
+      Math.min(
+        this.slotsPerDay - 1,
+        Math.floor(totalMinutes / this.slotMinutes),
+      ),
+    );
+  }
+
+  private getEffectiveEndTime(apt: Appointment): Date | null {
+    if (apt.endTime) {
+      return apt.endTime;
+    }
+
+    if (apt.startTime && typeof apt.estimatedDuration === 'number') {
+      return new Date(apt.startTime.getTime() + apt.estimatedDuration * 60000);
+    }
+
+    return null;
+  }
+
+  private canRenderAsRowSpan(
+    target: Appointment,
+    dayAppointments: Appointment[],
+  ): boolean {
+    const start = target.startTime;
+    if (!start) return false;
+
+    const end = this.getEffectiveEndTime(target);
+    if (!end) return false;
+
+    // If anything overlaps this time range, rowspanning would hide cells
+    // and would also hide other appointments.
+    return !dayAppointments.some((other) => {
+      if (other === target) return false;
+      const otherStart = other.startTime;
+      if (!otherStart) return false;
+
+      const otherEnd = this.getEffectiveEndTime(other) ?? otherStart;
+      return (
+        otherStart.getTime() < end.getTime() &&
+        otherEnd.getTime() > start.getTime()
+      );
+    });
   }
 
   getAppointmentsForDay(date: Date): Appointment[] {
@@ -456,8 +856,10 @@ export class CustomCalendarComponent implements AfterViewInit {
     );
   }
 
-  isCurrentHour(hour: number): boolean {
+  isCurrentSlot(slotIndex: number): boolean {
     const now = this.currentTime();
+    const nowSlot = this.getSlotIndex(now);
+
     // Check if ANY day in the current view is today
     if (this.viewMode() === 'week') {
       const today = new Date();
@@ -467,15 +869,17 @@ export class CustomCalendarComponent implements AfterViewInit {
         dayDate.setHours(0, 0, 0, 0);
         return dayDate.getTime() === today.getTime();
       });
-      return isAnyDayToday && now.getHours() === hour;
+
+      return isAnyDayToday && nowSlot === slotIndex;
     }
     // For day view, check if selected date is today
     const today = this.isToday(this.selectedDate());
-    return today && now.getHours() === hour;
+    return today && nowSlot === slotIndex;
   }
 
-  getCurrentMinutePercentage(): number {
-    return (this.currentTime().getMinutes() / 60) * 100;
+  getCurrentSlotMinutePercentage(): number {
+    const minutes = this.currentTime().getMinutes();
+    return ((minutes % this.slotMinutes) / this.slotMinutes) * 100;
   }
 
   private getWeekStart(date: Date): Date {

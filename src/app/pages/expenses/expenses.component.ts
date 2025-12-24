@@ -9,7 +9,13 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
+import { firstValueFrom, take } from 'rxjs';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
+import {
+  PullToRefreshDirective,
+  PullToRefreshEvent,
+} from '../../core/directives/pull-to-refresh.directive';
+import { SwipeDirective } from '../../core/directives/swipe.directive';
 import { Expense, ExpenseType } from '../../core/models/expense.model';
 import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
@@ -37,6 +43,8 @@ import {
     TooltipModule,
     CardModule,
     TableHeaderComponent,
+    PullToRefreshDirective,
+    SwipeDirective,
   ],
   providers: [],
   templateUrl: './expenses.component.html',
@@ -113,6 +121,22 @@ export class ExpensesComponent implements OnInit {
     this.updateListQueryParams();
   }
 
+  onListSwipe(direction: 'left' | 'right'): void {
+    if (!this.isMobile) return;
+    if (this.searchQuery.trim().length > 0) return;
+
+    const maxPage = Math.max(
+      1,
+      Math.ceil(this.expenses.length / this.mobileRows),
+    );
+    const nextPage = direction === 'left' ? this.page + 1 : this.page - 1;
+    const clamped = Math.max(1, Math.min(maxPage, nextPage));
+    if (clamped === this.page) return;
+
+    this.page = clamped;
+    this.updateListQueryParams();
+  }
+
   private updateListQueryParams(): void {
     void this.router.navigate([], {
       relativeTo: this.route,
@@ -133,6 +157,21 @@ export class ExpensesComponent implements OnInit {
     });
   }
 
+  async onPullToRefresh(evt: PullToRefreshEvent): Promise<void> {
+    try {
+      const expenses = await firstValueFrom(
+        this.expenseService.getData$().pipe(take(1)),
+      );
+      this.expenses = expenses.filter((e) => !e.deletedAt);
+      this.calculateTotalExpenses();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
+      this.toastrService.error('Fout', message);
+    } finally {
+      evt.complete();
+    }
+  }
+
   calculateTotalExpenses(): void {
     this.totalExpenses = this.expenses.reduce(
       (sum, expense) => sum + expense.amount,
@@ -141,11 +180,15 @@ export class ExpensesComponent implements OnInit {
   }
 
   createExpense(): void {
-    this.router.navigate(['/expenses/new']);
+    this.router.navigate(['/expenses/new'], {
+      queryParamsHandling: 'preserve',
+    });
   }
 
   editExpense(expense: Expense): void {
-    this.router.navigate(['/expenses', expense.id]);
+    this.router.navigate(['/expenses', expense.id], {
+      queryParamsHandling: 'preserve',
+    });
   }
 
   deleteExpense(expense: Expense): void {

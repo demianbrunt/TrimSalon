@@ -38,6 +38,15 @@ export const routes: Routes = [
     path: 'appointments/:id',
     loadComponent: () =>
       import(
+        './pages/appointments/appointment-preview/appointment-preview.component'
+      ).then((m) => m.AppointmentPreviewComponent),
+    canActivate: [authGuard],
+    data: { breadcrumb: 'Afspraak' },
+  },
+  {
+    path: 'appointments/:id/edit',
+    loadComponent: () =>
+      import(
         './pages/appointments/appointment-form/appointment-form.component'
       ).then((m) => m.AppointmentFormComponent),
     canActivate: [authGuard],

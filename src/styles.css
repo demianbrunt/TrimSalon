@@ -3,6 +3,17 @@
 @import "primeicons/primeicons.css";
 @import "primeflex/primeflex.css";
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 html,
 body {
   margin: 0;
@@ -11,11 +22,13 @@ body {
   background-color: var(--surface-ground);
   height: 100%;
   overflow: hidden; /* Prevent body scroll, handle in content-outlet */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Layout Utilities */
 .main-container {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
 }
@@ -24,18 +37,111 @@ body {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   position: relative;
+}
+
+/*
+  iOS Safari has longstanding issues with `position: sticky` inside momentum
+  scrolling containers. Disabling momentum scrolling here keeps sticky headers
+  (e.g., `app-table-header`) visible while scrolling.
+*/
+@supports (-webkit-touch-callout: none) {
+  .content-outlet {
+    -webkit-overflow-scrolling: auto;
+  }
+}
+
+.route-animation-host {
+  position: relative;
+  min-height: 100%;
+}
+
+.sr-only:not(:focus):not(:active) {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.ptr-indicator {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 0;
+  pointer-events: none;
+}
+
+.ptr-indicator__bubble {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  background: color-mix(
+    in srgb,
+    var(--p-surface-0, var(--surface-card, #ffffff)) 92%,
+    transparent
+  );
+  border: 1px solid var(--surface-border);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.06),
+    0 8px 20px rgba(0, 0, 0, 0.06);
+  transform: translate3d(-50%, -48px, 0);
+  opacity: 0;
+  transition:
+    transform 160ms ease,
+    opacity 120ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+  will-change: transform;
+}
+
+.ptr-host[data-ptr-state="pulling"] .ptr-indicator__bubble,
+.ptr-host[data-ptr-state="ready"] .ptr-indicator__bubble {
+  opacity: 1;
+  transform: translate3d(-50%, calc(var(--ptr-pull, 0px) - 48px), 0);
+}
+
+.ptr-host[data-ptr-state="refreshing"] .ptr-indicator__bubble {
+  opacity: 1;
+  transform: translate3d(-50%, 8px, 0);
+}
+
+.ptr-host[data-ptr-state="ready"] .ptr-indicator__bubble {
+  background: color-mix(in srgb, var(--p-primary-color) 10%, #ffffff);
+  border-color: color-mix(in srgb, var(--p-primary-color) 35%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ptr-indicator__bubble {
+    transition: none;
+  }
 }
 
 /* Responsive Card & Layout */
 @media (min-width: 769px) {
+  :root {
+    /* Top-nav uses generous padding + 3rem logo; 70px was too small on desktop. */
+    --top-nav-height: 88px;
+  }
+
   .content-outlet {
     padding-top: 0;
   }
 
   app-breadcrumb {
     display: block;
-    padding-top: 80px; /* Clear fixed navbar (70px) + spacing */
+    margin-top: var(--top-nav-height, 70px);
   }
 }
 
@@ -58,6 +164,40 @@ body {
   }
 
   /* Give stacked card lists a subtle contrasting backdrop to separate items */
+  /*
+    DataView adds its own header padding/border.
+    On mobile our `app-table-header` already handles spacing + sticky behavior,
+    so reset the DataView header to avoid double padding.
+  */
+  .p-dataview.mobile-card-list .p-dataview-header {
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  /*
+    Sticky fallback:
+    In some mobile browsers (notably iOS Safari), `position: sticky` can fail
+    on deeply nested elements. Making the DataView header container sticky keeps
+    `app-table-header` visible while the card list scrolls.
+  */
+  .p-dataview.mobile-card-list .p-dataview-header {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+  }
+
+  /*
+    Sticky headers (app-table-header) rely on the nearest scrolling ancestor.
+    PrimeNG DataView containers can introduce an overflow context that prevents
+    position: sticky from sticking while the main content outlet scrolls.
+  */
+  .p-dataview.mobile-card-list,
+  .p-dataview.mobile-card-list .p-dataview-header,
+  .p-dataview.mobile-card-list .p-dataview-content {
+    overflow: visible !important;
+  }
+
   .p-dataview.mobile-card-list .p-dataview-content {
     background: var(--surface-ground) !important;
     padding: 0.35rem !important;
@@ -68,10 +208,10 @@ body {
     padding: 0.35rem !important;
   }
 
-  /* Account for fixed mobile search header (app-table-header) when used */
+  /* Mobile table header is sticky (in flow), so no extra padding is needed */
   .p-dataview.mobile-card-list.mobile-card-list--fixed-header
     .p-dataview-content {
-    padding-top: 0.75rem !important;
+    padding-top: 0.35rem !important;
   }
 
   .responsive-card .p-card-body {

@@ -370,6 +370,8 @@ export class CompleteAppointmentDialogComponent implements OnInit {
 
   openFullEdit(): void {
     this.ref.close();
-    this.router.navigate(['/appointments', this.appointment.id]);
+    this.router.navigate(['/appointments', this.appointment.id, 'edit'], {
+      queryParamsHandling: 'preserve',
+    });
   }
 }

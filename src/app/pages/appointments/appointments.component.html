@@ -1,5 +1,39 @@
-<div class="appointments-container">
-  <div class="view-toggle-container">
+<div
+  class="appointments-container"
+  appPullToRefresh
+  #ptr="appPullToRefresh"
+  (refresh)="onPullToRefresh($event)"
+>
+  <div class="ptr-indicator" role="status" aria-live="polite">
+    <div class="ptr-indicator__bubble" aria-hidden="true">
+      <i
+        [class]="
+          ptr.state === 'refreshing'
+            ? 'pi pi-refresh pi-spin'
+            : ptr.state === 'ready'
+              ? 'pi pi-arrow-up'
+              : 'pi pi-arrow-down'
+        "
+      ></i>
+    </div>
+    <span class="sr-only">
+      @switch (ptr.state) {
+        @case ("refreshing") {
+          Vernieuwen…
+        }
+        @case ("ready") {
+          Loslaten om te vernieuwen
+        }
+        @default {
+          Trek omlaag om te vernieuwen
+        }
+      }
+    </span>
+  </div>
+  <div
+    class="view-toggle-container"
+    [class.view-toggle-container--calendar]="viewMode === 'calendar'"
+  >
     <div class="gradient-toggle">
       @for (option of viewModeOptions; track option.value) {
         <button
@@ -32,52 +66,56 @@
     </app-custom-calendar>
   } @else {
     @if (isMobile) {
-      <p-dataView
-        #dv
-        styleClass="mobile-card-list"
-        [value]="visibleAppointments"
-        [paginator]="true"
-        [rows]="mobileRows"
-        [first]="(page - 1) * mobileRows"
-        (onPage)="onMobilePage($event)"
-        [filterBy]="'client.name, dog.name'"
+      <div
+        appSwipe
+        (swipeLeft)="onListSwipe('left')"
+        (swipeRight)="onListSwipe('right')"
       >
-        <ng-template #header>
-          <div class="mobile-list-header">
-            <div class="mobile-list-header__row">
-              <p-iconfield class="mobile-list-header__search">
-                <p-inputicon class="pi pi-search" />
-                <input
-                  pInputText
-                  type="text"
-                  pSize="small"
-                  [ngModelOptions]="{ standalone: true }"
-                  [(ngModel)]="searchQuery"
-                  (input)="
-                    dv.filter(searchQuery, 'contains');
-                    onSearchQueryInput(searchQuery)
-                  "
-                  placeholder="Zoek afspraak"
-                  class="w-full"
-                  aria-label="Zoek afspraak"
-                />
-              </p-iconfield>
+        <p-dataView
+          #dv
+          styleClass="mobile-card-list mobile-card-list--fixed-header"
+          [value]="visibleAppointments"
+          [paginator]="true"
+          [rows]="mobileRows"
+          [first]="(page - 1) * mobileRows"
+          (onPage)="onMobilePage($event)"
+          [filterBy]="'client.name, dog.name'"
+        >
+          <ng-template #header>
+            <app-table-header
+              placeholder="Zoek afspraak"
+              [table]="dv"
+              [query]="searchQuery"
+              [queryDebounceMs]="0"
+              [showAdd]="false"
+              (queryChange)="onSearchQueryInput($event)"
+            >
+              <div header-actions class="flex gap-2 align-items-center">
+                <p-button
+                  label="Filters"
+                  icon="pi pi-filter"
+                  [text]="true"
+                  size="small"
+                  (click)="mobileFiltersOpen = !mobileFiltersOpen"
+                  [attr.aria-expanded]="mobileFiltersOpen"
+                  aria-controls="appointmentsMobileFilters"
+                  ariaLabel="Filters"
+                ></p-button>
 
-              <button
-                type="button"
-                class="mobile-filters-toggle"
-                (click)="mobileFiltersOpen = !mobileFiltersOpen"
-                [attr.aria-expanded]="mobileFiltersOpen"
-                aria-controls="mobileFiltersPanel"
-              >
-                <i class="pi pi-filter" aria-hidden="true"></i>
-                <span>Filter: {{ statusFilterLabel }}</span>
-              </button>
-            </div>
+                <p-button
+                  label="Reset"
+                  icon="pi pi-filter-slash"
+                  [text]="true"
+                  (click)="resetFilters()"
+                  size="small"
+                  ariaLabel="Reset filters"
+                ></p-button>
+              </div>
+            </app-table-header>
 
             <div
               class="mobile-filters-panel"
-              id="mobileFiltersPanel"
+              id="appointmentsMobileFilters"
               [class.is-open]="mobileFiltersOpen"
               [attr.aria-hidden]="!mobileFiltersOpen"
             >
@@ -109,138 +147,145 @@
                     (click)="setShowArchived(true)"
                     size="small"
                   ></p-button>
-                  <p-button
-                    label="Reset"
-                    icon="pi pi-filter-slash"
-                    [text]="true"
-                    (click)="resetFilters()"
-                    size="small"
-                    ariaLabel="Reset filters"
-                  ></p-button>
                 </div>
               </div>
             </div>
-          </div>
-        </ng-template>
-        <ng-template #emptymessage></ng-template>
-        <ng-template #list let-appointments: Appointment[]>
-          @for (appointment of appointments; track appointment.id) {
-            <div class="col-12 md:col-6 lg:col-4 p-2">
-              <p-card
-                [styleClass]="
-                  appointment.completed
-                    ? 'mobile-card completed-appointment h-full'
-                    : 'mobile-card h-full'
-                "
-              >
-                <ng-template pTemplate="header">
-                  <div class="p-3">
-                    <div class="flex justify-content-between align-items-start">
-                      <div class="font-bold text-lg">
-                        {{ appointment.client.name }} -
-                        {{ appointment.dog.name }}
-                        @if (appointment.dog.isInactive) {
+          </ng-template>
+          <ng-template #emptymessage></ng-template>
+          <ng-template #list let-appointments: Appointment[]>
+            @for (appointment of appointments; track appointment.id) {
+              <div class="col-12 md:col-6 lg:col-4 p-2">
+                <p-card
+                  (click)="showAppointmentForm(appointment)"
+                  [styleClass]="
+                    appointment.completed
+                      ? 'mobile-card completed-appointment h-full'
+                      : 'mobile-card h-full'
+                  "
+                >
+                  <ng-template pTemplate="header">
+                    <div class="p-3">
+                      <div
+                        class="flex justify-content-between align-items-start"
+                      >
+                        <div class="font-bold text-lg">
+                          {{ appointment.client.name }} -
+                          {{ appointment.dog.name }}
+                          @if (appointment.dog.isInactive) {
+                            <p-tag
+                              value="Niet actief"
+                              severity="warn"
+                              styleClass="ml-2"
+                            ></p-tag>
+                          }
+                          @if (appointment.dog.isAggressive) {
+                            <i
+                              class="pi pi-exclamation-triangle text-red-600 ml-2"
+                              pTooltip="Agressief dier"
+                            ></i>
+                          }
+                        </div>
+                        @if (appointment.completed) {
                           <p-tag
-                            value="Niet actief"
-                            severity="warn"
-                            styleClass="ml-2"
+                            value="Afgerond"
+                            severity="success"
+                            [rounded]="true"
                           ></p-tag>
                         }
-                        @if (appointment.dog.isAggressive) {
-                          <i
-                            class="pi pi-exclamation-triangle text-red-600 ml-2"
-                            pTooltip="Agressief dier"
-                          ></i>
-                        }
                       </div>
-                      @if (appointment.completed) {
-                        <p-tag
-                          value="Afgerond"
-                          severity="success"
-                          [rounded]="true"
-                        ></p-tag>
+                    </div>
+                  </ng-template>
+
+                  <div class="text-color-secondary mb-2">
+                    <i class="pi pi-calendar mr-2"></i>
+                    {{ appointment.startTime | date: "EEEE d MMMM yyyy" }}
+                  </div>
+                  <div class="text-color-secondary mb-3">
+                    <i class="pi pi-clock mr-2"></i>
+                    {{ appointment.startTime | date: "HH:mm" }} -
+                    {{ appointment.endTime | date: "HH:mm" }}
+                  </div>
+                  @if (
+                    appointment.completed &&
+                    appointment.actualPrice !== null &&
+                    appointment.actualPrice !== undefined
+                  ) {
+                    <div class="text-sm text-primary mb-2">
+                      <i class="pi pi-euro mr-2"></i>
+                      Werkelijke prijs:
+                      {{ appointment.actualPrice | currency: "EUR" }}
+                    </div>
+                  }
+                  <div>
+                    <div class="flex flex-wrap gap-1">
+                      @for (service of appointment.services; track service.id) {
+                        <p-tag [value]="service.name" severity="info"></p-tag>
+                      }
+                      @for (pkg of appointment.packages; track pkg.id) {
+                        <p-tag [value]="pkg.name" severity="success"></p-tag>
                       }
                     </div>
                   </div>
-                </ng-template>
 
-                <div class="text-color-secondary mb-2">
-                  <i class="pi pi-calendar mr-2"></i>
-                  {{ appointment.startTime | date: "EEEE d MMMM yyyy" }}
-                </div>
-                <div class="text-color-secondary mb-3">
-                  <i class="pi pi-clock mr-2"></i>
-                  {{ appointment.startTime | date: "HH:mm" }} -
-                  {{ appointment.endTime | date: "HH:mm" }}
-                </div>
-                @if (
-                  appointment.completed &&
-                  appointment.actualPrice !== null &&
-                  appointment.actualPrice !== undefined
-                ) {
-                  <div class="text-sm text-primary mb-2">
-                    <i class="pi pi-euro mr-2"></i>
-                    Werkelijke prijs:
-                    {{ appointment.actualPrice | currency: "EUR" }}
-                  </div>
-                }
-                <div>
-                  <div class="flex flex-wrap gap-1">
-                    @for (service of appointment.services; track service.id) {
-                      <p-tag [value]="service.name" severity="info"></p-tag>
-                    }
-                    @for (pkg of appointment.packages; track pkg.id) {
-                      <p-tag [value]="pkg.name" severity="success"></p-tag>
-                    }
-                  </div>
-                </div>
-
-                <ng-template pTemplate="footer">
-                  <div class="flex justify-content-end gap-2">
-                    @if (appointment.deletedAt) {
-                      <p-button
-                        icon="pi pi-undo"
-                        [text]="true"
-                        [rounded]="true"
-                        (click)="restoreAppointment(appointment)"
-                        pTooltip="Herstellen"
-                      ></p-button>
-                    } @else {
-                      @if (!appointment.completed) {
+                  <ng-template pTemplate="footer">
+                    <div class="flex justify-content-end gap-2">
+                      @if (appointment.deletedAt) {
                         <p-button
-                          icon="pi pi-check"
-                          severity="success"
+                          icon="pi pi-undo"
                           [text]="true"
                           [rounded]="true"
-                          (click)="completeAppointment(appointment)"
-                          pTooltip="Afronden"
+                          (click)="
+                            $event.stopPropagation();
+                            restoreAppointment(appointment)
+                          "
+                          pTooltip="Herstellen"
+                        ></p-button>
+                      } @else {
+                        @if (!appointment.completed) {
+                          <p-button
+                            icon="pi pi-check"
+                            severity="success"
+                            [text]="true"
+                            [rounded]="true"
+                            (click)="
+                              $event.stopPropagation();
+                              completeAppointment(appointment)
+                            "
+                            pTooltip="Afronden"
+                          ></p-button>
+                        }
+                        <p-button
+                          icon="pi pi-pencil"
+                          [text]="true"
+                          [rounded]="true"
+                          (click)="
+                            $event.stopPropagation();
+                            editAppointment(appointment)
+                          "
+                          pTooltip="Bewerken"
+                        ></p-button>
+                        <p-button
+                          icon="pi pi-inbox"
+                          severity="danger"
+                          [text]="true"
+                          [rounded]="true"
+                          (click)="
+                            $event.stopPropagation();
+                            deleteAppointment(appointment)
+                          "
+                          pTooltip="Archiveren"
                         ></p-button>
                       }
-                      <p-button
-                        icon="pi pi-pencil"
-                        [text]="true"
-                        [rounded]="true"
-                        (click)="showAppointmentForm(appointment)"
-                        pTooltip="Bewerken"
-                      ></p-button>
-                      <p-button
-                        icon="pi pi-inbox"
-                        severity="danger"
-                        [text]="true"
-                        [rounded]="true"
-                        (click)="deleteAppointment(appointment)"
-                        pTooltip="Archiveren"
-                      ></p-button>
-                    }
-                  </div>
-                </ng-template>
-              </p-card>
-            </div>
-          } @empty {
-            <div class="text-center p-4">Geen afspraken gevonden.</div>
-          }
-        </ng-template>
-      </p-dataView>
+                    </div>
+                  </ng-template>
+                </p-card>
+              </div>
+            } @empty {
+              <div class="text-center p-4">Geen afspraken gevonden.</div>
+            }
+          </ng-template>
+        </p-dataView>
+      </div>
 
       <div class="appointments-fab-container">
         <p-button
@@ -282,25 +327,6 @@
                     header-actions
                     class="flex flex-wrap gap-2 align-items-center"
                   >
-                    <div class="flex gap-2">
-                      <p-button
-                        label="Actief"
-                        [text]="showArchived"
-                        [outlined]="showArchived"
-                        [attr.aria-pressed]="!showArchived"
-                        (click)="setShowArchived(false)"
-                        size="small"
-                      ></p-button>
-                      <p-button
-                        label="Archief"
-                        [text]="!showArchived"
-                        [outlined]="!showArchived"
-                        [attr.aria-pressed]="showArchived"
-                        (click)="setShowArchived(true)"
-                        size="small"
-                      ></p-button>
-                    </div>
-
                     <p-button
                       label="Filters"
                       icon="pi pi-filter"
@@ -337,6 +363,25 @@
                       [allowEmpty]="false"
                       ariaLabel="Filter afspraken"
                     ></p-selectButton>
+
+                    <div class="flex gap-2 mt-2">
+                      <p-button
+                        label="Actief"
+                        [text]="showArchived"
+                        [outlined]="showArchived"
+                        [attr.aria-pressed]="!showArchived"
+                        (click)="setShowArchived(false)"
+                        size="small"
+                      ></p-button>
+                      <p-button
+                        label="Archief"
+                        [text]="!showArchived"
+                        [outlined]="!showArchived"
+                        [attr.aria-pressed]="showArchived"
+                        (click)="setShowArchived(true)"
+                        size="small"
+                      ></p-button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -360,7 +405,10 @@
               </tr>
             </ng-template>
             <ng-template pTemplate="body" let-appointment>
-              <tr>
+              <tr
+                (click)="showAppointmentForm(appointment)"
+                style="cursor: pointer"
+              >
                 <td>{{ appointment.client.name }}</td>
                 <td>
                   {{ appointment.dog.name }}
@@ -416,7 +464,10 @@
                       <p-button
                         icon="pi pi-undo"
                         styleClass="p-button-text p-button-rounded"
-                        (click)="restoreAppointment(appointment)"
+                        (click)="
+                          $event.stopPropagation();
+                          restoreAppointment(appointment)
+                        "
                         pTooltip="Herstellen"
                       ></p-button>
                     } @else {
@@ -425,20 +476,28 @@
                           icon="pi pi-check"
                           severity="success"
                           styleClass="p-button-text p-button-rounded"
-                          (click)="completeAppointment(appointment)"
+                          (click)="
+                            $event.stopPropagation();
+                            completeAppointment(appointment)
+                          "
                           pTooltip="Afronden"
                         ></p-button>
                       }
                       <p-button
                         icon="pi pi-pencil"
                         styleClass="p-button-text p-button-rounded"
-                        (click)="showAppointmentForm(appointment)"
+                        (click)="
+                          $event.stopPropagation(); editAppointment(appointment)
+                        "
                         pTooltip="Bewerken"
                       ></p-button>
                       <p-button
                         icon="pi pi-inbox"
                         styleClass="p-button-text p-button-rounded p-button-danger"
-                        (click)="deleteAppointment(appointment)"
+                        (click)="
+                          $event.stopPropagation();
+                          deleteAppointment(appointment)
+                        "
                         pTooltip="Archiveren"
                       ></p-button>
                     }

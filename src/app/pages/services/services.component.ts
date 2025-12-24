@@ -12,7 +12,13 @@ import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { firstValueFrom, take } from 'rxjs';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
+import {
+  PullToRefreshDirective,
+  PullToRefreshEvent,
+} from '../../core/directives/pull-to-refresh.directive';
+import { SwipeDirective } from '../../core/directives/swipe.directive';
 import { Service } from '../../core/models/service.model';
 import { AppDialogService } from '../../core/services/app-dialog.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
@@ -43,6 +49,8 @@ import {
     TableHeaderComponent,
     DataViewModule,
     CardModule,
+    PullToRefreshDirective,
+    SwipeDirective,
   ],
   providers: [ConfirmationService],
   templateUrl: './services.component.html',
@@ -96,6 +104,24 @@ export class ServicesComponent implements OnInit {
     });
   }
 
+  async onPullToRefresh(evt: PullToRefreshEvent): Promise<void> {
+    try {
+      const data = await firstValueFrom(
+        this.serviceService.getData$().pipe(take(1)),
+      );
+
+      this.services = data.filter((service) =>
+        this.showArchived ? !!service.deletedAt : !service.deletedAt,
+      );
+      this.isInitialized = true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
+      this.toastrService.error('Fout', message);
+    } finally {
+      evt.complete();
+    }
+  }
+
   setShowArchived(show: boolean): void {
     if (this.showArchived === show) return;
     this.showArchived = show;
@@ -131,6 +157,22 @@ export class ServicesComponent implements OnInit {
     this.page = 1;
     this.updateListQueryParams();
     this.loadServices();
+  }
+
+  onListSwipe(direction: 'left' | 'right'): void {
+    if (!this.isMobile) return;
+    if (this.searchQuery.trim().length > 0) return;
+
+    const maxPage = Math.max(
+      1,
+      Math.ceil(this.services.length / this.mobileRows),
+    );
+    const nextPage = direction === 'left' ? this.page + 1 : this.page - 1;
+    const clamped = Math.max(1, Math.min(maxPage, nextPage));
+    if (clamped === this.page) return;
+
+    this.page = clamped;
+    this.updateListQueryParams();
   }
 
   private updateListQueryParams(): void {

@@ -1,266 +1,315 @@
-@if (isMobile) {
-  <p-dataView
-    #dv
-    styleClass="mobile-card-list mobile-card-list--fixed-header"
-    [value]="packages"
-    [paginator]="true"
-    [rows]="mobileRows"
-    [first]="(page - 1) * mobileRows"
-    (onPage)="onMobilePage($event)"
-    [sortField]="sortField"
-    [sortOrder]="sortOrder"
-    [filterBy]="'name,services.name'"
-  >
-    <ng-template #header>
-      <app-table-header
-        placeholder="Zoek pakket"
-        [table]="dv"
-        [query]="searchQuery"
-        (queryChange)="onSearchQueryChange($event)"
-        [showAdd]="false"
-        (addClick)="showPackageForm()"
-      >
-        <div header-actions class="flex gap-2">
-          <p-button
-            label="Actief"
-            [text]="showArchived"
-            [outlined]="showArchived"
-            [attr.aria-pressed]="!showArchived"
-            (click)="setShowArchived(false)"
-            size="small"
-          ></p-button>
-          <p-button
-            label="Archief"
-            [text]="!showArchived"
-            [outlined]="!showArchived"
-            [attr.aria-pressed]="showArchived"
-            (click)="setShowArchived(true)"
-            size="small"
-          ></p-button>
-          <p-button
-            label="Reset"
-            icon="pi pi-filter-slash"
-            [text]="true"
-            (click)="resetFilters()"
-            size="small"
-            ariaLabel="Reset filters"
-          ></p-button>
-        </div>
-      </app-table-header>
-    </ng-template>
-    <ng-template #emptymessage></ng-template>
-    <ng-template #list let-packages>
-      @for (pkg of packages; track pkg.id) {
-        <div class="col-12 md:col-6 lg:col-4 p-2">
-          <p-card styleClass="mobile-card h-full">
-            <ng-template pTemplate="header">
-              <div class="p-3">
-                <div class="font-bold text-lg">{{ pkg.name }}</div>
-                <div class="text-color-secondary text-sm">
-                  {{ pkg.services?.length || 0 }} werkzaamhe{{
-                    pkg.services?.length === 1 ? "id" : "den"
-                  }}
-                </div>
-              </div>
-            </ng-template>
-
-            <!-- Werkzaamheden -->
-            <div class="mb-3">
-              <div class="flex flex-wrap gap-2">
-                @for (service of pkg.services; track service.id) {
-                  <p-tag [value]="service.name"></p-tag>
-                }
-              </div>
-            </div>
-
-            <!-- Prijzen per grootte -->
-            @if (pkg.sizePricing?.pricing) {
-              <div class="grid text-sm border-top-1 surface-border pt-3">
-                <div class="col-4 text-center">
-                  <div class="text-color-secondary mb-1">Klein</div>
-                  <div class="font-semibold">
-                    €{{ pkg.sizePricing.pricing.small | number: "1.2-2" }}
-                  </div>
-                </div>
-                <div class="col-4 text-center">
-                  <div class="text-color-secondary mb-1">Medium</div>
-                  <div class="font-semibold">
-                    €{{ pkg.sizePricing.pricing.medium | number: "1.2-2" }}
-                  </div>
-                </div>
-                <div class="col-4 text-center">
-                  <div class="text-color-secondary mb-1">Groot</div>
-                  <div class="font-semibold">
-                    €{{ pkg.sizePricing.pricing.large | number: "1.2-2" }}
-                  </div>
-                </div>
-              </div>
-            }
-
-            <ng-template pTemplate="footer">
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-history"
-                  [text]="true"
-                  [rounded]="true"
-                  (click)="showPriceHistory(pkg)"
-                  pTooltip="Prijs historie"
-                ></p-button>
-                @if (pkg.deletedAt) {
-                  <p-button
-                    icon="pi pi-undo"
-                    [text]="true"
-                    [rounded]="true"
-                    (click)="restorePackage(pkg)"
-                    pTooltip="Herstellen"
-                  ></p-button>
-                } @else {
-                  <p-button
-                    icon="pi pi-pencil"
-                    [text]="true"
-                    [rounded]="true"
-                    (click)="showPackageForm(pkg)"
-                    pTooltip="Bewerken"
-                  ></p-button>
-                  <p-button
-                    icon="pi pi-inbox"
-                    severity="danger"
-                    [text]="true"
-                    [rounded]="true"
-                    (click)="deletePackage(pkg)"
-                    pTooltip="Archiveren"
-                  ></p-button>
-                }
-              </div>
-            </ng-template>
-          </p-card>
-        </div>
-      } @empty {
-        <div class="text-center p-4">Geen pakketten gevonden.</div>
+<div
+  appPullToRefresh
+  #ptr="appPullToRefresh"
+  (refresh)="onPullToRefresh($event)"
+>
+  <div class="ptr-indicator" role="status" aria-live="polite">
+    <div class="ptr-indicator__bubble" aria-hidden="true">
+      <i
+        [class]="
+          ptr.state === 'refreshing'
+            ? 'pi pi-refresh pi-spin'
+            : ptr.state === 'ready'
+              ? 'pi pi-arrow-up'
+              : 'pi pi-arrow-down'
+        "
+      ></i>
+    </div>
+    <span class="sr-only">
+      @switch (ptr.state) {
+        @case ("refreshing") {
+          Vernieuwen…
+        }
+        @case ("ready") {
+          Loslaten om te vernieuwen
+        }
+        @default {
+          Trek omlaag om te vernieuwen
+        }
       }
-    </ng-template>
-  </p-dataView>
-
-  <div class="page-fab-container">
-    <p-button
-      icon="pi pi-plus"
-      [rounded]="true"
-      ariaLabel="Nieuw pakket"
-      pTooltip="Nieuw"
-      tooltipPosition="left"
-      (click)="showPackageForm()"
-    ></p-button>
+    </span>
   </div>
-} @else {
-  <div class="p-4">
-    <p-card>
-      <p-table
-        #dt
+
+  @if (isMobile) {
+    <div
+      appSwipe
+      (swipeLeft)="onListSwipe('left')"
+      (swipeRight)="onListSwipe('right')"
+    >
+      <p-dataView
+        #dv
+        styleClass="mobile-card-list mobile-card-list--fixed-header"
         [value]="packages"
         [paginator]="true"
-        [rows]="desktopRows"
-        [first]="(page - 1) * desktopRows"
-        (onPage)="onDesktopPage($event)"
+        [rows]="mobileRows"
+        [first]="(page - 1) * mobileRows"
+        (onPage)="onMobilePage($event)"
         [sortField]="sortField"
         [sortOrder]="sortOrder"
-        [filterDelay]="0"
-        [globalFilterFields]="['name', 'services.name']"
-        [tableStyle]="{ 'min-width': '75rem' }"
+        [filterBy]="'name,services.name'"
       >
-        <ng-template pTemplate="caption">
-          <div class="flex flex-column gap-2">
-            <app-table-header
-              placeholder="Zoek pakket"
-              [table]="dt"
-              [query]="searchQuery"
-              (queryChange)="onSearchQueryChange($event)"
-              (addClick)="showPackageForm()"
-            >
-              <div header-actions class="flex gap-2">
-                <p-button
-                  label="Actief"
-                  [text]="showArchived"
-                  [outlined]="showArchived"
-                  [attr.aria-pressed]="!showArchived"
-                  (click)="setShowArchived(false)"
-                  size="small"
-                ></p-button>
-                <p-button
-                  label="Archief"
-                  [text]="!showArchived"
-                  [outlined]="!showArchived"
-                  [attr.aria-pressed]="showArchived"
-                  (click)="setShowArchived(true)"
-                  size="small"
-                ></p-button>
-                <p-button
-                  label="Reset"
-                  icon="pi pi-filter-slash"
-                  [text]="true"
-                  (click)="resetFilters()"
-                  size="small"
-                  ariaLabel="Reset filters"
-                ></p-button>
-              </div>
-            </app-table-header>
-          </div>
+        <ng-template #header>
+          <app-table-header
+            placeholder="Zoek pakket"
+            [table]="dv"
+            [query]="searchQuery"
+            (queryChange)="onSearchQueryChange($event)"
+            [showFilters]="true"
+            [showAdd]="false"
+            (addClick)="showPackageForm()"
+          >
+            <div header-actions class="flex gap-2">
+              <p-button
+                label="Reset"
+                icon="pi pi-filter-slash"
+                [text]="true"
+                (click)="resetFilters()"
+                size="small"
+                ariaLabel="Reset filters"
+              ></p-button>
+            </div>
+
+            <div header-filters class="flex gap-2 align-items-center flex-wrap">
+              <p-button
+                label="Actief"
+                [text]="showArchived"
+                [outlined]="showArchived"
+                [attr.aria-pressed]="!showArchived"
+                (click)="setShowArchived(false)"
+                size="small"
+              ></p-button>
+              <p-button
+                label="Archief"
+                [text]="!showArchived"
+                [outlined]="!showArchived"
+                [attr.aria-pressed]="showArchived"
+                (click)="setShowArchived(true)"
+                size="small"
+              ></p-button>
+            </div>
+          </app-table-header>
         </ng-template>
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="name">
-              Naam <p-sortIcon field="name"></p-sortIcon>
-            </th>
-            <th>Werkzaamheden</th>
-            <th style="width: 10rem"></th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-pkg>
-          <tr>
-            <td>{{ pkg.name }}</td>
-            <td>
-              @for (service of pkg.services; track service.id) {
-                <p-tag [value]="service.name" styleClass="mr-2"></p-tag>
-              }
-            </td>
-            <td>
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-history"
-                  styleClass="p-button-text p-button-rounded"
-                  (click)="showPriceHistory(pkg)"
-                  pTooltip="Prijs historie"
-                ></p-button>
-                @if (pkg.deletedAt) {
-                  <p-button
-                    icon="pi pi-undo"
-                    styleClass="p-button-text p-button-rounded"
-                    (click)="restorePackage(pkg)"
-                    pTooltip="Herstellen"
-                  ></p-button>
-                } @else {
-                  <p-button
-                    icon="pi pi-pencil"
-                    styleClass="p-button-text p-button-rounded"
-                    (click)="showPackageForm(pkg)"
-                    pTooltip="Bewerken"
-                  ></p-button>
-                  <p-button
-                    icon="pi pi-inbox"
-                    styleClass="p-button-text p-button-rounded p-button-danger"
-                    (click)="deletePackage(pkg)"
-                    pTooltip="Archiveren"
-                  ></p-button>
+        <ng-template #emptymessage></ng-template>
+        <ng-template #list let-packages>
+          @for (pkg of packages; track pkg.id) {
+            <div class="col-12 md:col-6 lg:col-4 p-2">
+              <p-card styleClass="mobile-card h-full">
+                <ng-template pTemplate="header">
+                  <div class="p-3">
+                    <div class="font-bold text-lg">{{ pkg.name }}</div>
+                    <div class="text-color-secondary text-sm">
+                      {{ pkg.services?.length || 0 }} werkzaamhe{{
+                        pkg.services?.length === 1 ? "id" : "den"
+                      }}
+                    </div>
+                  </div>
+                </ng-template>
+
+                <!-- Werkzaamheden -->
+                <div class="mb-3">
+                  <div class="flex flex-wrap gap-2">
+                    @for (service of pkg.services; track service.id) {
+                      <p-tag [value]="service.name"></p-tag>
+                    }
+                  </div>
+                </div>
+
+                @if (pkg.sizePricing?.pricing) {
+                  <div class="grid text-sm">
+                    <div class="col-4 text-center">
+                      <div class="text-color-secondary mb-1">Klein</div>
+                      <div class="font-semibold">
+                        €{{ pkg.sizePricing.pricing.small | number: "1.2-2" }}
+                      </div>
+                    </div>
+                    <div class="col-4 text-center">
+                      <div class="text-color-secondary mb-1">Middel</div>
+                      <div class="font-semibold">
+                        €{{ pkg.sizePricing.pricing.medium | number: "1.2-2" }}
+                      </div>
+                    </div>
+                    <div class="col-4 text-center">
+                      <div class="text-color-secondary mb-1">Groot</div>
+                      <div class="font-semibold">
+                        €{{ pkg.sizePricing.pricing.large | number: "1.2-2" }}
+                      </div>
+                    </div>
+                  </div>
                 }
-              </div>
-            </td>
-          </tr>
+
+                <ng-template pTemplate="footer">
+                  <div class="flex justify-content-end gap-2">
+                    <p-button
+                      icon="pi pi-history"
+                      [text]="true"
+                      [rounded]="true"
+                      (click)="showPriceHistory(pkg)"
+                      pTooltip="Prijs historie"
+                    ></p-button>
+                    @if (pkg.deletedAt) {
+                      <p-button
+                        icon="pi pi-undo"
+                        [text]="true"
+                        [rounded]="true"
+                        (click)="restorePackage(pkg)"
+                        pTooltip="Herstellen"
+                      ></p-button>
+                    } @else {
+                      <p-button
+                        icon="pi pi-pencil"
+                        [text]="true"
+                        [rounded]="true"
+                        (click)="showPackageForm(pkg)"
+                        pTooltip="Bewerken"
+                      ></p-button>
+                      <p-button
+                        icon="pi pi-inbox"
+                        severity="danger"
+                        [text]="true"
+                        [rounded]="true"
+                        (click)="deletePackage(pkg)"
+                        pTooltip="Archiveren"
+                      ></p-button>
+                    }
+                  </div>
+                </ng-template>
+              </p-card>
+            </div>
+          } @empty {
+            <div class="text-center p-4">Geen pakketten gevonden.</div>
+          }
         </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="3" class="text-center">Geen pakketten gevonden.</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </p-card>
-  </div>
-}
+      </p-dataView>
+    </div>
+
+    <div class="page-fab-container">
+      <p-button
+        icon="pi pi-plus"
+        [rounded]="true"
+        ariaLabel="Nieuw pakket"
+        pTooltip="Nieuw"
+        tooltipPosition="left"
+        (click)="showPackageForm()"
+      ></p-button>
+    </div>
+  } @else {
+    <div class="p-4">
+      <p-card>
+        <p-table
+          #dt
+          [value]="packages"
+          [paginator]="true"
+          [rows]="desktopRows"
+          [first]="(page - 1) * desktopRows"
+          (onPage)="onDesktopPage($event)"
+          [sortField]="sortField"
+          [sortOrder]="sortOrder"
+          [filterDelay]="0"
+          [globalFilterFields]="['name', 'services.name']"
+          [tableStyle]="{ 'min-width': '75rem' }"
+        >
+          <ng-template pTemplate="caption">
+            <div class="flex flex-column gap-2">
+              <app-table-header
+                placeholder="Zoek pakket"
+                [table]="dt"
+                [query]="searchQuery"
+                (queryChange)="onSearchQueryChange($event)"
+                [showFilters]="true"
+                (addClick)="showPackageForm()"
+              >
+                <div header-actions class="flex gap-2">
+                  <p-button
+                    label="Reset"
+                    icon="pi pi-filter-slash"
+                    [text]="true"
+                    (click)="resetFilters()"
+                    size="small"
+                    ariaLabel="Reset filters"
+                  ></p-button>
+                </div>
+
+                <div
+                  header-filters
+                  class="flex gap-2 align-items-center flex-wrap"
+                >
+                  <p-button
+                    label="Actief"
+                    [text]="showArchived"
+                    [outlined]="showArchived"
+                    [attr.aria-pressed]="!showArchived"
+                    (click)="setShowArchived(false)"
+                    size="small"
+                  ></p-button>
+                  <p-button
+                    label="Archief"
+                    [text]="!showArchived"
+                    [outlined]="!showArchived"
+                    [attr.aria-pressed]="showArchived"
+                    (click)="setShowArchived(true)"
+                    size="small"
+                  ></p-button>
+                </div>
+              </app-table-header>
+            </div>
+          </ng-template>
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="name">
+                Naam <p-sortIcon field="name"></p-sortIcon>
+              </th>
+              <th>Werkzaamheden</th>
+              <th style="width: 10rem"></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-pkg>
+            <tr>
+              <td>{{ pkg.name }}</td>
+              <td>
+                @for (service of pkg.services; track service.id) {
+                  <p-tag [value]="service.name" styleClass="mr-2"></p-tag>
+                }
+              </td>
+              <td>
+                <div class="flex justify-content-end gap-2">
+                  <p-button
+                    icon="pi pi-history"
+                    styleClass="p-button-text p-button-rounded"
+                    (click)="showPriceHistory(pkg)"
+                    pTooltip="Prijs historie"
+                  ></p-button>
+                  @if (pkg.deletedAt) {
+                    <p-button
+                      icon="pi pi-undo"
+                      styleClass="p-button-text p-button-rounded"
+                      (click)="restorePackage(pkg)"
+                      pTooltip="Herstellen"
+                    ></p-button>
+                  } @else {
+                    <p-button
+                      icon="pi pi-pencil"
+                      styleClass="p-button-text p-button-rounded"
+                      (click)="showPackageForm(pkg)"
+                      pTooltip="Bewerken"
+                    ></p-button>
+                    <p-button
+                      icon="pi pi-inbox"
+                      styleClass="p-button-text p-button-rounded p-button-danger"
+                      (click)="deletePackage(pkg)"
+                      pTooltip="Archiveren"
+                    ></p-button>
+                  }
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="3" class="text-center">Geen pakketten gevonden.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  }
+</div>

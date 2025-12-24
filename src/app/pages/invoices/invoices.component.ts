@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -7,9 +8,18 @@ import { DataViewModule } from 'primeng/dataview';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { combineLatest, firstValueFrom, map, of, switchMap, take } from 'rxjs';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
+import {
+  PullToRefreshDirective,
+  PullToRefreshEvent,
+} from '../../core/directives/pull-to-refresh.directive';
+import { SwipeDirective } from '../../core/directives/swipe.directive';
+import { Appointment } from '../../core/models/appointment.model';
 import { Invoice, PaymentStatus } from '../../core/models/invoice.model';
 import { AppDialogService } from '../../core/services/app-dialog.service';
+import { AppSettingsService } from '../../core/services/app-settings.service';
+import { AppointmentService } from '../../core/services/appointment.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { InvoiceService } from '../../core/services/invoice.service';
@@ -34,12 +44,15 @@ import {
     TableHeaderComponent,
     DataViewModule,
     CardModule,
+    PullToRefreshDirective,
+    SwipeDirective,
   ],
   templateUrl: './invoices.component.html',
   styleUrls: ['./invoices.component.css'],
 })
 export class InvoicesComponent implements OnInit {
   invoices: Invoice[] = [];
+  missingInvoiceAppointments: Appointment[] = [];
   sortField = 'issueDate';
   sortOrder = -1;
   PaymentStatus = PaymentStatus;
@@ -51,7 +64,13 @@ export class InvoicesComponent implements OnInit {
   readonly mobileRows = 9;
   readonly desktopRows = 10;
 
+  private allInvoices: Invoice[] = [];
+  private allAppointments: Appointment[] = [];
+
+  private readonly destroyRef = inject(DestroyRef);
   private readonly invoiceService = inject(InvoiceService);
+  private readonly appointmentService = inject(AppointmentService);
+  private readonly appSettingsService = inject(AppSettingsService);
   private readonly toastrService = inject(ToastrService);
   private readonly confirmationDialogService = inject(
     ConfirmationDialogService,
@@ -72,7 +91,7 @@ export class InvoicesComponent implements OnInit {
     this.showArchived = readBooleanParam(queryParamMap, 'archived', false);
     this.page = sanitizePage(readNumberParam(queryParamMap, 'page', 1));
 
-    this.loadInvoices();
+    this.subscribeToData();
     this.breadcrumbService.setItems([
       {
         label: 'Facturen',
@@ -80,17 +99,69 @@ export class InvoicesComponent implements OnInit {
     ]);
   }
 
+  private subscribeToData(): void {
+    combineLatest([
+      this.invoiceService.getData$(),
+      this.appointmentService.getData$(),
+    ])
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ([invoices, appointments]) => {
+          this.allInvoices = invoices;
+          this.allAppointments = appointments;
+          this.recomputeView();
+        },
+        error: (err) => {
+          const message = err instanceof Error ? err.message : 'Laden mislukt';
+          this.toastrService.error('Fout', message);
+        },
+      });
+  }
+
+  private recomputeView(): void {
+    this.invoices = this.allInvoices.filter((inv) =>
+      this.showArchived ? !!inv.deletedAt : !inv.deletedAt,
+    );
+
+    const invoiceAppointmentIds = new Set(
+      this.allInvoices
+        .map((inv) => inv.appointmentId ?? inv.appointment?.id)
+        .filter((id): id is string => typeof id === 'string' && id.length > 0),
+    );
+
+    this.missingInvoiceAppointments = this.allAppointments
+      .filter((a) => !!a.completed)
+      .filter((a) => !a.deletedAt)
+      .filter((a) => typeof a.id === 'string' && a.id.length > 0)
+      .filter((a) => !invoiceAppointmentIds.has(a.id!));
+  }
+
   loadInvoices(): void {
-    this.invoiceService.getData$().subscribe({
-      next: (data) => {
-        this.invoices = data.filter((inv) =>
-          this.showArchived ? !!inv.deletedAt : !inv.deletedAt,
-        );
-      },
-      error: (err) => {
-        this.toastrService.error('Fout', err.message);
-      },
-    });
+    void this.reloadDataOnce();
+  }
+
+  private async reloadDataOnce(): Promise<void> {
+    const [invoices, appointments] = await firstValueFrom(
+      combineLatest([
+        this.invoiceService.getData$().pipe(take(1)),
+        this.appointmentService.getData$().pipe(take(1)),
+      ]),
+    );
+
+    this.allInvoices = invoices;
+    this.allAppointments = appointments;
+    this.recomputeView();
+  }
+
+  async onPullToRefresh(evt: PullToRefreshEvent): Promise<void> {
+    try {
+      await this.reloadDataOnce();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
+      this.toastrService.error('Fout', message);
+    } finally {
+      evt.complete();
+    }
   }
 
   setShowArchived(show: boolean): void {
@@ -98,7 +169,7 @@ export class InvoicesComponent implements OnInit {
     this.showArchived = show;
     this.page = 1;
     this.updateListQueryParams();
-    this.loadInvoices();
+    this.recomputeView();
   }
 
   onSearchQueryChange(value: string): void {
@@ -127,7 +198,23 @@ export class InvoicesComponent implements OnInit {
     this.showArchived = false;
     this.page = 1;
     this.updateListQueryParams();
-    this.loadInvoices();
+    this.recomputeView();
+  }
+
+  onListSwipe(direction: 'left' | 'right'): void {
+    if (!this.isMobile) return;
+    if (this.searchQuery.trim().length > 0) return;
+
+    const maxPage = Math.max(
+      1,
+      Math.ceil(this.invoices.length / this.mobileRows),
+    );
+    const nextPage = direction === 'left' ? this.page + 1 : this.page - 1;
+    const clamped = Math.max(1, Math.min(maxPage, nextPage));
+    if (clamped === this.page) return;
+
+    this.page = clamped;
+    this.updateListQueryParams();
   }
 
   private updateListQueryParams(): void {
@@ -145,9 +232,13 @@ export class InvoicesComponent implements OnInit {
 
   showInvoiceForm(invoice?: Invoice): void {
     if (invoice) {
-      this.router.navigate(['/invoices', invoice.id]);
+      this.router.navigate(['/invoices', invoice.id], {
+        queryParamsHandling: 'preserve',
+      });
     } else {
-      this.router.navigate(['/invoices/new']);
+      this.router.navigate(['/invoices/new'], {
+        queryParamsHandling: 'preserve',
+      });
     }
   }
 
@@ -227,6 +318,86 @@ export class InvoicesComponent implements OnInit {
       default:
         return status;
     }
+  }
+
+  createInvoiceForAppointment(appointment: Appointment): void {
+    const appointmentId = appointment.id;
+    if (!appointmentId) return;
+
+    combineLatest([
+      this.invoiceService
+        .getInvoicesForAppointment$(appointmentId)
+        .pipe(take(1)),
+      this.appSettingsService.settings$.pipe(take(1)),
+    ])
+      .pipe(
+        switchMap(([existingInvoices, settings]) => {
+          if (existingInvoices.length > 0) {
+            return of(null);
+          }
+
+          const subtotal =
+            appointment.actualPrice ?? appointment.estimatedPrice ?? 0;
+          const vatRate = settings.korEnabled ? 0 : settings.defaultVatRate;
+          const vatAmount = (subtotal * vatRate) / 100;
+          const totalAmount = subtotal + vatAmount;
+
+          const issueDate = new Date();
+          const dueDate = new Date(issueDate);
+          dueDate.setDate(dueDate.getDate() + 30);
+
+          const invoice: Invoice = {
+            invoiceNumber: this.generateInvoiceNumber(issueDate),
+            client: appointment.client,
+            appointmentId,
+            items: [
+              {
+                description: `Afspraak${appointment.dog?.name ? ` - ${appointment.dog.name}` : ''}`,
+                quantity: 1,
+                unitPrice: subtotal,
+                totalPrice: subtotal,
+              },
+            ],
+            subtotal,
+            vatRate,
+            vatAmount,
+            totalAmount,
+            paymentStatus: PaymentStatus.PENDING,
+            issueDate,
+            dueDate,
+            notes: appointment.notes ?? '',
+          };
+
+          return this.invoiceService.add(invoice);
+        }),
+        map((created) => created),
+      )
+      .subscribe({
+        next: (created) => {
+          if (!created) {
+            this.toastrService.info(
+              'Info',
+              'Voor deze afspraak bestaat al een factuur.',
+            );
+            return;
+          }
+
+          this.toastrService.success('Succes', 'Conceptfactuur aangemaakt');
+          void this.router.navigate(['/invoices', created.id], {
+            queryParamsHandling: 'preserve',
+          });
+        },
+        error: (err) => {
+          const message = err instanceof Error ? err.message : 'Mislukt';
+          this.toastrService.error('Fout', message);
+        },
+      });
+  }
+
+  private generateInvoiceNumber(issueDate: Date): string {
+    const yyyymmdd = issueDate.toISOString().slice(0, 10).replace(/-/g, '');
+    const suffix = Date.now().toString().slice(-6);
+    return `INV-${yyyymmdd}-${suffix}`;
   }
 
   formatCurrency(value: number): string {

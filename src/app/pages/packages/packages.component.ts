@@ -22,7 +22,13 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
+import { firstValueFrom, take } from 'rxjs';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
+import {
+  PullToRefreshDirective,
+  PullToRefreshEvent,
+} from '../../core/directives/pull-to-refresh.directive';
+import { SwipeDirective } from '../../core/directives/swipe.directive';
 import { Package } from '../../core/models/package.model';
 import { Price } from '../../core/models/price.model';
 import { Service } from '../../core/models/service.model';
@@ -61,6 +67,8 @@ import {
     TooltipModule,
     DataViewModule,
     CardModule,
+    PullToRefreshDirective,
+    SwipeDirective,
   ],
   providers: [ConfirmationService],
   templateUrl: './packages.component.html',
@@ -144,6 +152,25 @@ export class PackagesComponent implements OnInit {
       );
   }
 
+  async onPullToRefresh(evt: PullToRefreshEvent): Promise<void> {
+    try {
+      const [packages, services] = await Promise.all([
+        firstValueFrom(this.packageService.getData$().pipe(take(1))),
+        firstValueFrom(this.serviceService.getData$().pipe(take(1))),
+      ]);
+
+      this.packages = packages.filter((pkg) =>
+        this.showArchived ? !!pkg.deletedAt : !pkg.deletedAt,
+      );
+      this.allServices = services.filter((s) => !s.deletedAt);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
+      this.toastrService.error('Fout', message);
+    } finally {
+      evt.complete();
+    }
+  }
+
   setShowArchived(show: boolean): void {
     if (this.showArchived === show) return;
     this.showArchived = show;
@@ -179,6 +206,22 @@ export class PackagesComponent implements OnInit {
     this.page = 1;
     this.updateListQueryParams();
     this.loadPackages();
+  }
+
+  onListSwipe(direction: 'left' | 'right'): void {
+    if (!this.isMobile) return;
+    if (this.searchQuery.trim().length > 0) return;
+
+    const maxPage = Math.max(
+      1,
+      Math.ceil(this.packages.length / this.mobileRows),
+    );
+    const nextPage = direction === 'left' ? this.page + 1 : this.page - 1;
+    const clamped = Math.max(1, Math.min(maxPage, nextPage));
+    if (clamped === this.page) return;
+
+    this.page = clamped;
+    this.updateListQueryParams();
   }
 
   private updateListQueryParams(): void {

@@ -1,0 +1,11 @@
+:host {
+  display: block;
+}
+
+.appointment-preview__notes {
+  white-space: pre-wrap;
+  border: 1px solid var(--surface-border);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: var(--p-surface-0, var(--surface-card, #ffffff));
+}

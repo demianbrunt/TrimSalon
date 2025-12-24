@@ -60,6 +60,7 @@ export const commonProviders = [
     },
   },
   providePrimeNG({
+    ripple: true,
     theme: {
       preset: Aura,
       options: {

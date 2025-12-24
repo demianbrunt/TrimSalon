@@ -1,3 +1,10 @@
+import {
+  animate,
+  query,
+  style,
+  transition,
+  trigger,
+} from '@angular/animations';
 import { CommonModule } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
@@ -26,6 +33,57 @@ import { MobileService } from './core/services/mobile.service';
     TopNavComponent,
     ConfirmDialogModule,
   ],
+  animations: [
+    trigger('routeAnimations', [
+      transition(
+        '* <=> *',
+        [
+          query(
+            ':enter, :leave',
+            [
+              style({
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+              }),
+            ],
+            { optional: true },
+          ),
+          query(
+            ':leave',
+            [
+              animate(
+                '{{duration}} ease-in',
+                style({
+                  opacity: 0,
+                  transform: 'translate3d(0, -4px, 0)',
+                }),
+              ),
+            ],
+            { optional: true },
+          ),
+          query(
+            ':enter',
+            [
+              style({
+                opacity: 0,
+                transform: 'translate3d(0, 6px, 0)',
+              }),
+              animate(
+                '{{duration}} ease-out',
+                // Avoid leaving a `transform` on the routed page element.
+                // Some mobile browsers (notably iOS Safari) can break `position: sticky`
+                // for descendants when any ancestor remains transformed.
+                style({ opacity: 1, transform: 'none', position: 'relative' }),
+              ),
+            ],
+            { optional: true },
+          ),
+        ],
+        { params: { duration: '160ms' } },
+      ),
+    ]),
+  ],
   template: `
     <p-confirmDialog />
     <p-toast
@@ -41,7 +99,19 @@ import { MobileService } from './core/services/mobile.service';
         <app-breadcrumb></app-breadcrumb>
       }
       <div class="content-outlet">
-        <router-outlet></router-outlet>
+        <div
+          class="route-animation-host"
+          [@routeAnimations]="{
+            value: outlet?.isActivated
+              ? (outlet.activatedRouteData?.['breadcrumb'] ??
+                outlet.activatedRoute.snapshot.routeConfig?.path ??
+                '')
+              : '',
+            params: { duration: routeAnimationDuration },
+          }"
+        >
+          <router-outlet #outlet="outlet"></router-outlet>
+        </div>
       </div>
     </div>
   `,
@@ -70,6 +140,16 @@ export class App {
           this.swUpdate.activateUpdate().then(() => document.location.reload());
         });
     }
+  }
+
+  get routeAnimationDuration(): string {
+    if (typeof window === 'undefined') {
+      return '160ms';
+    }
+
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      ? '0ms'
+      : '160ms';
   }
 
   get isMobile() {

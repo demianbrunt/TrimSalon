@@ -1,9 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { DialogService } from 'primeng/dynamicdialog';
 import { of } from 'rxjs';
 import { MockActivatedRoute } from '../../../test-helpers/angular-mocks';
+import { DEFAULT_APP_SETTINGS } from '../../core/models/app-settings.model';
 import { PaymentStatus } from '../../core/models/invoice.model';
+import { AppDialogService } from '../../core/services/app-dialog.service';
+import { AppSettingsService } from '../../core/services/app-settings.service';
+import { AppointmentService } from '../../core/services/appointment.service';
 import { BreadcrumbService } from '../../core/services/breadcrumb.service';
 import { ConfirmationDialogService } from '../../core/services/confirmation-dialog.service';
 import { InvoiceService } from '../../core/services/invoice.service';
@@ -20,16 +23,22 @@ describe('InvoicesComponent', () => {
   let mockBreadcrumbService: jasmine.SpyObj<BreadcrumbService>;
   let mockConfirmationDialogService: jasmine.SpyObj<ConfirmationDialogService>;
   let mockMobileService: jasmine.SpyObj<MobileService>;
-  let mockDialogService: jasmine.SpyObj<DialogService>;
+  let mockAppointmentService: jasmine.SpyObj<AppointmentService>;
+  let mockAppSettingsService: jasmine.SpyObj<AppSettingsService>;
+  let mockAppDialogService: jasmine.SpyObj<AppDialogService>;
 
   beforeEach(async () => {
     mockInvoiceService = jasmine.createSpyObj('InvoiceService', [
       'getData$',
       'delete',
+      'restore',
+      'add',
+      'getInvoicesForAppointment$',
     ]);
     mockToastrService = jasmine.createSpyObj('ToastrService', [
       'success',
       'error',
+      'info',
     ]);
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
     mockBreadcrumbService = jasmine.createSpyObj('BreadcrumbService', [
@@ -42,18 +51,28 @@ describe('InvoicesComponent', () => {
     mockMobileService = jasmine.createSpyObj('MobileService', [], {
       isMobile: false,
     });
-    mockDialogService = jasmine.createSpyObj('DialogService', [
-      'open',
-      'getInstance',
+    mockAppointmentService = jasmine.createSpyObj('AppointmentService', [
+      'getData$',
     ]);
+    mockAppSettingsService = jasmine.createSpyObj(
+      'AppSettingsService',
+      ['saveSettings'],
+      { settings$: of(DEFAULT_APP_SETTINGS) },
+    );
+    mockAppDialogService = jasmine.createSpyObj('AppDialogService', ['open']);
 
     mockInvoiceService.getData$.and.returnValue(of([]));
+    mockAppointmentService.getData$.and.returnValue(of([]));
+    mockInvoiceService.getInvoicesForAppointment$.and.returnValue(of([]));
+    mockInvoiceService.add.and.returnValue(of({ id: 'created' } as any));
 
     await TestBed.configureTestingModule({
       imports: [InvoicesComponent],
       providers: [
         { provide: ActivatedRoute, useValue: new MockActivatedRoute() },
         { provide: InvoiceService, useValue: mockInvoiceService },
+        { provide: AppointmentService, useValue: mockAppointmentService },
+        { provide: AppSettingsService, useValue: mockAppSettingsService },
         { provide: ToastrService, useValue: mockToastrService },
         { provide: Router, useValue: mockRouter },
         { provide: BreadcrumbService, useValue: mockBreadcrumbService },
@@ -62,7 +81,7 @@ describe('InvoicesComponent', () => {
           useValue: mockConfirmationDialogService,
         },
         { provide: MobileService, useValue: mockMobileService },
-        { provide: DialogService, useValue: mockDialogService },
+        { provide: AppDialogService, useValue: mockAppDialogService },
       ],
     }).compileComponents();
 

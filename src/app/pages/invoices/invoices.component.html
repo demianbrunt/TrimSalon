@@ -1,283 +1,384 @@
-@if (isMobile) {
-  <p-dataView
-    #dv
-    styleClass="mobile-card-list mobile-card-list--fixed-header"
-    [value]="invoices"
-    [paginator]="true"
-    [rows]="mobileRows"
-    [first]="(page - 1) * mobileRows"
-    (onPage)="onMobilePage($event)"
-    [sortField]="sortField"
-    [sortOrder]="sortOrder"
-    [filterBy]="'invoiceNumber, client.name'"
-  >
-    <ng-template #header>
-      <app-table-header
-        placeholder="Zoek factuur"
-        [table]="dv"
-        [query]="searchQuery"
-        (queryChange)="onSearchQueryChange($event)"
-        [showAdd]="false"
-        (addClick)="showInvoiceForm()"
-      >
-        <div header-actions class="flex gap-2">
-          <p-button
-            label="Actief"
-            [text]="showArchived"
-            [outlined]="showArchived"
-            [attr.aria-pressed]="!showArchived"
-            (click)="setShowArchived(false)"
-            size="small"
-          ></p-button>
-          <p-button
-            label="Archief"
-            [text]="!showArchived"
-            [outlined]="!showArchived"
-            [attr.aria-pressed]="showArchived"
-            (click)="setShowArchived(true)"
-            size="small"
-          ></p-button>
-          <p-button
-            label="Reset"
-            icon="pi pi-filter-slash"
-            [text]="true"
-            (click)="resetFilters()"
-            size="small"
-            ariaLabel="Reset filters"
-          ></p-button>
-        </div>
-      </app-table-header>
-    </ng-template>
-    <ng-template #emptymessage></ng-template>
-    <ng-template #list let-invoices>
-      @for (invoice of invoices; track invoice.id) {
-        <div class="col-12 md:col-6 lg:col-4 p-2">
-          <p-card styleClass="mobile-card h-full">
-            <ng-template pTemplate="header">
-              <div class="p-3">
-                <div class="flex justify-content-between align-items-center">
-                  <div class="font-bold text-lg">
-                    {{ invoice.invoiceNumber }}
-                  </div>
-                  <p-tag
-                    [value]="getStatusLabel(invoice.paymentStatus)"
-                    [severity]="getStatusSeverity(invoice.paymentStatus)"
-                  ></p-tag>
-                </div>
-                <div class="text-color-secondary mt-1">
-                  <i class="pi pi-user mr-1"></i>{{ invoice.client.name }}
-                </div>
-              </div>
-            </ng-template>
-
-            <!-- Datums en bedrag -->
-            <div class="grid text-sm mb-2">
-              <div class="col-6">
-                <div class="text-color-secondary">Factuurdatum</div>
-                <div class="font-medium">
-                  {{ invoice.issueDate | date: "dd-MM-yyyy" }}
-                </div>
-              </div>
-              <div class="col-6">
-                <div class="text-color-secondary">Vervaldatum</div>
-                <div class="font-medium">
-                  {{ invoice.dueDate | date: "dd-MM-yyyy" }}
-                </div>
-              </div>
-            </div>
-
-            <div
-              class="flex justify-content-between align-items-center border-top-1 surface-border pt-3"
-            >
-              <div class="text-color-secondary text-sm">Totaal</div>
-              <div class="font-bold text-xl text-primary">
-                {{ formatCurrency(invoice.totalAmount) }}
-              </div>
-            </div>
-
-            <ng-template pTemplate="footer">
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-print"
-                  [text]="true"
-                  [rounded]="true"
-                  (click)="printInvoice(invoice)"
-                  pTooltip="Printen"
-                ></p-button>
-                @if (invoice.deletedAt) {
-                  <p-button
-                    icon="pi pi-undo"
-                    [text]="true"
-                    [rounded]="true"
-                    (click)="restoreInvoice(invoice)"
-                    pTooltip="Herstellen"
-                  ></p-button>
-                } @else {
-                  <p-button
-                    icon="pi pi-pencil"
-                    [text]="true"
-                    [rounded]="true"
-                    (click)="showInvoiceForm(invoice)"
-                    pTooltip="Bewerken"
-                  ></p-button>
-                  <p-button
-                    icon="pi pi-inbox"
-                    severity="danger"
-                    [text]="true"
-                    [rounded]="true"
-                    (click)="deleteInvoice(invoice)"
-                    pTooltip="Archiveren"
-                  ></p-button>
-                }
-              </div>
-            </ng-template>
-          </p-card>
-        </div>
-      } @empty {
-        <div class="text-center p-4">Geen facturen gevonden.</div>
+<div
+  appPullToRefresh
+  #ptr="appPullToRefresh"
+  (refresh)="onPullToRefresh($event)"
+>
+  <div class="ptr-indicator" role="status" aria-live="polite">
+    <div class="ptr-indicator__bubble" aria-hidden="true">
+      <i
+        [class]="
+          ptr.state === 'refreshing'
+            ? 'pi pi-refresh pi-spin'
+            : ptr.state === 'ready'
+              ? 'pi pi-arrow-up'
+              : 'pi pi-arrow-down'
+        "
+      ></i>
+    </div>
+    <span class="sr-only">
+      @switch (ptr.state) {
+        @case ("refreshing") {
+          Vernieuwen…
+        }
+        @case ("ready") {
+          Loslaten om te vernieuwen
+        }
+        @default {
+          Trek omlaag om te vernieuwen
+        }
       }
-    </ng-template>
-  </p-dataView>
-
-  <div class="page-fab-container">
-    <p-button
-      icon="pi pi-plus"
-      [rounded]="true"
-      ariaLabel="Nieuwe factuur"
-      pTooltip="Nieuw"
-      tooltipPosition="left"
-      (click)="showInvoiceForm()"
-    ></p-button>
+    </span>
   </div>
-} @else {
-  <div class="p-4">
-    <p-card>
-      <p-table
-        #dt
+
+  @if (missingInvoiceAppointments.length > 0) {
+    <div class="p-3 md:p-4">
+      <p-card styleClass="mb-3">
+        <div class="flex align-items-start gap-3">
+          <i
+            class="pi pi-exclamation-triangle text-orange-500 text-xl"
+            aria-hidden="true"
+          ></i>
+          <div class="flex-1">
+            <h2 class="m-0 text-lg">Afgeronde afspraken zonder factuur</h2>
+            <p class="text-500 mt-1 mb-3">
+              Deze afspraken zijn afgerond, maar hebben nog geen gekoppelde
+              factuur.
+            </p>
+
+            <div class="flex flex-column gap-2">
+              @for (apt of missingInvoiceAppointments; track apt.id) {
+                <div
+                  class="flex justify-content-between align-items-center flex-wrap gap-2"
+                >
+                  <div>
+                    <div class="font-medium">
+                      {{ apt.client.name }} – {{ apt.dog.name }}
+                    </div>
+                    <div class="text-500 text-sm">
+                      {{ apt.startTime | date: "dd-MM-yyyy" }}
+                      <span class="mx-2" aria-hidden="true">•</span>
+                      {{ apt.startTime | date: "HH:mm" }}
+                    </div>
+                  </div>
+
+                  <p-button
+                    label="Factuur aanmaken"
+                    icon="pi pi-file"
+                    size="small"
+                    (click)="createInvoiceForAppointment(apt)"
+                    [attr.aria-label]="
+                      'Factuur aanmaken voor afspraak van ' +
+                      apt.client.name +
+                      ' – ' +
+                      apt.dog.name
+                    "
+                  ></p-button>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  }
+
+  @if (isMobile) {
+    <div
+      appSwipe
+      (swipeLeft)="onListSwipe('left')"
+      (swipeRight)="onListSwipe('right')"
+    >
+      <p-dataView
+        #dv
+        styleClass="mobile-card-list mobile-card-list--fixed-header"
         [value]="invoices"
         [paginator]="true"
-        [rows]="desktopRows"
-        [first]="(page - 1) * desktopRows"
-        (onPage)="onDesktopPage($event)"
+        [rows]="mobileRows"
+        [first]="(page - 1) * mobileRows"
+        (onPage)="onMobilePage($event)"
         [sortField]="sortField"
         [sortOrder]="sortOrder"
-        [filterDelay]="0"
-        [globalFilterFields]="['invoiceNumber', 'client.name']"
-        [tableStyle]="{ 'min-width': '75rem' }"
+        [filterBy]="'invoiceNumber, client.name'"
       >
-        <ng-template pTemplate="caption">
-          <div class="flex flex-column gap-2">
-            <app-table-header
-              placeholder="Zoek factuur"
-              [table]="dt"
-              [query]="searchQuery"
-              (queryChange)="onSearchQueryChange($event)"
-              (addClick)="showInvoiceForm()"
-            >
-              <div header-actions class="flex gap-2">
-                <p-button
-                  label="Actief"
-                  [text]="showArchived"
-                  [outlined]="showArchived"
-                  [attr.aria-pressed]="!showArchived"
-                  (click)="setShowArchived(false)"
-                  size="small"
-                ></p-button>
-                <p-button
-                  label="Archief"
-                  [text]="!showArchived"
-                  [outlined]="!showArchived"
-                  [attr.aria-pressed]="showArchived"
-                  (click)="setShowArchived(true)"
-                  size="small"
-                ></p-button>
-                <p-button
-                  label="Reset"
-                  icon="pi pi-filter-slash"
-                  [text]="true"
-                  (click)="resetFilters()"
-                  size="small"
-                  ariaLabel="Reset filters"
-                ></p-button>
-              </div>
-            </app-table-header>
-          </div>
+        <ng-template #header>
+          <app-table-header
+            placeholder="Zoek factuur"
+            [table]="dv"
+            [query]="searchQuery"
+            (queryChange)="onSearchQueryChange($event)"
+            [showFilters]="true"
+            [showAdd]="false"
+            (addClick)="showInvoiceForm()"
+          >
+            <div header-actions class="flex gap-2">
+              <p-button
+                label="Reset"
+                icon="pi pi-filter-slash"
+                [text]="true"
+                (click)="resetFilters()"
+                size="small"
+                ariaLabel="Reset filters"
+              ></p-button>
+            </div>
+
+            <div header-filters class="flex gap-2 align-items-center flex-wrap">
+              <p-button
+                label="Actief"
+                [text]="showArchived"
+                [outlined]="showArchived"
+                [attr.aria-pressed]="!showArchived"
+                (click)="setShowArchived(false)"
+                size="small"
+              ></p-button>
+              <p-button
+                label="Archief"
+                [text]="!showArchived"
+                [outlined]="!showArchived"
+                [attr.aria-pressed]="showArchived"
+                (click)="setShowArchived(true)"
+                size="small"
+              ></p-button>
+            </div>
+          </app-table-header>
         </ng-template>
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="invoiceNumber">
-              Factuurnummer <p-sortIcon field="invoiceNumber"></p-sortIcon>
-            </th>
-            <th pSortableColumn="client.name">
-              Klant <p-sortIcon field="client.name"></p-sortIcon>
-            </th>
-            <th pSortableColumn="issueDate">
-              Factuurdatum <p-sortIcon field="issueDate"></p-sortIcon>
-            </th>
-            <th pSortableColumn="dueDate">
-              Vervaldatum <p-sortIcon field="dueDate"></p-sortIcon>
-            </th>
-            <th pSortableColumn="totalAmount">
-              Bedrag <p-sortIcon field="totalAmount"></p-sortIcon>
-            </th>
-            <th pSortableColumn="paymentStatus">
-              Status <p-sortIcon field="paymentStatus"></p-sortIcon>
-            </th>
-            <th style="width: 10rem"></th>
-          </tr>
+        <ng-template #emptymessage></ng-template>
+        <ng-template #list let-invoices>
+          @for (invoice of invoices; track invoice.id) {
+            <div class="col-12 md:col-6 lg:col-4 p-2">
+              <p-card styleClass="mobile-card h-full">
+                <ng-template pTemplate="header">
+                  <div class="p-3">
+                    <div
+                      class="flex justify-content-between align-items-center"
+                    >
+                      <div class="font-bold text-lg">
+                        {{ invoice.invoiceNumber }}
+                      </div>
+                      <p-tag
+                        [value]="getStatusLabel(invoice.paymentStatus)"
+                        [severity]="getStatusSeverity(invoice.paymentStatus)"
+                      ></p-tag>
+                    </div>
+                    <div class="text-color-secondary mt-1">
+                      <i class="pi pi-user mr-1"></i>{{ invoice.client.name }}
+                    </div>
+                  </div>
+                </ng-template>
+
+                <!-- Datums en bedrag -->
+                <div class="grid text-sm mb-2">
+                  <div class="col-6">
+                    <div class="text-color-secondary">Factuurdatum</div>
+                    <div class="font-medium">
+                      {{ invoice.issueDate | date: "dd-MM-yyyy" }}
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="text-color-secondary">Vervaldatum</div>
+                    <div class="font-medium">
+                      {{ invoice.dueDate | date: "dd-MM-yyyy" }}
+                    </div>
+                  </div>
+                  <div class="col-12 mt-2">
+                    <div class="text-color-secondary">Bedrag</div>
+                    <div class="font-medium">
+                      {{ formatCurrency(invoice.totalAmount) }}
+                    </div>
+                  </div>
+                </div>
+
+                <ng-template pTemplate="footer">
+                  <div class="flex justify-content-end gap-2">
+                    <p-button
+                      icon="pi pi-print"
+                      [text]="true"
+                      [rounded]="true"
+                      (click)="printInvoice(invoice)"
+                      pTooltip="Printen"
+                    ></p-button>
+                    @if (invoice.deletedAt) {
+                      <p-button
+                        icon="pi pi-undo"
+                        [text]="true"
+                        [rounded]="true"
+                        (click)="restoreInvoice(invoice)"
+                        pTooltip="Herstellen"
+                      ></p-button>
+                    } @else {
+                      <p-button
+                        icon="pi pi-pencil"
+                        [text]="true"
+                        [rounded]="true"
+                        (click)="showInvoiceForm(invoice)"
+                        pTooltip="Bewerken"
+                      ></p-button>
+                      <p-button
+                        icon="pi pi-inbox"
+                        severity="danger"
+                        [text]="true"
+                        [rounded]="true"
+                        (click)="deleteInvoice(invoice)"
+                        pTooltip="Archiveren"
+                      ></p-button>
+                    }
+                  </div>
+                </ng-template>
+              </p-card>
+            </div>
+          } @empty {
+            <div class="text-center p-4">Geen facturen gevonden.</div>
+          }
         </ng-template>
-        <ng-template pTemplate="body" let-invoice>
-          <tr>
-            <td>{{ invoice.invoiceNumber }}</td>
-            <td>{{ invoice.client.name }}</td>
-            <td>{{ invoice.issueDate | date: "dd-MM-yyyy" }}</td>
-            <td>{{ invoice.dueDate | date: "dd-MM-yyyy" }}</td>
-            <td>{{ formatCurrency(invoice.totalAmount) }}</td>
-            <td>
-              <p-tag
-                [value]="getStatusLabel(invoice.paymentStatus)"
-                [severity]="getStatusSeverity(invoice.paymentStatus)"
-              ></p-tag>
-            </td>
-            <td>
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-print"
-                  styleClass="p-button-text p-button-rounded"
-                  (click)="printInvoice(invoice)"
-                  pTooltip="Printen"
-                ></p-button>
-                @if (invoice.deletedAt) {
+      </p-dataView>
+    </div>
+
+    <div class="page-fab-container">
+      <p-button
+        icon="pi pi-plus"
+        [rounded]="true"
+        ariaLabel="Nieuwe factuur"
+        pTooltip="Nieuw"
+        tooltipPosition="left"
+        (click)="showInvoiceForm()"
+      ></p-button>
+    </div>
+  } @else {
+    <div class="p-4">
+      <p-card>
+        <p-table
+          #dt
+          [value]="invoices"
+          [paginator]="true"
+          [rows]="desktopRows"
+          [first]="(page - 1) * desktopRows"
+          (onPage)="onDesktopPage($event)"
+          [sortField]="sortField"
+          [sortOrder]="sortOrder"
+          [filterDelay]="0"
+          [globalFilterFields]="['invoiceNumber', 'client.name']"
+          [tableStyle]="{ 'min-width': '75rem' }"
+        >
+          <ng-template pTemplate="caption">
+            <div class="flex flex-column gap-2">
+              <app-table-header
+                placeholder="Zoek factuur"
+                [table]="dt"
+                [query]="searchQuery"
+                (queryChange)="onSearchQueryChange($event)"
+                [showFilters]="true"
+                (addClick)="showInvoiceForm()"
+              >
+                <div header-actions class="flex gap-2">
                   <p-button
-                    icon="pi pi-undo"
+                    label="Reset"
+                    icon="pi pi-filter-slash"
+                    [text]="true"
+                    (click)="resetFilters()"
+                    size="small"
+                    ariaLabel="Reset filters"
+                  ></p-button>
+                </div>
+
+                <div
+                  header-filters
+                  class="flex gap-2 align-items-center flex-wrap"
+                >
+                  <p-button
+                    label="Actief"
+                    [text]="showArchived"
+                    [outlined]="showArchived"
+                    [attr.aria-pressed]="!showArchived"
+                    (click)="setShowArchived(false)"
+                    size="small"
+                  ></p-button>
+                  <p-button
+                    label="Archief"
+                    [text]="!showArchived"
+                    [outlined]="!showArchived"
+                    [attr.aria-pressed]="showArchived"
+                    (click)="setShowArchived(true)"
+                    size="small"
+                  ></p-button>
+                </div>
+              </app-table-header>
+            </div>
+          </ng-template>
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="invoiceNumber">
+                Factuurnummer <p-sortIcon field="invoiceNumber"></p-sortIcon>
+              </th>
+              <th pSortableColumn="client.name">
+                Klant <p-sortIcon field="client.name"></p-sortIcon>
+              </th>
+              <th pSortableColumn="issueDate">
+                Factuurdatum <p-sortIcon field="issueDate"></p-sortIcon>
+              </th>
+              <th pSortableColumn="dueDate">
+                Vervaldatum <p-sortIcon field="dueDate"></p-sortIcon>
+              </th>
+              <th pSortableColumn="totalAmount">
+                Bedrag <p-sortIcon field="totalAmount"></p-sortIcon>
+              </th>
+              <th pSortableColumn="paymentStatus">
+                Status <p-sortIcon field="paymentStatus"></p-sortIcon>
+              </th>
+              <th style="width: 10rem"></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-invoice>
+            <tr>
+              <td>{{ invoice.invoiceNumber }}</td>
+              <td>{{ invoice.client.name }}</td>
+              <td>{{ invoice.issueDate | date: "dd-MM-yyyy" }}</td>
+              <td>{{ invoice.dueDate | date: "dd-MM-yyyy" }}</td>
+              <td>{{ formatCurrency(invoice.totalAmount) }}</td>
+              <td>
+                <p-tag
+                  [value]="getStatusLabel(invoice.paymentStatus)"
+                  [severity]="getStatusSeverity(invoice.paymentStatus)"
+                ></p-tag>
+              </td>
+              <td>
+                <div class="flex justify-content-end gap-2">
+                  <p-button
+                    icon="pi pi-print"
                     styleClass="p-button-text p-button-rounded"
-                    (click)="restoreInvoice(invoice)"
-                    pTooltip="Herstellen"
+                    (click)="printInvoice(invoice)"
+                    pTooltip="Printen"
                   ></p-button>
-                } @else {
-                  <p-button
-                    icon="pi pi-pencil"
-                    styleClass="p-button-text p-button-rounded"
-                    (click)="showInvoiceForm(invoice)"
-                    pTooltip="Bewerken"
-                  ></p-button>
-                  <p-button
-                    icon="pi pi-inbox"
-                    styleClass="p-button-text p-button-rounded p-button-danger"
-                    (click)="deleteInvoice(invoice)"
-                    pTooltip="Archiveren"
-                  ></p-button>
-                }
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="7" class="text-center">Geen facturen gevonden.</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </p-card>
-  </div>
-}
+                  @if (invoice.deletedAt) {
+                    <p-button
+                      icon="pi pi-undo"
+                      styleClass="p-button-text p-button-rounded"
+                      (click)="restoreInvoice(invoice)"
+                      pTooltip="Herstellen"
+                    ></p-button>
+                  } @else {
+                    <p-button
+                      icon="pi pi-pencil"
+                      styleClass="p-button-text p-button-rounded"
+                      (click)="showInvoiceForm(invoice)"
+                      pTooltip="Bewerken"
+                    ></p-button>
+                    <p-button
+                      icon="pi pi-inbox"
+                      styleClass="p-button-text p-button-rounded p-button-danger"
+                      (click)="deleteInvoice(invoice)"
+                      pTooltip="Archiveren"
+                    ></p-button>
+                  }
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="7" class="text-center">Geen facturen gevonden.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  }
+</div>

@@ -2,3 +2,25 @@
 :host {
   display: block;
 }
+
+:host ::ng-deep .reports-shell {
+  border-radius: 0.75rem;
+}
+
+:host ::ng-deep .reports-kpi-card {
+  height: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid var(--surface-border);
+  background: var(--p-surface-0, var(--surface-card, #ffffff));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+:host ::ng-deep .reports-kpi-card .p-card-body {
+  padding: 1rem;
+}
+
+@media (min-width: 769px) {
+  :host ::ng-deep .reports-kpi-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+}

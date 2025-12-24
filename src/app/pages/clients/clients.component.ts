@@ -13,7 +13,13 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
+import { firstValueFrom, take } from 'rxjs';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
+import {
+  PullToRefreshDirective,
+  PullToRefreshEvent,
+} from '../../core/directives/pull-to-refresh.directive';
+import { SwipeDirective } from '../../core/directives/swipe.directive';
 import { Client } from '../../core/models/client.model';
 import { Dog } from '../../core/models/dog.model';
 import { AppDialogService } from '../../core/services/app-dialog.service';
@@ -47,6 +53,8 @@ import {
     TableHeaderComponent,
     DataViewModule,
     CardModule,
+    PullToRefreshDirective,
+    SwipeDirective,
   ],
   templateUrl: './clients.component.html',
 })
@@ -138,6 +146,19 @@ export class ClientsComponent implements OnInit {
     this.onMobilePage(event);
   }
 
+  onListSwipe(direction: 'left' | 'right'): void {
+    if (!this.isMobile) return;
+    if (this.searchQuery.trim().length > 0) return;
+
+    const maxPage = Math.max(
+      1,
+      Math.ceil(this.clients.length / this.mobileRows),
+    );
+    const nextPage = direction === 'left' ? this.page + 1 : this.page - 1;
+    this.page = Math.max(1, Math.min(maxPage, nextPage));
+    this.updateListQueryParams();
+  }
+
   resetFilters(): void {
     this.searchQuery = '';
     this.page = 1;
@@ -173,6 +194,22 @@ export class ClientsComponent implements OnInit {
         this.toastrService.error('Fout', err.message);
       },
     });
+  }
+
+  async onPullToRefresh(evt: PullToRefreshEvent): Promise<void> {
+    try {
+      const source$ = this.showArchived
+        ? this.clientService.getAnonymized$()
+        : this.clientService.getData$();
+
+      this.clients = await firstValueFrom(source$.pipe(take(1)));
+      this.isIntialized = true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
+      this.toastrService.error('Fout', message);
+    } finally {
+      evt.complete();
+    }
   }
 
   showClientForm(client?: Client): void {

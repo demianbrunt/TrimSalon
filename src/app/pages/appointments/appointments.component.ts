@@ -28,6 +28,7 @@ import {
   combineLatest,
   debounceTime,
   distinctUntilChanged,
+  firstValueFrom,
   map,
   Observable,
   of,
@@ -37,6 +38,11 @@ import {
 } from 'rxjs';
 import { TableHeaderComponent } from '../../core/components/table-header/table-header.component';
 import { TOAST_TITLE } from '../../core/constants/toast-titles';
+import {
+  PullToRefreshDirective,
+  PullToRefreshEvent,
+} from '../../core/directives/pull-to-refresh.directive';
+import { SwipeDirective } from '../../core/directives/swipe.directive';
 import {
   APPOINTMENT_STATUS,
   AppointmentStatus,
@@ -89,6 +95,8 @@ import { AppDialogService } from '../../core/services/app-dialog.service';
     CardModule,
     SelectButtonModule,
     CustomCalendarComponent,
+    PullToRefreshDirective,
+    SwipeDirective,
   ],
   providers: [ConfirmationService, DialogService],
   templateUrl: './appointments.component.html',
@@ -231,6 +239,29 @@ export class AppointmentsComponent implements OnInit {
     });
   }
 
+  async onPullToRefresh(evt: PullToRefreshEvent): Promise<void> {
+    try {
+      const data = await firstValueFrom(
+        this.appointmentService.getData$().pipe(take(1)),
+      );
+
+      this.appointments = data.filter((a) => {
+        if (this.viewMode === 'calendar') {
+          return !a.deletedAt;
+        }
+
+        return this.showArchived ? !!a.deletedAt : !a.deletedAt;
+      });
+
+      this.isInitialized = true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
+      this.toastrService.error(TOAST_TITLE.error, message);
+    } finally {
+      evt.complete();
+    }
+  }
+
   setViewMode(mode: 'list' | 'calendar'): void {
     if (this.viewMode === mode) return;
 
@@ -276,6 +307,19 @@ export class AppointmentsComponent implements OnInit {
     this.updateListQueryParams();
   }
 
+  onListSwipe(direction: 'left' | 'right'): void {
+    if (!this.isMobile) return;
+    if (this.viewMode !== 'list') return;
+    if (this.searchQuery.trim().length > 0) return;
+
+    const total = this.visibleAppointments.length;
+    const maxPage = Math.max(1, Math.ceil(total / this.mobileRows));
+
+    const nextPage = direction === 'left' ? this.page + 1 : this.page - 1;
+    this.page = Math.max(1, Math.min(maxPage, nextPage));
+    this.updateListQueryParams();
+  }
+
   onDesktopPage(event: { page?: number; first?: number; rows?: number }): void {
     this.onMobilePage(event);
   }
@@ -307,10 +351,22 @@ export class AppointmentsComponent implements OnInit {
 
   showAppointmentForm(appointment?: Appointment): void {
     if (appointment) {
-      this.router.navigate(['/appointments', appointment.id]);
-    } else {
-      this.router.navigate(['/appointments/new']);
+      // Preview-first flow: opening an appointment shows a read-only preview page.
+      this.router.navigate(['/appointments', appointment.id], {
+        queryParamsHandling: 'preserve',
+      });
+      return;
     }
+
+    this.router.navigate(['/appointments/new'], {
+      queryParamsHandling: 'preserve',
+    });
+  }
+
+  editAppointment(appointment: Appointment): void {
+    this.router.navigate(['/appointments', appointment.id, 'edit'], {
+      queryParamsHandling: 'preserve',
+    });
   }
 
   deleteAppointment(appointment: Appointment): void {
@@ -496,10 +552,14 @@ export class AppointmentsComponent implements OnInit {
     this.showAppointmentForm(appointment);
   }
 
-  onCalendarDateClick(event: { date: Date; hour?: number }): void {
+  onCalendarDateClick(event: {
+    date: Date;
+    hour?: number;
+    minute?: number;
+  }): void {
     const startTime = new Date(event.date);
     if (event.hour !== undefined) {
-      startTime.setHours(event.hour, 0, 0, 0);
+      startTime.setHours(event.hour, event.minute ?? 0, 0, 0);
     }
 
     this.router.navigate(['/appointments/new'], {

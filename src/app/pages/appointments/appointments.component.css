@@ -26,6 +26,10 @@
   flex-shrink: 0;
   background: transparent;
   padding: 0.25rem 0.5rem;
+  transition:
+    top 220ms ease,
+    bottom 220ms ease,
+    transform 220ms ease;
 }
 
 @media (min-width: 768px) {
@@ -50,6 +54,16 @@
     left: 0;
     right: 0;
     z-index: 1100;
+  }
+
+  .view-toggle-container.view-toggle-container--calendar {
+    bottom: 62px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view-toggle-container {
+    transition: none;
   }
 }
 
@@ -128,20 +142,12 @@
 }
 
 @media (max-width: 768px) {
-  :host ::ng-deep .p-dataview .p-dataview-header {
-    position: sticky;
-    top: max(0px, env(safe-area-inset-top));
-    z-index: 1000;
-    background-color: var(--p-surface-0, var(--surface-card, #fff));
-    border-bottom: 1px solid var(--surface-border);
-  }
-
-  ::ng-deep .p-dataview .p-dataview-content {
+  ::ng-deep .p-dataview.mobile-card-list .p-dataview-content {
     padding: 0.5rem !important;
     padding-bottom: calc(130px + env(safe-area-inset-bottom)) !important;
   }
 
-  .col-12.p-2 {
+  ::ng-deep .p-dataview.mobile-card-list .col-12.p-2 {
     padding: 0.5rem !important;
   }
 
@@ -161,48 +167,12 @@
   }
 }
 
-.mobile-list-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  background-color: var(--p-surface-0, var(--surface-card, #fff));
-}
-
-.mobile-list-header__row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.mobile-list-header__search {
-  flex: 1;
-  min-width: 0;
-}
-
-.mobile-filters-toggle {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--surface-border);
-  border-radius: 9999px;
-  background-color: var(--p-surface-0, var(--surface-card, #fff));
-  color: var(--text-color);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.mobile-filters-toggle:focus-visible {
-  outline: 2px solid var(--p-primary-color);
-  outline-offset: 2px;
-}
-
 .mobile-filters {
   border: 1px solid var(--surface-border);
   border-radius: 0.75rem;
   background-color: var(--p-surface-0, var(--surface-card, #fff));
   padding: 0.5rem 0.75rem 0.75rem;
+  margin: 0.5rem 0.75rem 0.75rem;
 }
 
 .mobile-filters-panel {

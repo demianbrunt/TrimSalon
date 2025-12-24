@@ -1,78 +1,332 @@
-@if (isMobile) {
-  <p-dataView
-    #dv
-    styleClass="mobile-card-list mobile-card-list--fixed-header"
-    [value]="clients"
-    [paginator]="true"
-    [rows]="mobileRows"
-    [first]="(page - 1) * mobileRows"
-    (onPage)="onMobilePage($event)"
-    [sortField]="sortField"
-    [sortOrder]="sortOrder"
-    [filterBy]="'name,dogs.name,dogs.breed.name'"
-  >
-    <ng-template #header>
-      <app-table-header
-        placeholder="Zoek klant of hond"
-        [table]="dv"
-        [query]="searchQuery"
-        (queryChange)="onSearchQueryChange($event)"
-        [showAdd]="false"
-        (addClick)="showClientForm()"
-      >
-        <div header-actions class="flex gap-2 align-items-center">
-          <p-button
-            label="Actief"
-            icon="pi pi-check"
-            [text]="showArchived"
-            (click)="setShowArchived(false)"
-            size="small"
-            ariaLabel="Toon actieve klanten"
-          ></p-button>
-          <p-button
-            label="Archief"
-            icon="pi pi-archive"
-            [text]="!showArchived"
-            (click)="setShowArchived(true)"
-            size="small"
-            ariaLabel="Toon gearchiveerde klanten"
-          ></p-button>
+<div
+  appPullToRefresh
+  #ptr="appPullToRefresh"
+  (refresh)="onPullToRefresh($event)"
+>
+  <div class="ptr-indicator" role="status" aria-live="polite">
+    <div class="ptr-indicator__bubble" aria-hidden="true">
+      <i
+        [class]="
+          ptr.state === 'refreshing'
+            ? 'pi pi-refresh pi-spin'
+            : ptr.state === 'ready'
+              ? 'pi pi-arrow-up'
+              : 'pi pi-arrow-down'
+        "
+      ></i>
+    </div>
+    <span class="sr-only">
+      @switch (ptr.state) {
+        @case ("refreshing") {
+          Vernieuwen…
+        }
+        @case ("ready") {
+          Loslaten om te vernieuwen
+        }
+        @default {
+          Trek omlaag om te vernieuwen
+        }
+      }
+    </span>
+  </div>
 
-          <p-button
-            label="Reset"
-            icon="pi pi-filter-slash"
-            [text]="true"
-            (click)="resetFilters()"
-            size="small"
-            ariaLabel="Reset filters"
-          ></p-button>
-        </div>
-      </app-table-header>
-    </ng-template>
-    <ng-template #emptymessage></ng-template>
-    <ng-template #list let-clients>
-      @for (client of clients; track client.id) {
-        <div class="col-12 md:col-6 lg:col-4 p-2">
-          <p-card styleClass="mobile-card h-full">
-            <ng-template pTemplate="header">
-              <div class="p-3">
-                <div class="font-bold text-lg">{{ client.name }}</div>
-                <div class="text-color-secondary">
-                  <i class="pi pi-phone mr-1"></i>{{ client.phone }}
-                </div>
-                @if (client.email) {
+  @if (isMobile) {
+    <div
+      appSwipe
+      (swipeLeft)="onListSwipe('left')"
+      (swipeRight)="onListSwipe('right')"
+    >
+      <p-dataView
+        #dv
+        styleClass="mobile-card-list mobile-card-list--fixed-header"
+        [value]="clients"
+        [paginator]="true"
+        [rows]="mobileRows"
+        [first]="(page - 1) * mobileRows"
+        (onPage)="onMobilePage($event)"
+        [sortField]="sortField"
+        [sortOrder]="sortOrder"
+        [filterBy]="'name,dogs.name,dogs.breed.name'"
+      >
+        <ng-template #header>
+          <app-table-header
+            placeholder="Zoek klant of hond"
+            [table]="dv"
+            [query]="searchQuery"
+            (queryChange)="onSearchQueryChange($event)"
+            [showFilters]="true"
+            [showAdd]="false"
+            (addClick)="showClientForm()"
+          >
+            <div header-actions class="flex gap-2 align-items-center">
+              <p-button
+                label="Reset"
+                icon="pi pi-filter-slash"
+                [text]="true"
+                (click)="resetFilters()"
+                size="small"
+                ariaLabel="Reset filters"
+              ></p-button>
+            </div>
+
+            <div header-filters class="flex gap-2 align-items-center flex-wrap">
+              <p-button
+                label="Actief"
+                icon="pi pi-check"
+                [text]="showArchived"
+                [outlined]="showArchived"
+                [attr.aria-pressed]="!showArchived"
+                (click)="setShowArchived(false)"
+                size="small"
+                ariaLabel="Toon actieve klanten"
+              ></p-button>
+              <p-button
+                label="Archief"
+                icon="pi pi-archive"
+                [text]="!showArchived"
+                [outlined]="!showArchived"
+                [attr.aria-pressed]="showArchived"
+                (click)="setShowArchived(true)"
+                size="small"
+                ariaLabel="Toon gearchiveerde klanten"
+              ></p-button>
+            </div>
+          </app-table-header>
+        </ng-template>
+        <ng-template #emptymessage></ng-template>
+        <ng-template #list let-clients>
+          @for (client of clients; track client.id) {
+            <div class="col-12 md:col-6 lg:col-4 p-2">
+              <p-card styleClass="mobile-card h-full">
+                <ng-template pTemplate="header">
+                  <div class="p-3">
+                    <div class="font-bold text-lg">{{ client.name }}</div>
+                    <div class="text-color-secondary">
+                      <i class="pi pi-phone mr-1"></i>{{ client.phone }}
+                    </div>
+                    @if (client.email) {
+                      <div class="text-color-secondary text-sm">
+                        <i class="pi pi-envelope mr-1"></i>{{ client.email }}
+                      </div>
+                    }
+                  </div>
+                </ng-template>
+
+                @if (client.dogs?.length) {
+                  <div class="mb-2">
+                    <div class="flex flex-wrap gap-2">
+                      @for (dog of client.dogs; track dog.name) {
+                        <div class="dog-chip mr-2 mb-2">
+                          <div class="dog-chip__header">
+                            <span class="dog-chip__name">{{ dog.name }}</span>
+                            @if (dog.isInactive) {
+                              <p-tag
+                                value="Niet actief"
+                                severity="warn"
+                                styleClass="ml-2 text-xs"
+                              ></p-tag>
+                            }
+                            @if (dog.isAggressive) {
+                              <i
+                                class="pi pi-exclamation-triangle text-red-500"
+                                pTooltip="Aggressief"
+                                aria-hidden="true"
+                              ></i>
+                            }
+                          </div>
+                          <div class="dog-chip__meta">
+                            <p-tag
+                              [value]="dog.breed?.name || 'Onbekend'"
+                              severity="info"
+                              styleClass="text-xs"
+                            ></p-tag>
+                            @if (dog.gender) {
+                              <p-tag severity="secondary" styleClass="text-xs">
+                                <div class="flex align-items-center gap-1">
+                                  @if (dog.gender === "male") {
+                                    <i
+                                      class="pi pi-mars text-blue-600"
+                                      aria-hidden="true"
+                                    ></i>
+                                    <span>Reu</span>
+                                  } @else if (dog.gender === "female") {
+                                    <i
+                                      class="pi pi-venus text-pink-600"
+                                      aria-hidden="true"
+                                    ></i>
+                                    <span>Teefje</span>
+                                  }
+                                </div>
+                              </p-tag>
+                            }
+                            @let age = getDogAge(dog);
+                            @if (age) {
+                              <p-tag
+                                [value]="age"
+                                severity="warn"
+                                styleClass="text-xs"
+                              ></p-tag>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  </div>
+                } @else {
                   <div class="text-color-secondary text-sm">
-                    <i class="pi pi-envelope mr-1"></i>{{ client.email }}
+                    <i class="pi pi-info-circle mr-1"></i>Geen honden
+                    geregistreerd
                   </div>
                 }
-              </div>
-            </ng-template>
 
-            @if (client.dogs?.length) {
-              <div class="mb-2">
+                <ng-template pTemplate="footer">
+                  <div class="flex justify-content-end gap-2">
+                    <p-button
+                      icon="pi pi-pencil"
+                      [text]="true"
+                      [rounded]="true"
+                      [disabled]="client.isAnonymized"
+                      (click)="showClientForm(client)"
+                      pTooltip="Bewerken"
+                    ></p-button>
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [text]="true"
+                      [rounded]="true"
+                      [disabled]="client.isAnonymized"
+                      (click)="deleteClient(client)"
+                      pTooltip="Anonimiseren"
+                    ></p-button>
+                  </div>
+                </ng-template>
+              </p-card>
+            </div>
+          } @empty {
+            <div class="text-center p-4">Geen klanten gevonden.</div>
+          }
+        </ng-template>
+      </p-dataView>
+    </div>
+
+    <div class="page-fab-container">
+      <p-button
+        icon="pi pi-plus"
+        [rounded]="true"
+        ariaLabel="Nieuwe klant"
+        pTooltip="Nieuw"
+        tooltipPosition="left"
+        (click)="showClientForm()"
+      ></p-button>
+    </div>
+  } @else {
+    <div class="p-4">
+      <p-card>
+        <p-table
+          #dt
+          [value]="clients"
+          [paginator]="true"
+          [rows]="desktopRows"
+          [first]="(page - 1) * desktopRows"
+          (onPage)="onDesktopPage($event)"
+          [sortField]="sortField"
+          [sortOrder]="sortOrder"
+          [filterDelay]="0"
+          [globalFilterFields]="[
+            'name',
+            'email',
+            'dogs.name',
+            'dogs.breed.name',
+          ]"
+          [tableStyle]="{ 'min-width': '75rem' }"
+        >
+          <ng-template pTemplate="caption">
+            <app-table-header
+              placeholder="Zoek klant of hond"
+              [table]="dt"
+              [query]="searchQuery"
+              (queryChange)="onSearchQueryChange($event)"
+              [showFilters]="true"
+              (addClick)="showClientForm()"
+            >
+              <div header-actions class="flex gap-2 align-items-center">
+                <p-button
+                  label="Reset"
+                  icon="pi pi-filter-slash"
+                  [text]="true"
+                  (click)="resetFilters()"
+                  size="small"
+                  ariaLabel="Reset filters"
+                ></p-button>
+              </div>
+
+              <div
+                header-filters
+                class="flex gap-2 align-items-center flex-wrap"
+              >
+                <p-button
+                  label="Actief"
+                  icon="pi pi-check"
+                  [text]="showArchived"
+                  [outlined]="showArchived"
+                  [attr.aria-pressed]="!showArchived"
+                  (click)="setShowArchived(false)"
+                  size="small"
+                  ariaLabel="Toon actieve klanten"
+                ></p-button>
+                <p-button
+                  label="Archief"
+                  icon="pi pi-archive"
+                  [text]="!showArchived"
+                  [outlined]="!showArchived"
+                  [attr.aria-pressed]="showArchived"
+                  (click)="setShowArchived(true)"
+                  size="small"
+                  ariaLabel="Toon gearchiveerde klanten"
+                ></p-button>
+              </div>
+            </app-table-header>
+          </ng-template>
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="name">
+                Naam <p-sortIcon field="name"></p-sortIcon>
+              </th>
+              <th pSortableColumn="email">
+                Email <p-sortIcon field="email"></p-sortIcon>
+              </th>
+              <th pSortableColumn="phone">
+                Telefoon <p-sortIcon field="phone"></p-sortIcon>
+              </th>
+              <th>Honden</th>
+              <th style="width: 10rem"></th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-client>
+            <tr>
+              <td>
+                <div class="font-medium">{{ client.name }}</div>
+              </td>
+              <td>
+                @if (client.email) {
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-envelope text-color-secondary"></i>
+                    {{ client.email }}
+                  </div>
+                } @else {
+                  <span class="text-color-secondary font-italic">-</span>
+                }
+              </td>
+              <td>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-phone text-color-secondary"></i>
+                  {{ client.phone }}
+                </div>
+              </td>
+              <td>
                 <div class="flex flex-wrap gap-2">
                   @for (dog of client.dogs; track dog.name) {
-                    <div class="dog-chip mr-2 mb-2">
+                    <div class="dog-chip mr-2">
                       <div class="dog-chip__header">
                         <span class="dog-chip__name">{{ dog.name }}</span>
                         @if (dog.isInactive) {
@@ -127,226 +381,34 @@
                     </div>
                   }
                 </div>
-              </div>
-            } @else {
-              <div class="text-color-secondary text-sm">
-                <i class="pi pi-info-circle mr-1"></i>Geen honden geregistreerd
-              </div>
-            }
-
-            <ng-template pTemplate="footer">
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-pencil"
-                  [text]="true"
-                  [rounded]="true"
-                  [disabled]="client.isAnonymized"
-                  (click)="showClientForm(client)"
-                  pTooltip="Bewerken"
-                ></p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  [text]="true"
-                  [rounded]="true"
-                  [disabled]="client.isAnonymized"
-                  (click)="deleteClient(client)"
-                  pTooltip="Anonimiseren"
-                ></p-button>
-              </div>
-            </ng-template>
-          </p-card>
-        </div>
-      } @empty {
-        <div class="text-center p-4">Geen klanten gevonden.</div>
-      }
-    </ng-template>
-  </p-dataView>
-
-  <div class="page-fab-container">
-    <p-button
-      icon="pi pi-plus"
-      [rounded]="true"
-      ariaLabel="Nieuwe klant"
-      pTooltip="Nieuw"
-      tooltipPosition="left"
-      (click)="showClientForm()"
-    ></p-button>
-  </div>
-} @else {
-  <div class="p-4">
-    <p-card>
-      <p-table
-        #dt
-        [value]="clients"
-        [paginator]="true"
-        [rows]="desktopRows"
-        [first]="(page - 1) * desktopRows"
-        (onPage)="onDesktopPage($event)"
-        [sortField]="sortField"
-        [sortOrder]="sortOrder"
-        [filterDelay]="0"
-        [globalFilterFields]="['name', 'email', 'dogs.name', 'dogs.breed.name']"
-        [tableStyle]="{ 'min-width': '75rem' }"
-      >
-        <ng-template pTemplate="caption">
-          <app-table-header
-            placeholder="Zoek klant of hond"
-            [table]="dt"
-            [query]="searchQuery"
-            (queryChange)="onSearchQueryChange($event)"
-            (addClick)="showClientForm()"
-          >
-            <div header-actions class="flex gap-2 align-items-center">
-              <p-button
-                label="Actief"
-                icon="pi pi-check"
-                [text]="showArchived"
-                (click)="setShowArchived(false)"
-                size="small"
-                ariaLabel="Toon actieve klanten"
-              ></p-button>
-              <p-button
-                label="Archief"
-                icon="pi pi-archive"
-                [text]="!showArchived"
-                (click)="setShowArchived(true)"
-                size="small"
-                ariaLabel="Toon gearchiveerde klanten"
-              ></p-button>
-
-              <p-button
-                label="Reset"
-                icon="pi pi-filter-slash"
-                [text]="true"
-                (click)="resetFilters()"
-                size="small"
-                ariaLabel="Reset filters"
-              ></p-button>
-            </div>
-          </app-table-header>
-        </ng-template>
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="name">
-              Naam <p-sortIcon field="name"></p-sortIcon>
-            </th>
-            <th pSortableColumn="email">
-              Email <p-sortIcon field="email"></p-sortIcon>
-            </th>
-            <th pSortableColumn="phone">
-              Telefoon <p-sortIcon field="phone"></p-sortIcon>
-            </th>
-            <th>Honden</th>
-            <th style="width: 10rem"></th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-client>
-          <tr>
-            <td>
-              <div class="font-medium">{{ client.name }}</div>
-            </td>
-            <td>
-              @if (client.email) {
-                <div class="flex align-items-center gap-2">
-                  <i class="pi pi-envelope text-color-secondary"></i>
-                  {{ client.email }}
+              </td>
+              <td>
+                <div class="flex justify-content-end gap-2">
+                  <p-button
+                    icon="pi pi-pencil"
+                    styleClass="p-button-text p-button-rounded"
+                    [disabled]="client.isAnonymized"
+                    (click)="showClientForm(client)"
+                    pTooltip="Bewerken"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-trash"
+                    styleClass="p-button-text p-button-rounded p-button-danger"
+                    [disabled]="client.isAnonymized"
+                    (click)="deleteClient(client)"
+                    pTooltip="Anonimiseren"
+                  ></p-button>
                 </div>
-              } @else {
-                <span class="text-color-secondary font-italic">-</span>
-              }
-            </td>
-            <td>
-              <div class="flex align-items-center gap-2">
-                <i class="pi pi-phone text-color-secondary"></i>
-                {{ client.phone }}
-              </div>
-            </td>
-            <td>
-              <div class="flex flex-wrap gap-2">
-                @for (dog of client.dogs; track dog.name) {
-                  <div class="dog-chip mr-2">
-                    <div class="dog-chip__header">
-                      <span class="dog-chip__name">{{ dog.name }}</span>
-                      @if (dog.isInactive) {
-                        <p-tag
-                          value="Niet actief"
-                          severity="warn"
-                          styleClass="ml-2 text-xs"
-                        ></p-tag>
-                      }
-                      @if (dog.isAggressive) {
-                        <i
-                          class="pi pi-exclamation-triangle text-red-500"
-                          pTooltip="Aggressief"
-                          aria-hidden="true"
-                        ></i>
-                      }
-                    </div>
-                    <div class="dog-chip__meta">
-                      <p-tag
-                        [value]="dog.breed?.name || 'Onbekend'"
-                        severity="info"
-                        styleClass="text-xs"
-                      ></p-tag>
-                      @if (dog.gender) {
-                        <p-tag severity="secondary" styleClass="text-xs">
-                          <div class="flex align-items-center gap-1">
-                            @if (dog.gender === "male") {
-                              <i
-                                class="pi pi-mars text-blue-600"
-                                aria-hidden="true"
-                              ></i>
-                              <span>Reu</span>
-                            } @else if (dog.gender === "female") {
-                              <i
-                                class="pi pi-venus text-pink-600"
-                                aria-hidden="true"
-                              ></i>
-                              <span>Teefje</span>
-                            }
-                          </div>
-                        </p-tag>
-                      }
-                      @let age = getDogAge(dog);
-                      @if (age) {
-                        <p-tag
-                          [value]="age"
-                          severity="warn"
-                          styleClass="text-xs"
-                        ></p-tag>
-                      }
-                    </div>
-                  </div>
-                }
-              </div>
-            </td>
-            <td>
-              <div class="flex justify-content-end gap-2">
-                <p-button
-                  icon="pi pi-pencil"
-                  styleClass="p-button-text p-button-rounded"
-                  [disabled]="client.isAnonymized"
-                  (click)="showClientForm(client)"
-                  pTooltip="Bewerken"
-                ></p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  styleClass="p-button-text p-button-rounded p-button-danger"
-                  [disabled]="client.isAnonymized"
-                  (click)="deleteClient(client)"
-                  pTooltip="Anonimiseren"
-                ></p-button>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="4" class="text-center">Geen klanten gevonden.</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </p-card>
-  </div>
-}
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="4" class="text-center">Geen klanten gevonden.</td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-card>
+    </div>
+  }
+</div>

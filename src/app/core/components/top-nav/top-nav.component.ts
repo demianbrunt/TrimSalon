@@ -1,17 +1,21 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
+import { SwipeDirective } from '../../directives/swipe.directive';
 import { AuthenticationService } from '../../services/authentication.service';
 import { MobileService } from '../../services/mobile.service';
 
 @Component({
   selector: 'app-top-nav',
   standalone: true,
-  imports: [CommonModule, ButtonModule],
+  imports: [CommonModule, ButtonModule, SwipeDirective],
   template: `
     <div
       class="flex justify-content-between align-items-center shadow-3 bg-primary"
       [ngClass]="isMobile ? 'px-3 py-2' : 'px-4 py-3'"
+      appSwipe
+      (swipeRight)="goBack()"
+      (swipeLeft)="goForward()"
     >
       <div
         class="flex align-items-center"
@@ -60,6 +64,7 @@ import { MobileService } from '../../services/mobile.service';
 export class TopNavComponent {
   readonly authService = inject(AuthenticationService);
   private readonly mobileService = inject(MobileService);
+  private readonly location = inject(Location);
 
   get isMobile() {
     return this.mobileService.isMobile;
@@ -67,5 +72,13 @@ export class TopNavComponent {
 
   async signOut(): Promise<void> {
     await this.authService.signOut();
+  }
+
+  goBack(): void {
+    this.location.back();
+  }
+
+  goForward(): void {
+    this.location.forward();
   }
 }

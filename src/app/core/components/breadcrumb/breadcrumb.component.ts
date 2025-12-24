@@ -17,7 +17,12 @@ import { BreadcrumbService } from '../../services/breadcrumb.service';
   styles: [
     `
       ::ng-deep .breadcrumb-custom {
-        padding: 0.5rem 1rem !important;
+        margin: 0 !important;
+        padding: 0.35rem 1rem !important;
+      }
+
+      ::ng-deep .breadcrumb-custom .p-breadcrumb {
+        margin: 0 !important;
       }
     `,
   ],
