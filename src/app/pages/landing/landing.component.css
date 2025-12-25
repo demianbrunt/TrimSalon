@@ -460,6 +460,13 @@
   border: 0;
 }
 
+.landing-map--placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--p-surface-50, #fafafa);
+}
+
 .landing-footer {
   padding: 3rem 0;
   background: var(--p-primary-color, #2563eb);

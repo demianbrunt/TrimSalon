@@ -18,18 +18,14 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import {
-  DomSanitizer,
-  Meta,
-  SafeResourceUrl,
-  Title,
-} from '@angular/platform-browser';
+import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { MenuItem, MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DatePickerModule } from 'primeng/datepicker';
+import { DialogModule } from 'primeng/dialog';
 import { DividerModule } from 'primeng/divider';
 import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
@@ -75,10 +71,34 @@ interface Review {
     InputTextModule,
     StepsModule,
     MessageModule,
+    DialogModule,
   ],
   styleUrls: ['./landing.component.css'],
   template: `
     <a class="sr-only skip-link" href="#maincontent">Skip naar hoofdinhoud</a>
+
+    <p-dialog
+      header="Demo omgeving"
+      [modal]="true"
+      [dismissableMask]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [visible]="demoDialogVisible()"
+      (visibleChange)="onDemoDialogVisibleChange($event)"
+    >
+      <p class="m-0">
+        Dit is een demo-omgeving. Dit is geen echt bedrijf en de informatie op
+        deze pagina is fictief.
+      </p>
+      <p class="mt-3 mb-0 text-600">
+        Gebruik geen echte persoonsgegevens. Gegevens kunnen op elk moment
+        worden verwijderd.
+      </p>
+
+      <ng-template pTemplate="footer">
+        <p-button label="Ik begrijp het" (onClick)="acknowledgeDemoNotice()" />
+      </ng-template>
+    </p-dialog>
 
     <header class="landing-header hidden md:block">
       <div
@@ -103,7 +123,7 @@ interface Review {
           <div class="col-12 lg:col-6">
             <p-tag
               severity="success"
-              [value]="'Professionele trimsalo­n in Zenderen'"
+              [value]="'Professionele trimsalon (demo)'"
             />
 
             <h1 id="hero-title" class="landing-hero-title">
@@ -916,20 +936,28 @@ interface Review {
           <div class="text-center mb-4">
             <h2 id="locatie-title" class="landing-section-title">Kom langs</h2>
             <p class="text-600 text-lg m-0">
-              Gevestigd in een rustige thuissalon in Zenderen
+              In deze demo tonen we geen echte locatiegegevens
             </p>
           </div>
 
           <div class="grid">
             <div class="col-12 lg:col-6">
               <p-card styleClass="landing-map-card">
-                <iframe
-                  class="landing-map"
-                  [src]="mapEmbedUrl"
-                  title="Locatie Marlie TrimSalon"
-                  loading="lazy"
-                  referrerpolicy="no-referrer-when-downgrade"
-                ></iframe>
+                <div
+                  class="landing-map landing-map--placeholder"
+                  role="img"
+                  aria-label="Kaart is verborgen in deze demo omgeving"
+                >
+                  <div class="text-center p-4">
+                    <i class="pi pi-map text-primary" aria-hidden="true"></i>
+                    <div class="text-lg font-semibold mt-2">
+                      Kaart verborgen
+                    </div>
+                    <div class="text-sm text-600 mt-1">
+                      In een echte omgeving staat hier een routekaart.
+                    </div>
+                  </div>
+                </div>
               </p-card>
             </div>
             <div class="col-12 lg:col-6">
@@ -940,20 +968,7 @@ interface Review {
                   </div>
                   <div>
                     <div class="font-semibold text-xl">Adres</div>
-                    <div class="text-700 mt-1">
-                      Hilbertsweg 2a<br />
-                      7591 PH Zenderen
-                    </div>
-                    <div class="mt-3">
-                      <a
-                        class="landing-contact-link"
-                        href="https://www.google.com/maps/search/?api=1&query=Hilbertsweg+2a+Zenderen"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open in Google Maps
-                      </a>
-                    </div>
+                    <div class="text-700 mt-1">Verborgen in demo-omgeving</div>
                   </div>
                 </div>
 
@@ -963,7 +978,7 @@ interface Review {
                   <div class="col-12 md:col-6">
                     <div class="font-semibold">Parkeren</div>
                     <div class="text-600 mt-1">
-                      Parkeren links in het gras bij de oprit.
+                      In een echte omgeving kun je hier parkeertips tonen.
                     </div>
                   </div>
                   <div class="col-12 md:col-6">
@@ -983,8 +998,7 @@ interface Review {
             <div class="col-12 md:col-4">
               <div class="font-bold text-lg">Marlie TrimSalon</div>
               <div class="text-sm text-100 line-height-3 mt-2">
-                Professionele hondentrimsalon in Zenderen met extra aandacht
-                voor honden die rust en geduld nodig hebben.
+                Demo-omgeving: voorbeeldwebsite voor een hondentrimsalon.
               </div>
             </div>
 
@@ -993,7 +1007,7 @@ interface Review {
               <div class="text-sm text-100 line-height-3 mt-2">
                 Telefoon: 7:00 – 22:00<br />
                 Email: info&#64;marliestrim.nl<br />
-                Locatie: Hilbertsweg 2a, Zenderen
+                Locatie: verborgen in demo
               </div>
             </div>
 
@@ -1022,7 +1036,6 @@ interface Review {
 export class LandingComponent {
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly messageService = inject(MessageService);
   private readonly bookingRequestService = inject(BookingRequestService);
   private readonly serviceService = inject(ServiceService);
@@ -1031,7 +1044,12 @@ export class LandingComponent {
   private readonly pricingService = inject(PricingService);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly doc = inject(DOCUMENT);
+  private readonly storage = this.doc.defaultView?.localStorage ?? null;
   private readonly host = inject(ElementRef<HTMLElement>);
+
+  private readonly demoNoticeStorageKey = 'trimsalon.demoNoticeAcknowledged.v1';
+
+  readonly demoDialogVisible = signal(true);
 
   readonly currentYear = new Date().getFullYear();
 
@@ -1136,10 +1154,6 @@ export class LandingComponent {
 
   readonly whatsAppLink = 'https://wa.me/31612345678';
 
-  readonly mapEmbedUrl: SafeResourceUrl = this.toTrustedGoogleMapsEmbed(
-    'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2435.7676854321234!2d6.6347!3d52.2894!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x47b81f5b4e2e9999%3A0x9999999999999999!2sHilbertsweg%202a%2C%207591%20PH%20Zenderen!5e0!3m2!1snl!2snl!4v1234567890',
-  );
-
   readonly minDate = new Date();
 
   readonly currentBookingStep = signal(0);
@@ -1193,12 +1207,36 @@ export class LandingComponent {
   });
 
   constructor() {
-    this.title.setTitle('Marlie TrimSalon - Jouw hond, mijn passie');
+    const demoNoticeAcknowledged =
+      this.storage?.getItem(this.demoNoticeStorageKey) === '1';
+    this.demoDialogVisible.set(!demoNoticeAcknowledged);
+
+    this.title.setTitle('Marlie TrimSalon (demo) - Jouw hond, mijn passie');
     this.meta.updateTag({
       name: 'description',
       content:
-        'Professionele hondentrimsalon in Zenderen met extra aandacht voor moeilijke honden. Boek nu een afspraak!',
+        'Demo-omgeving (fictief): dit is geen echt bedrijf en de informatie op deze pagina is niet echt.',
     });
+  }
+
+  onDemoDialogVisibleChange(visible: boolean): void {
+    this.demoDialogVisible.set(visible);
+    if (!visible) {
+      this.persistDemoNoticeAcknowledged();
+    }
+  }
+
+  acknowledgeDemoNotice(): void {
+    this.demoDialogVisible.set(false);
+    this.persistDemoNoticeAcknowledged();
+  }
+
+  private persistDemoNoticeAcknowledged(): void {
+    try {
+      this.storage?.setItem(this.demoNoticeStorageKey, '1');
+    } catch {
+      // ignore storage errors
+    }
   }
 
   scrollToTop(): void {
@@ -1560,18 +1598,5 @@ export class LandingComponent {
   private getScrollContainer(): HTMLElement | null {
     // In deze app is `.content-outlet` de scroll-container (body heeft overflow hidden).
     return this.doc.querySelector<HTMLElement>('.content-outlet');
-  }
-
-  private toTrustedGoogleMapsEmbed(url: string): SafeResourceUrl {
-    try {
-      const parsed = new URL(url);
-      const allowedHosts = new Set(['www.google.com']);
-      if (parsed.protocol !== 'https:' || !allowedHosts.has(parsed.host)) {
-        return this.sanitizer.bypassSecurityTrustResourceUrl('about:blank');
-      }
-      return this.sanitizer.bypassSecurityTrustResourceUrl(parsed.toString());
-    } catch {
-      return this.sanitizer.bypassSecurityTrustResourceUrl('about:blank');
-    }
   }
 }

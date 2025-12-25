@@ -85,6 +85,7 @@ const runtimeConfig = {
     reCaptchaSiteKey: readEnv("RECAPTCHA_SITE_KEY"),
     reCaptchaProvider: readReCaptchaProvider(),
     devMode: parseBool(readEnv("APP_DEV_MODE"), false),
+    appCheckDebugToken: readEnv("FIREBASE_APPCHECK_DEBUG_TOKEN"),
   },
 };
 

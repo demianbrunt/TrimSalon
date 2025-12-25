@@ -19,6 +19,7 @@ export interface RuntimeConfigFile {
     reCaptchaSiteKey?: string;
     reCaptchaProvider?: 'v3' | 'enterprise';
     devMode?: boolean;
+    appCheckDebugToken?: string;
   };
 }
 
@@ -113,6 +114,7 @@ export class RuntimeConfigService {
         reCaptchaSiteKey: '',
         reCaptchaProvider: 'v3',
         devMode: false,
+        appCheckDebugToken: '',
       }
     );
   }
@@ -164,6 +166,10 @@ export class RuntimeConfigService {
             return provider === 'enterprise' ? 'enterprise' : 'v3';
           })(),
         devMode: obj.app?.devMode ?? false,
+        appCheckDebugToken:
+          typeof obj.app?.appCheckDebugToken === 'string'
+            ? obj.app.appCheckDebugToken.trim()
+            : undefined,
       },
     };
   }

@@ -14,6 +14,7 @@
     },
     "reCaptchaSiteKey": "",
     "reCaptchaProvider": "v3",
-    "devMode": false
+    "devMode": false,
+    "appCheckDebugToken": ""
   }
 }

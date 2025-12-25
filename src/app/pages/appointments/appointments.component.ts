@@ -1,11 +1,5 @@
 import { CommonModule } from '@angular/common';
-import {
-  Component,
-  DestroyRef,
-  inject,
-  OnInit,
-  ViewChild,
-} from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,26 +7,23 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DataView, DataViewModule } from 'primeng/dataview';
+import { DataViewModule } from 'primeng/dataview';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { RippleModule } from 'primeng/ripple';
 import { SelectButtonModule } from 'primeng/selectbutton';
-import { Table, TableModule } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import {
   combineLatest,
-  debounceTime,
-  distinctUntilChanged,
   firstValueFrom,
   map,
   Observable,
   of,
-  Subject,
   switchMap,
   take,
 } from 'rxjs';
@@ -104,6 +95,9 @@ import { AppDialogService } from '../../core/services/app-dialog.service';
 })
 export class AppointmentsComponent implements OnInit {
   appointments: Appointment[] = [];
+  /** List-mode backing array for PrimeNG Table/DataView. */
+  visibleAppointments: Appointment[] = [];
+  private allAppointments: Appointment[] = [];
   // PrimeNG sorting is still available in the desktop table, but we apply a
   // sensible default ordering for the initial render (and for mobile DataView).
   sortField: string | undefined = 'startTime';
@@ -145,8 +139,6 @@ export class AppointmentsComponent implements OnInit {
 
   showArchived = false;
 
-  private readonly searchQueryInput$ = new Subject<string>();
-
   private readonly appointmentService = inject(AppointmentService);
   private readonly invoiceService = inject(InvoiceService);
   private readonly appSettingsService = inject(AppSettingsService);
@@ -159,22 +151,6 @@ export class AppointmentsComponent implements OnInit {
   private readonly dialogService = inject(AppDialogService);
   private readonly destroyRef = inject(DestroyRef);
   private dialogRef: DynamicDialogRef | undefined;
-
-  @ViewChild('dv')
-  set dataViewRef(value: DataView | undefined) {
-    if (!value) return;
-    if (this.searchQuery) {
-      value.filter(this.searchQuery, 'contains');
-    }
-  }
-
-  @ViewChild('dt')
-  set tableRef(value: Table | undefined) {
-    if (!value) return;
-    if (this.searchQuery) {
-      value.filterGlobal(this.searchQuery, 'contains');
-    }
-  }
 
   get isMobile() {
     return this.mobileService.isMobile;
@@ -200,19 +176,21 @@ export class AppointmentsComponent implements OnInit {
     );
     this.setStatusFilter(status, { skipUrlUpdate: true });
 
-    this.searchQueryInput$
-      .pipe(
-        debounceTime(250),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe((value) => {
-        this.searchQuery = value;
-        this.page = 1;
-        this.updateListQueryParams();
+    // Single subscription; list state is derived from `allAppointments`.
+    this.appointmentService
+      .getData$()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (data) => {
+          this.allAppointments = data;
+          this.applyAppointmentsForView();
+          this.isInitialized = true;
+        },
+        error: (err) => {
+          this.toastrService.error(TOAST_TITLE.error, err.message);
+        },
       });
 
-    this.loadAppointments();
     this.breadcrumbService.setItems([
       {
         label: 'Afspraken',
@@ -221,22 +199,19 @@ export class AppointmentsComponent implements OnInit {
   }
 
   loadAppointments(): void {
-    this.appointmentService.getData$().subscribe({
-      next: (data) => {
-        this.appointments = data.filter((a) => {
-          // Archived items are not shown on the calendar.
-          if (this.viewMode === 'calendar') {
-            return !a.deletedAt;
-          }
-
-          return this.showArchived ? !!a.deletedAt : !a.deletedAt;
-        });
-        this.isInitialized = true;
-      },
-      error: (err) => {
-        this.toastrService.error(TOAST_TITLE.error, err.message);
-      },
-    });
+    this.appointmentService
+      .getData$()
+      .pipe(take(1))
+      .subscribe({
+        next: (data) => {
+          this.allAppointments = data;
+          this.applyAppointmentsForView();
+          this.isInitialized = true;
+        },
+        error: (err) => {
+          this.toastrService.error(TOAST_TITLE.error, err.message);
+        },
+      });
   }
 
   async onPullToRefresh(evt: PullToRefreshEvent): Promise<void> {
@@ -245,14 +220,8 @@ export class AppointmentsComponent implements OnInit {
         this.appointmentService.getData$().pipe(take(1)),
       );
 
-      this.appointments = data.filter((a) => {
-        if (this.viewMode === 'calendar') {
-          return !a.deletedAt;
-        }
-
-        return this.showArchived ? !!a.deletedAt : !a.deletedAt;
-      });
-
+      this.allAppointments = data;
+      this.applyAppointmentsForView();
       this.isInitialized = true;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Vernieuwen mislukt';
@@ -277,7 +246,7 @@ export class AppointmentsComponent implements OnInit {
 
     this.updateDefaultSort();
 
-    this.loadAppointments();
+    this.applyAppointmentsForView();
   }
 
   setShowArchived(show: boolean): void {
@@ -288,17 +257,18 @@ export class AppointmentsComponent implements OnInit {
 
     this.updateDefaultSort();
 
-    this.loadAppointments();
-  }
-
-  onSearchQueryInput(value: string): void {
-    this.searchQueryInput$.next(value);
+    this.applyAppointmentsForView();
   }
 
   onSearchQueryChange(value: string): void {
     this.searchQuery = value;
     this.page = 1;
     this.updateListQueryParams();
+  }
+
+  // Backwards-compatible alias (some templates/tooling may still reference this).
+  onSearchQueryInput(value: string): void {
+    this.onSearchQueryChange(value);
   }
 
   onMobilePage(event: { page?: number; first?: number; rows?: number }): void {
@@ -334,8 +304,11 @@ export class AppointmentsComponent implements OnInit {
     this.mobileFiltersOpen = false;
     this.desktopFiltersOpen = false;
     this.page = 1;
-    this.setShowArchived(false);
+
+    this.showArchived = false;
     this.setStatusFilter(APPOINTMENT_STATUS.open, { skipUrlUpdate: true });
+    this.updateDefaultSort();
+    this.applyAppointmentsForView();
     this.updateListQueryParams();
   }
 
@@ -580,23 +553,6 @@ export class AppointmentsComponent implements OnInit {
     });
   }
 
-  get visibleAppointments(): Appointment[] {
-    const items = Array.isArray(this.appointments) ? this.appointments : [];
-
-    const filtered =
-      this.statusFilter === APPOINTMENT_STATUS.open
-        ? items.filter((a) => !a.completed)
-        : this.statusFilter === APPOINTMENT_STATUS.completed
-          ? items.filter((a) => !!a.completed)
-          : items;
-
-    // Always return a new array so PrimeNG change detection stays predictable.
-    const now = Date.now();
-    return [...filtered].sort((a, b) =>
-      this.compareAppointmentsForList(a, b, now),
-    );
-  }
-
   setStatusFilter(value: unknown, opts?: { skipUrlUpdate?: boolean }): void {
     const nextValue =
       typeof value === 'string'
@@ -617,14 +573,48 @@ export class AppointmentsComponent implements OnInit {
     ) {
       this.statusFilter = nextValue as AppointmentStatus;
 
+      if (!opts?.skipUrlUpdate) {
+        this.page = 1;
+      }
+
       this.updateDefaultSort();
 
       if (!opts?.skipUrlUpdate) {
-        this.page = 1;
         this.updateListQueryParams();
       }
+
+      this.recomputeVisibleAppointments();
       return;
     }
+  }
+
+  private applyAppointmentsForView(): void {
+    this.appointments = this.allAppointments.filter((a) => {
+      // Archived items are not shown on the calendar.
+      if (this.viewMode === 'calendar') {
+        return !a.deletedAt;
+      }
+
+      return this.showArchived ? !!a.deletedAt : !a.deletedAt;
+    });
+
+    this.recomputeVisibleAppointments();
+  }
+
+  private recomputeVisibleAppointments(): void {
+    const items = Array.isArray(this.appointments) ? this.appointments : [];
+
+    const filtered =
+      this.statusFilter === APPOINTMENT_STATUS.open
+        ? items.filter((a) => !a.completed)
+        : this.statusFilter === APPOINTMENT_STATUS.completed
+          ? items.filter((a) => !!a.completed)
+          : items;
+
+    const now = Date.now();
+    this.visibleAppointments = [...filtered].sort((a, b) =>
+      this.compareAppointmentsForList(a, b, now),
+    );
   }
 
   private updateDefaultSort(): void {

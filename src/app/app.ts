@@ -74,8 +74,9 @@ import { MobileService } from './core/services/mobile.service';
                 // Avoid leaving a `transform` on the routed page element.
                 // Some mobile browsers (notably iOS Safari) can break `position: sticky`
                 // for descendants when any ancestor remains transformed.
-                style({ opacity: 1, transform: 'none', position: 'relative' }),
+                style({ opacity: 1, transform: 'none' }),
               ),
+              style({ position: 'relative', inset: 'auto', width: 'auto' }),
             ],
             { optional: true },
           ),

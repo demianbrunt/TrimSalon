@@ -81,16 +81,15 @@
           (onPage)="onMobilePage($event)"
           [sortField]="sortField"
           [sortOrder]="sortOrder"
-          [filterBy]="'client.name, dog.name'"
+          [filterBy]="'client.name,dog.name'"
         >
           <ng-template #header>
             <app-table-header
               placeholder="Zoek afspraak"
               [table]="dv"
               [query]="searchQuery"
-              [queryDebounceMs]="0"
               [showAdd]="false"
-              (queryChange)="onSearchQueryInput($event)"
+              (queryChange)="onSearchQueryChange($event)"
             >
               <div header-actions class="flex gap-2 align-items-center">
                 <p-button
@@ -153,9 +152,11 @@
               </div>
             </div>
           </ng-template>
+
           <ng-template #emptymessage></ng-template>
-          <ng-template #list let-appointments: Appointment[]>
-            @for (appointment of appointments; track appointment.id) {
+
+          <ng-template #list let-items>
+            @for (appointment of items; track appointment.id) {
               <div class="col-12 md:col-6 lg:col-4 p-2">
                 <p-card
                   (click)="showAppointmentForm(appointment)"

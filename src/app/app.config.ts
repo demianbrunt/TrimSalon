@@ -90,6 +90,27 @@ export const commonProviders = [
         provideAppCheck(() => {
           const runtimeConfig = inject(RuntimeConfigService);
           const appConfig = runtimeConfig.getAppConfigOrDefault();
+
+          // When App Check enforcement is enabled (e.g. for Firebase Auth), local development
+          // must also send valid App Check tokens.
+          // In dev mode, use the App Check debug token flow instead of reCAPTCHA.
+          if (isDevMode()) {
+            const debugToken = appConfig.appCheckDebugToken?.trim();
+
+            const g = globalThis as typeof globalThis & {
+              FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean | string;
+            };
+
+            if (debugToken) {
+              // Prefer an explicit token from runtime-config so it can be registered once in
+              // Firebase Console and reused across reloads.
+              g.FIREBASE_APPCHECK_DEBUG_TOKEN = debugToken;
+            } else if (g.FIREBASE_APPCHECK_DEBUG_TOKEN == null) {
+              // No token provided: let the SDK generate and log one.
+              g.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+            }
+          }
+
           const siteKey = appConfig.reCaptchaSiteKey;
           const provider = appConfig.reCaptchaProvider ?? 'v3';
 
