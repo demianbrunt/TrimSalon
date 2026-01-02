@@ -83,9 +83,9 @@
 
         <!-- Subtotal -->
         <div class="col-12 md:col-4">
-          <label for="subtotal" class="block mb-2">Subtotaal (€) *</label>
+          <label for="subtotal" class="block mb-2">Subtotaal *</label>
           <p-inputNumber
-            id="subtotal"
+            inputId="subtotal"
             formControlName="subtotal"
             mode="currency"
             currency="EUR"
@@ -93,6 +93,7 @@
             class="w-full"
             [minFractionDigits]="2"
             aria-required="true"
+            ariaLabel="Subtotaal (€)"
           ></p-inputNumber>
           <app-validation-message
             [control]="form.controls.subtotal"
@@ -102,15 +103,16 @@
 
         <!-- VAT Rate -->
         <div class="col-12 md:col-4">
-          <label for="vatRate" class="block mb-2">BTW (%) *</label>
+          <label for="vatRate" class="block mb-2">BTW *</label>
           <p-inputNumber
-            id="vatRate"
+            inputId="vatRate"
             formControlName="vatRate"
             [min]="0"
             [max]="100"
             suffix="%"
             class="w-full"
             aria-required="true"
+            ariaLabel="BTW (%)"
           ></p-inputNumber>
           <app-validation-message
             [control]="form.controls.vatRate"
@@ -120,29 +122,31 @@
 
         <!-- VAT Amount (readonly) -->
         <div class="col-12 md:col-4">
-          <label for="vatAmount" class="block mb-2">BTW Bedrag (€)</label>
+          <label for="vatAmount" class="block mb-2">BTW bedrag</label>
           <p-inputNumber
-            id="vatAmount"
+            inputId="vatAmount"
             formControlName="vatAmount"
             mode="currency"
             currency="EUR"
             locale="nl-NL"
             class="w-full"
             [minFractionDigits]="2"
+            ariaLabel="BTW bedrag (€)"
           ></p-inputNumber>
         </div>
 
         <!-- Total Amount (readonly) -->
         <div class="col-12 md:col-6">
-          <label for="totalAmount" class="block mb-2">Totaal Bedrag (€)</label>
+          <label for="totalAmount" class="block mb-2">Totaal bedrag</label>
           <p-inputNumber
-            id="totalAmount"
+            inputId="totalAmount"
             formControlName="totalAmount"
             mode="currency"
             currency="EUR"
             locale="nl-NL"
             class="w-full"
             [minFractionDigits]="2"
+            ariaLabel="Totaal bedrag (€)"
           ></p-inputNumber>
         </div>
 

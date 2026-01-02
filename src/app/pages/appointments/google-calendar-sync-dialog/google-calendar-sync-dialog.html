@@ -87,9 +87,7 @@
 
     @if (syncSettings.autoSync) {
       <div class="field mb-3">
-        <label for="syncInterval" class="block mb-2"
-          >Sync interval (minuten)</label
-        >
+        <label for="syncInterval" class="block mb-2">Sync interval</label>
         <p-inputNumber
           [(ngModel)]="syncSettings.syncInterval"
           inputId="syncInterval"
@@ -98,6 +96,8 @@
           [step]="5"
           [showButtons]="true"
           styleClass="w-full"
+          suffix=" min"
+          ariaLabel="Sync interval (minuten)"
         ></p-inputNumber>
       </div>
     }

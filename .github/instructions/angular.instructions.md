@@ -114,3 +114,9 @@ Instructions for generating high-quality Angular applications with TypeScript, u
 - Use Angular's built-in i18n for internationalization (if specified)
 - Keep code DRY by creating reusable utilities and shared modules
 - Use signals consistently for state management to ensure reactive updates
+
+### PrimeNG `p-inputNumber` units
+
+- Prefer `suffix`/`prefix` for units that add clarity (e.g., `suffix=" min"`, `suffix=" uur/week"`, `suffix="%"`) instead of putting the unit in the visible `<label>`.
+- Keep visible labels short (e.g., "Beschikbare uren"), and if the unit matters for assistive tech, set `ariaLabel` (e.g., `ariaLabel="Beschikbare uren (uur/week)"`) and/or connect help text using `ariaDescribedBy`.
+- Use `inputId` (not `id`) so the `<label for="...">` correctly associates with the actual input.

@@ -51,17 +51,16 @@
           </div>
 
           <div class="col-12 md:col-6">
-            <label for="defaultVatRate" class="block mb-2"
-              >Standaard BTW (%)</label
-            >
+            <label for="defaultVatRate" class="block mb-2">Standaard BTW</label>
             <p-inputNumber
-              id="defaultVatRate"
+              inputId="defaultVatRate"
               formControlName="defaultVatRate"
               [min]="0"
               [max]="100"
               suffix="%"
               class="w-full"
-              aria-describedby="defaultVatHelp"
+              ariaLabel="Standaard BTW (%)"
+              ariaDescribedBy="defaultVatHelp"
             ></p-inputNumber>
             <small id="defaultVatHelp" class="text-600">
               Wordt gebruikt bij nieuwe facturen.
@@ -69,11 +68,11 @@
           </div>
 
           <div class="col-12 md:col-6">
-            <label for="targetHourlyRate" class="block mb-2">
-              Doel uurtarief (€/uur)
-            </label>
+            <label for="targetHourlyRate" class="block mb-2"
+              >Doel uurtarief</label
+            >
             <p-inputNumber
-              id="targetHourlyRate"
+              inputId="targetHourlyRate"
               formControlName="targetHourlyRate"
               mode="currency"
               currency="EUR"
@@ -81,24 +80,28 @@
               class="w-full"
               [minFractionDigits]="0"
               [maxFractionDigits]="2"
+              suffix=" /uur"
+              ariaLabel="Doel uurtarief (€/uur)"
             ></p-inputNumber>
           </div>
 
           <div class="col-12 md:col-6">
             <label for="weeklyAvailableHoursTarget" class="block mb-2">
-              Beschikbare uren (uur/week)
+              Beschikbare uren
             </label>
             <p-inputNumber
-              id="weeklyAvailableHoursTarget"
+              inputId="weeklyAvailableHoursTarget"
               formControlName="weeklyAvailableHoursTarget"
               [min]="0"
               [maxFractionDigits]="1"
               suffix=" uur/week"
               class="w-full"
-              aria-describedby="weeklyAvailableHoursHelp"
+              ariaLabel="Beschikbare uren (uur/week)"
+              ariaDescribedBy="weeklyAvailableHoursHelp"
             ></p-inputNumber>
             <small id="weeklyAvailableHoursHelp" class="text-600">
-              Wordt gebruikt om bezettingsgraad te berekenen in rapportages.
+              In uren per week. Wordt gebruikt om bezettingsgraad te berekenen
+              in rapportages.
             </small>
           </div>
         </div>
