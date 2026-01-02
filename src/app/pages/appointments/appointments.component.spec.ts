@@ -4,6 +4,7 @@ import {
   fakeAsync,
   tick,
 } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Subject, of } from 'rxjs';
@@ -34,7 +35,7 @@ describe('AppointmentsComponent', () => {
   let mockRouter: jasmine.SpyObj<Router>;
   let mockBreadcrumbService: jasmine.SpyObj<BreadcrumbService>;
   let mockConfirmationDialogService: jasmine.SpyObj<ConfirmationDialogService>;
-  let mockMobileService: jasmine.SpyObj<MobileService>;
+  let mockMobileService: Pick<MobileService, 'isMobile'>;
   let mockDialogService: jasmine.SpyObj<AppDialogService>;
 
   const appointment: Appointment = {
@@ -85,9 +86,7 @@ describe('AppointmentsComponent', () => {
       'ConfirmationDialogService',
       ['open'],
     );
-    mockMobileService = jasmine.createSpyObj('MobileService', [], {
-      isMobile: false,
-    });
+    mockMobileService = { isMobile: false };
     mockDialogService = jasmine.createSpyObj('AppDialogService', ['open']);
 
     mockAppointmentService.getData$.and.returnValue(of([]));
@@ -120,7 +119,7 @@ describe('AppointmentsComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should show a completed indicator in the desktop table', () => {
+  it('should show the dog breed in the desktop table', () => {
     const testAppointment = { ...appointment, completed: true };
     component.appointments = [testAppointment];
     component.visibleAppointments = [testAppointment];
@@ -131,7 +130,24 @@ describe('AppointmentsComponent', () => {
       'p-table tbody tr td:nth-child(2)',
     ) as HTMLElement | null;
 
-    expect(dogCell?.textContent).toContain('Afgerond');
+    expect(dogCell?.textContent).toContain('Labrador');
+  });
+
+  it('should include dog breed in the desktop search fields', () => {
+    const table = fixture.debugElement.query(By.css('p-table'))
+      ?.componentInstance as { globalFilterFields?: string[] } | undefined;
+
+    expect(table?.globalFilterFields).toContain('dog.breed.name');
+  });
+
+  it('should include dog breed in the mobile search fields', () => {
+    (mockMobileService as unknown as { isMobile: boolean }).isMobile = true;
+    fixture.detectChanges();
+
+    const dataView = fixture.debugElement.query(By.css('p-dataview'))
+      ?.componentInstance as { filterBy?: string } | undefined;
+
+    expect(dataView?.filterBy?.split(',')).toContain('dog.breed.name');
   });
 
   it('should create invoice as PAID when completing appointment as paid', fakeAsync(() => {

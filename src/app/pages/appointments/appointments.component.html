@@ -81,11 +81,11 @@
           (onPage)="onMobilePage($event)"
           [sortField]="sortField"
           [sortOrder]="sortOrder"
-          [filterBy]="'client.name,dog.name'"
+          [filterBy]="'client.name,dog.name,dog.breed.name'"
         >
           <ng-template #header>
             <app-table-header
-              placeholder="Zoek afspraak"
+              placeholder="Zoek op klant, hond of ras"
               [table]="dv"
               [query]="searchQuery"
               [showAdd]="false"
@@ -176,32 +176,41 @@
                   <ng-template pTemplate="header">
                     <div class="p-3">
                       <div
-                        class="flex justify-content-between align-items-start"
+                        class="flex justify-content-between align-items-start gap-2"
                       >
-                        <div class="font-bold text-lg">
-                          {{ appointment.client.name }} -
-                          {{ appointment.dog.name }}
-                          @if (appointment.dog.isInactive) {
-                            <p-tag
-                              value="Niet actief"
-                              severity="warn"
-                              styleClass="ml-2"
-                            ></p-tag>
-                          }
-                          @if (appointment.dog.isAggressive) {
-                            <i
-                              class="pi pi-exclamation-triangle text-red-600 ml-2"
-                              pTooltip="Agressief dier"
-                            ></i>
-                          }
+                        <div class="flex-1 min-w-0">
+                          <div class="font-bold text-lg">
+                            {{ appointment.client.name }}
+                          </div>
+                          <div
+                            class="font-medium mt-1 flex align-items-center gap-2 flex-wrap"
+                          >
+                            <span class="text-color-secondary">{{
+                              appointment.dog.name
+                            }}</span>
+                            @if (appointment.dog.breed?.name) {
+                              <p-tag
+                                [value]="appointment.dog.breed.name"
+                                severity="secondary"
+                                [rounded]="true"
+                              ></p-tag>
+                            }
+                            @if (appointment.dog.isInactive) {
+                              <p-tag
+                                value="Niet actief"
+                                severity="warn"
+                              ></p-tag>
+                            }
+                            @if (appointment.dog.isAggressive) {
+                              <i
+                                class="pi pi-exclamation-triangle text-red-600"
+                                pTooltip="Agressief dier"
+                                role="img"
+                                aria-label="Agressief dier"
+                              ></i>
+                            }
+                          </div>
                         </div>
-                        @if (appointment.completed) {
-                          <p-tag
-                            value="Afgerond"
-                            severity="success"
-                            [rounded]="true"
-                          ></p-tag>
-                        }
                       </div>
                     </div>
                   </ng-template>
@@ -321,13 +330,13 @@
             [sortField]="sortField"
             [sortOrder]="sortOrder"
             [filterDelay]="0"
-            [globalFilterFields]="['client.name', 'dog.name']"
+            [globalFilterFields]="['client.name', 'dog.name', 'dog.breed.name']"
             [tableStyle]="{ 'min-width': '75rem' }"
           >
             <ng-template pTemplate="caption">
               <div class="flex flex-column gap-2">
                 <app-table-header
-                  placeholder="Zoek afspraak"
+                  placeholder="Zoek op klant, hond of ras"
                   [table]="dt"
                   [query]="searchQuery"
                   (queryChange)="onSearchQueryChange($event)"
@@ -422,6 +431,14 @@
                 <td>{{ appointment.client.name }}</td>
                 <td>
                   {{ appointment.dog.name }}
+                  @if (appointment.dog.breed?.name) {
+                    <p-tag
+                      [value]="appointment.dog.breed.name"
+                      severity="secondary"
+                      [rounded]="true"
+                      styleClass="ml-2"
+                    ></p-tag>
+                  }
                   @if (appointment.dog.isInactive) {
                     <p-tag
                       value="Niet actief"
@@ -434,14 +451,6 @@
                       class="pi pi-exclamation-triangle text-red-600 ml-2"
                       pTooltip="Agressief dier"
                     ></i>
-                  }
-                  @if (appointment.completed) {
-                    <p-tag
-                      value="Afgerond"
-                      severity="success"
-                      [rounded]="true"
-                      styleClass="ml-2"
-                    ></p-tag>
                   }
                 </td>
                 <td>

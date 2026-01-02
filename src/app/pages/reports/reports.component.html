@@ -449,15 +449,128 @@
             </div>
           </ng-template>
           <div class="p-3">
-            <p class="text-500">
-              Facturen en betalingen worden hier weergegeven wanneer deze
-              beschikbaar zijn.
-            </p>
-            <p class="text-500 mt-2">
-              <i class="pi pi-info-circle mr-2"></i>
-              Tip: Koppel afspraken aan facturen om financiële rapportages te
-              genereren.
-            </p>
+            <div class="grid mb-3" role="group" aria-label="Financiële totalen">
+              <div class="col-12 md:col-4">
+                <div class="text-500 text-sm font-semibold">
+                  Facturen uitgegeven
+                </div>
+                <div class="text-xl font-bold">
+                  {{ formatCurrency(financialTotals.issuedTotal) }}
+                </div>
+              </div>
+              <div class="col-12 md:col-4">
+                <div class="text-500 text-sm font-semibold">
+                  Betalingen ontvangen
+                </div>
+                <div class="text-xl font-bold text-green-600">
+                  {{ formatCurrency(financialTotals.paidTotal) }}
+                </div>
+              </div>
+              <div class="col-12 md:col-4">
+                <div class="text-500 text-sm font-semibold">Openstaand</div>
+                <div class="text-xl font-bold text-orange-600">
+                  {{ formatCurrency(financialTotals.outstandingTotal) }}
+                </div>
+              </div>
+            </div>
+
+            @if (unlinkedInvoiceCount > 0) {
+              <p class="text-500 mt-2">
+                <i class="pi pi-info-circle mr-2"></i>
+                {{ unlinkedInvoiceCount }} factu(u)r(en) in deze periode zijn
+                niet gekoppeld aan een afspraak.
+              </p>
+            }
+
+            @if (
+              financialInvoicesIssued.length === 0 &&
+              financialPaymentsReceived.length === 0
+            ) {
+              <div class="p-3 text-center text-500">
+                <i class="pi pi-wallet" style="font-size: 2rem"></i>
+                <p class="mt-2">Geen facturen of betalingen in deze periode.</p>
+                <p class="text-sm">
+                  Tip: maak een factuur aan en markeer deze als betaald om dit
+                  overzicht te vullen.
+                </p>
+              </div>
+            } @else {
+              <div class="grid">
+                <div class="col-12 lg:col-6">
+                  <p-table [value]="financialInvoicesIssued">
+                    <ng-template pTemplate="caption">
+                      <div class="font-semibold">Facturen uitgegeven</div>
+                    </ng-template>
+                    <ng-template pTemplate="header">
+                      <tr>
+                        <th>Factuur</th>
+                        <th>Klant</th>
+                        <th>Datum</th>
+                        <th>Status</th>
+                        <th class="text-right">Bedrag</th>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-invoice>
+                      <tr>
+                        <td class="font-semibold">
+                          {{ invoice.invoiceNumber }}
+                        </td>
+                        <td>{{ invoice.client?.name }}</td>
+                        <td>{{ formatDate(invoice.issueDate) }}</td>
+                        <td>
+                          {{ formatPaymentStatus(invoice.paymentStatus) }}
+                        </td>
+                        <td class="text-right">
+                          {{ formatCurrency(invoice.totalAmount || 0) }}
+                        </td>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                      <tr>
+                        <td colspan="5" class="text-center">
+                          Geen facturen uitgegeven.
+                        </td>
+                      </tr>
+                    </ng-template>
+                  </p-table>
+                </div>
+
+                <div class="col-12 lg:col-6">
+                  <p-table [value]="financialPaymentsReceived">
+                    <ng-template pTemplate="caption">
+                      <div class="font-semibold">Betalingen ontvangen</div>
+                    </ng-template>
+                    <ng-template pTemplate="header">
+                      <tr>
+                        <th>Factuur</th>
+                        <th>Klant</th>
+                        <th>Betaald op</th>
+                        <th class="text-right">Bedrag</th>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-invoice>
+                      <tr>
+                        <td class="font-semibold">
+                          {{ invoice.invoiceNumber }}
+                        </td>
+                        <td>{{ invoice.client?.name }}</td>
+                        <td>{{ formatDate(invoice.paidDate) }}</td>
+                        <td class="text-right">
+                          {{ formatCurrency(invoice.totalAmount || 0) }}
+                        </td>
+                      </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                      <tr>
+                        <td colspan="4" class="text-center">
+                          Geen betalingen ontvangen.
+                        </td>
+                      </tr>
+                    </ng-template>
+                  </p-table>
+                </div>
+              </div>
+            }
           </div>
         </p-card>
       </div>

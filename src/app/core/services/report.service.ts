@@ -28,12 +28,23 @@ export class ReportService {
   private expenseService = inject(ExpenseService);
   private appSettingsService = inject(AppSettingsService);
 
+  private isActiveAppointment(appointment: { deletedAt?: Date }): boolean {
+    return !appointment.deletedAt;
+  }
+
+  private isActiveInvoice(invoice: { deletedAt?: Date }): boolean {
+    return !invoice.deletedAt;
+  }
+
   private toDate(value: unknown): Date | null {
     if (value instanceof Date) {
       return value;
     }
     if (value && typeof value === 'object' && 'toDate' in value) {
-      return (value as any).toDate();
+      const candidate = value as { toDate?: unknown };
+      if (typeof candidate.toDate === 'function') {
+        return (candidate.toDate as () => Date)();
+      }
     }
     if (typeof value === 'string' || typeof value === 'number') {
       return new Date(value);
@@ -50,6 +61,7 @@ export class ReportService {
         const filteredInvoices = invoices.filter((invoice) => {
           const issueDate = this.toDate(invoice.issueDate);
           return (
+            this.isActiveInvoice(invoice) &&
             issueDate &&
             issueDate >= period.startDate &&
             issueDate <= period.endDate &&
@@ -150,6 +162,7 @@ export class ReportService {
           if (!apt.startTime) return false;
           const startTime = this.toDate(apt.startTime);
           return (
+            this.isActiveAppointment(apt) &&
             startTime &&
             startTime >= period.startDate &&
             startTime <= period.endDate
@@ -179,6 +192,7 @@ export class ReportService {
           const clientInvoices = invoices.filter((inv) => {
             const issueDate = this.toDate(inv.issueDate);
             return (
+              this.isActiveInvoice(inv) &&
               inv.client.id === clientId &&
               issueDate &&
               issueDate >= period.startDate &&
@@ -213,6 +227,7 @@ export class ReportService {
           if (!apt.startTime) return false;
           const startTime = this.toDate(apt.startTime);
           return (
+            this.isActiveAppointment(apt) &&
             startTime &&
             startTime >= period.startDate &&
             startTime <= period.endDate
@@ -263,6 +278,7 @@ export class ReportService {
           if (!apt.startTime) return false;
           const startTime = this.toDate(apt.startTime);
           return (
+            this.isActiveAppointment(apt) &&
             startTime &&
             startTime >= period.startDate &&
             startTime <= period.endDate
@@ -304,12 +320,16 @@ export class ReportService {
    * Calculate calendar occupancy rate
    */
   getCalendarOccupancy(period: ReportPeriod): Observable<CalendarOccupancy> {
-    return this.appointmentService.getData$().pipe(
-      map((appointments) => {
+    return combineLatest([
+      this.appointmentService.getData$(),
+      this.appSettingsService.settings$,
+    ]).pipe(
+      map(([appointments, settings]) => {
         const filteredAppointments = appointments.filter((apt) => {
           if (!apt.startTime) return false;
           const startTime = this.toDate(apt.startTime);
           return (
+            this.isActiveAppointment(apt) &&
             startTime &&
             startTime >= period.startDate &&
             startTime <= period.endDate
@@ -328,13 +348,20 @@ export class ReportService {
           return sum;
         }, 0);
 
-        // Calculate available hours (assuming 8 hours/day, 5 days/week)
-        const days = Math.ceil(
-          (period.endDate.getTime() - period.startDate.getTime()) /
-            (1000 * 60 * 60 * 24),
-        );
-        const workingDays = Math.floor((days / 7) * 5); // Rough estimate
-        const totalAvailableHours = workingDays * 8;
+        const weeklyTargetHours = settings.weeklyAvailableHoursTarget;
+
+        const msPerDay = 1000 * 60 * 60 * 24;
+        const diffMs = period.endDate.getTime() - period.startDate.getTime();
+
+        // Inclusive, timezone-safe day span.
+        // - If start=end => 1 day
+        // - If end<start => 0 days
+        const daysInPeriod =
+          diffMs >= 0 ? Math.ceil((diffMs + 1) / msPerDay) : 0;
+
+        // Pro-rate weekly target by the number of days in the selected period.
+        const totalAvailableHours =
+          daysInPeriod > 0 ? (daysInPeriod / 7) * weeklyTargetHours : 0;
 
         const occupancyRate =
           totalAvailableHours > 0
@@ -410,6 +437,7 @@ export class ReportService {
           if (!apt.startTime) return false;
           const startTime = this.toDate(apt.startTime);
           return (
+            this.isActiveAppointment(apt) &&
             startTime &&
             startTime >= period.startDate &&
             startTime <= period.endDate &&
@@ -451,6 +479,7 @@ export class ReportService {
           .filter((inv) => {
             const issueDate = this.toDate(inv.issueDate);
             return (
+              this.isActiveInvoice(inv) &&
               issueDate &&
               issueDate >= period.startDate &&
               issueDate <= period.endDate &&
@@ -525,6 +554,7 @@ export class ReportService {
           if (!apt.startTime) return false;
           const startTime = this.toDate(apt.startTime);
           return (
+            this.isActiveAppointment(apt) &&
             startTime &&
             startTime >= period.startDate &&
             startTime <= period.endDate &&
@@ -559,6 +589,7 @@ export class ReportService {
           // Get revenue from invoice
           const relatedInvoice = invoices.find(
             (inv) =>
+              this.isActiveInvoice(inv) &&
               (inv.appointmentId ?? inv.appointment?.id) === apt.id &&
               inv.paymentStatus === PaymentStatus.PAID,
           );

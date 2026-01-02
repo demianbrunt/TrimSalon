@@ -5,6 +5,7 @@ import {
   tick,
 } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { Appointment } from '../../../core/models/appointment.model';
@@ -122,6 +123,7 @@ describe('AppointmentFormComponent', () => {
     await TestBed.configureTestingModule({
       imports: [AppointmentFormComponent, ReactiveFormsModule],
       providers: [
+        provideNoopAnimations(),
         { provide: AppointmentService, useValue: mockAppointmentService },
         { provide: ClientService, useValue: mockClientService },
         { provide: ServiceService, useValue: mockServiceService },

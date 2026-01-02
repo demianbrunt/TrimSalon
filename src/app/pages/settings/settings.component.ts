@@ -37,6 +37,7 @@ interface SettingsFormControls {
   korEnabled: FormControl<boolean>;
   defaultVatRate: FormControl<number>;
   targetHourlyRate: FormControl<number>;
+  weeklyAvailableHoursTarget: FormControl<number>;
 }
 
 @Component({
@@ -144,6 +145,13 @@ export class SettingsComponent implements OnInit {
         nonNullable: true,
         validators: [Validators.required, Validators.min(0)],
       }),
+      weeklyAvailableHoursTarget: new FormControl(
+        DEFAULT_APP_SETTINGS.weeklyAvailableHoursTarget,
+        {
+          nonNullable: true,
+          validators: [Validators.required, Validators.min(0)],
+        },
+      ),
     });
 
     this.settingsService.settings$
@@ -430,6 +438,7 @@ export class SettingsComponent implements OnInit {
         korEnabled: value.korEnabled,
         defaultVatRate: value.defaultVatRate,
         targetHourlyRate: value.targetHourlyRate,
+        weeklyAvailableHoursTarget: value.weeklyAvailableHoursTarget,
       };
 
       await this.settingsService.saveSettings(nextSettings);

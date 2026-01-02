@@ -151,6 +151,11 @@ body {
       3rem + max(0.75rem, env(safe-area-inset-bottom))
     );
 
+    /* Used to keep top-positioned overlays (like Toast) below the fixed top-nav on mobile. */
+    --mobile-fixed-top-offset: calc(
+      var(--top-nav-height, 70px) + env(safe-area-inset-top)
+    );
+
     /*
       PrimeNG paginator has min-height 44px and 0.25rem vertical padding.
       Use a slightly generous value so sticky actions can sit above it.
@@ -197,6 +202,17 @@ body {
     position: sticky;
     top: 0;
     z-index: 500;
+  }
+
+  /* Toasts: show at top on mobile, but don't cover the fixed top-nav. */
+  .p-toast-top-center,
+  .p-toast-top-left,
+  .p-toast-top-right {
+    top: calc(var(--mobile-fixed-top-offset, 70px) + 0.5rem);
+  }
+
+  .p-toast {
+    max-width: calc(100vw - 1.5rem);
   }
 
   /*

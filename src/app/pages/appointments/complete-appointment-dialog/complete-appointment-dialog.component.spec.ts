@@ -6,8 +6,11 @@ import {
 } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { of } from 'rxjs';
 import { Appointment } from '../../../core/models/appointment.model';
 import { MobileService } from '../../../core/services/mobile.service';
+import { PackageService } from '../../../core/services/package.service';
+import { ServiceService } from '../../../core/services/service.service';
 import { CompleteAppointmentDialogComponent } from './complete-appointment-dialog.component';
 
 describe('CompleteAppointmentDialogComponent', () => {
@@ -17,6 +20,8 @@ describe('CompleteAppointmentDialogComponent', () => {
   let mockDialogRef: jasmine.SpyObj<DynamicDialogRef>;
   let mockRouter: jasmine.SpyObj<Router>;
   let mockMobileService: { isMobile: boolean };
+  let mockServiceService: jasmine.SpyObj<ServiceService>;
+  let mockPackageService: jasmine.SpyObj<PackageService>;
 
   const appointment: Appointment = {
     id: 'a1',
@@ -39,6 +44,11 @@ describe('CompleteAppointmentDialogComponent', () => {
     mockDialogRef = jasmine.createSpyObj('DynamicDialogRef', ['close']);
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
     mockMobileService = { isMobile: false };
+    mockServiceService = jasmine.createSpyObj('ServiceService', ['getData$']);
+    mockPackageService = jasmine.createSpyObj('PackageService', ['getData$']);
+
+    mockServiceService.getData$.and.returnValue(of([]));
+    mockPackageService.getData$.and.returnValue(of([]));
 
     mockRouter.navigate.and.resolveTo(true);
 
@@ -54,6 +64,8 @@ describe('CompleteAppointmentDialogComponent', () => {
         { provide: DynamicDialogRef, useValue: mockDialogRef },
         { provide: Router, useValue: mockRouter },
         { provide: MobileService, useValue: mockMobileService },
+        { provide: ServiceService, useValue: mockServiceService },
+        { provide: PackageService, useValue: mockPackageService },
       ],
     }).compileComponents();
 
@@ -74,37 +86,36 @@ describe('CompleteAppointmentDialogComponent', () => {
     );
     expect(component.actualPrice.value).toBe(45);
     expect(component.notes.value).toBe('Let op');
-    expect(component.isPaid.value).toBeFalse();
-    expect(component.paidDate.disabled).toBeTrue();
-    expect(component.paidDate.value).toBeNull();
+    expect(component.actualServices.value).toEqual([]);
+    expect(component.actualPackages.value).toEqual([]);
+    expect(component.isPaid.value).toBeTrue();
+    expect(component.paidDate.enabled).toBeTrue();
+    expect(component.paidDate.value?.toISOString()).toBe(
+      appointment.startTime.toISOString(),
+    );
   });
 
   it('should enable and require paidDate when isPaid is true', fakeAsync(() => {
-    jasmine.clock().install();
-    jasmine.clock().mockDate(new Date('2025-12-24T00:00:00.000Z'));
-
     fixture.detectChanges();
+
+    component.isPaid.setValue(false);
+    tick();
 
     component.isPaid.setValue(true);
     tick();
 
     expect(component.paidDate.enabled).toBeTrue();
     expect(component.paidDate.value?.toISOString()).toBe(
-      new Date('2025-12-24T00:00:00.000Z').toISOString(),
+      appointment.startTime.toISOString(),
     );
 
     component.paidDate.setValue(null);
     component.paidDate.updateValueAndValidity();
     expect(component.paidDate.hasError('required')).toBeTrue();
-
-    jasmine.clock().uninstall();
   }));
 
   it('should disable and clear paidDate when isPaid is false', fakeAsync(() => {
     fixture.detectChanges();
-
-    component.isPaid.setValue(true);
-    tick();
 
     component.isPaid.setValue(false);
     tick();
@@ -127,6 +138,8 @@ describe('CompleteAppointmentDialogComponent', () => {
       expect(mockDialogRef.close).toHaveBeenCalledWith({
         actualEndTime: new Date('2025-01-01T10:05:00.000Z'),
         actualPrice: 50,
+        actualServices: [],
+        actualPackages: [],
         notes: 'Klaar',
         isPaid: false,
         paidDate: null,

@@ -14,10 +14,16 @@ export interface AppSettings {
    * Target hourly rate used in reporting (€/hour).
    */
   targetHourlyRate: number;
+
+  /**
+   * Weekly available hours used for occupancy reporting (hours/week).
+   */
+  weeklyAvailableHoursTarget: number;
 }
 
 export const DEFAULT_APP_SETTINGS: AppSettings = {
   korEnabled: false,
   defaultVatRate: 21,
   targetHourlyRate: 60,
+  weeklyAvailableHoursTarget: 8,
 };

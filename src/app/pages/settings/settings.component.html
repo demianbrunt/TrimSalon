@@ -83,6 +83,24 @@
               [maxFractionDigits]="2"
             ></p-inputNumber>
           </div>
+
+          <div class="col-12 md:col-6">
+            <label for="weeklyAvailableHoursTarget" class="block mb-2">
+              Beschikbare uren (uur/week)
+            </label>
+            <p-inputNumber
+              id="weeklyAvailableHoursTarget"
+              formControlName="weeklyAvailableHoursTarget"
+              [min]="0"
+              [maxFractionDigits]="1"
+              suffix=" uur/week"
+              class="w-full"
+              aria-describedby="weeklyAvailableHoursHelp"
+            ></p-inputNumber>
+            <small id="weeklyAvailableHoursHelp" class="text-600">
+              Wordt gebruikt om bezettingsgraad te berekenen in rapportages.
+            </small>
+          </div>
         </div>
 
         <div class="flex justify-content-end gap-2 mt-4 sticky-footer-actions">

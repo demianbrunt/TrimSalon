@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { Invoice, PaymentStatus } from '../../core/models/invoice.model';
 import {
   CalendarOccupancy,
   DashboardReport,
@@ -10,6 +11,7 @@ import {
   RevenueReport,
   TopClient,
 } from '../../core/models/report.model';
+import { InvoiceService } from '../../core/services/invoice.service';
 import { ReportService } from '../../core/services/report.service';
 import { ReportsComponent } from './reports.component';
 
@@ -17,6 +19,7 @@ describe('ReportsComponent', () => {
   let component: ReportsComponent;
   let fixture: ComponentFixture<ReportsComponent>;
   let mockReportService: jasmine.SpyObj<ReportService>;
+  let mockInvoiceService: jasmine.SpyObj<InvoiceService>;
 
   const mockDashboardReport: DashboardReport = {
     revenueReport: {
@@ -91,9 +94,15 @@ describe('ReportsComponent', () => {
       of(mockDashboardReport),
     );
 
+    mockInvoiceService = jasmine.createSpyObj('InvoiceService', ['getData$']);
+    mockInvoiceService.getData$.and.returnValue(of([]));
+
     await TestBed.configureTestingModule({
       imports: [ReportsComponent],
-      providers: [{ provide: ReportService, useValue: mockReportService }],
+      providers: [
+        { provide: ReportService, useValue: mockReportService },
+        { provide: InvoiceService, useValue: mockInvoiceService },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ReportsComponent);
@@ -160,5 +169,98 @@ describe('ReportsComponent', () => {
 
     component.setQuickPeriod('year');
     expect(mockReportService.getDashboardReport).toHaveBeenCalled();
+  });
+
+  it('should build financial overview from invoices', () => {
+    const inPeriodIssueDate = new Date(component.startDate);
+    inPeriodIssueDate.setHours(12, 0, 0, 0);
+
+    const inPeriodPaidDate = new Date(component.startDate);
+    inPeriodPaidDate.setDate(inPeriodPaidDate.getDate() + 1);
+    inPeriodPaidDate.setHours(12, 0, 0, 0);
+
+    const outOfPeriodDate = new Date(1999, 0, 1);
+
+    const client = {
+      name: 'Client A',
+      email: 'a@example.com',
+      phone: '0612345678',
+      dogs: [],
+    };
+
+    const paidInvoice: Invoice = {
+      invoiceNumber: 'INV-100',
+      client,
+      items: [],
+      subtotal: 100,
+      vatRate: 0,
+      vatAmount: 0,
+      totalAmount: 100,
+      paymentStatus: PaymentStatus.PAID,
+      issueDate: inPeriodIssueDate,
+      dueDate: inPeriodIssueDate,
+      paidDate: inPeriodPaidDate,
+    };
+
+    const openInvoice: Invoice = {
+      invoiceNumber: 'INV-200',
+      client,
+      items: [],
+      subtotal: 200,
+      vatRate: 0,
+      vatAmount: 0,
+      totalAmount: 200,
+      paymentStatus: PaymentStatus.PENDING,
+      issueDate: inPeriodIssueDate,
+      dueDate: inPeriodIssueDate,
+    };
+
+    const outOfPeriodInvoice: Invoice = {
+      invoiceNumber: 'INV-OLD',
+      client,
+      items: [],
+      subtotal: 50,
+      vatRate: 0,
+      vatAmount: 0,
+      totalAmount: 50,
+      paymentStatus: PaymentStatus.PAID,
+      issueDate: outOfPeriodDate,
+      dueDate: outOfPeriodDate,
+      paidDate: outOfPeriodDate,
+    };
+
+    const deletedInvoice: Invoice = {
+      invoiceNumber: 'INV-DELETED',
+      client,
+      items: [],
+      subtotal: 75,
+      vatRate: 0,
+      vatAmount: 0,
+      totalAmount: 75,
+      paymentStatus: PaymentStatus.PAID,
+      issueDate: inPeriodIssueDate,
+      dueDate: inPeriodIssueDate,
+      paidDate: inPeriodPaidDate,
+      deletedAt: new Date(),
+    };
+
+    mockInvoiceService.getData$.and.returnValue(
+      of([paidInvoice, openInvoice, outOfPeriodInvoice, deletedInvoice]),
+    );
+
+    component.loadReports();
+    fixture.detectChanges();
+
+    expect(component.financialInvoicesIssued.length).toBe(2);
+    expect(component.financialPaymentsReceived.length).toBe(1);
+    expect(component.financialTotals.issuedTotal).toBe(300);
+    expect(component.financialTotals.paidTotal).toBe(100);
+    expect(component.financialTotals.outstandingTotal).toBe(200);
+    expect(component.unlinkedInvoiceCount).toBe(2);
+
+    const el: HTMLElement = fixture.nativeElement;
+    expect(el.textContent).toContain('Financieel Overzicht');
+    expect(el.textContent).toContain('INV-100');
+    expect(el.textContent).toContain('INV-200');
   });
 });

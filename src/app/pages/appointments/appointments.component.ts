@@ -112,7 +112,7 @@ export class AppointmentsComponent implements OnInit {
   readonly mobileRows = 9;
   readonly desktopRows = 10;
 
-  statusFilter: AppointmentStatus = APPOINTMENT_STATUS.open;
+  statusFilter: AppointmentStatus = APPOINTMENT_STATUS.all;
 
   readonly statusFilterOptions: {
     label: string;
@@ -172,7 +172,7 @@ export class AppointmentsComponent implements OnInit {
     const status = readStringParam(
       queryParamMap,
       'status',
-      APPOINTMENT_STATUS.open,
+      APPOINTMENT_STATUS.all,
     );
     this.setStatusFilter(status, { skipUrlUpdate: true });
 
@@ -419,6 +419,8 @@ export class AppointmentsComponent implements OnInit {
           ...appointment,
           actualEndTime: result.actualEndTime,
           actualPrice: result.actualPrice ?? appointment.actualPrice,
+          actualServices: result.actualServices ?? appointment.actualServices,
+          actualPackages: result.actualPackages ?? appointment.actualPackages,
           notes: result.notes ?? appointment.notes,
           completed: true,
         };
@@ -445,6 +447,11 @@ export class AppointmentsComponent implements OnInit {
                   isPaid
                     ? 'Factuur als betaald aangemaakt'
                     : 'Conceptfactuur aangemaakt',
+                );
+              } else if (isPaid) {
+                this.toastrService.info(
+                  TOAST_TITLE.success,
+                  'Factuur bestond al; betaalstatus is niet automatisch aangepast',
                 );
               }
               this.loadAppointments();

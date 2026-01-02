@@ -88,8 +88,8 @@ import { MobileService } from './core/services/mobile.service';
   template: `
     <p-confirmDialog />
     <p-toast
-      [class]="isMobile ? 'px-5 pb-4' : ''"
-      [position]="isMobile ? 'bottom-center' : 'top-right'"
+      class="app-toast"
+      [position]="isMobile ? 'top-center' : 'top-right'"
       [preventOpenDuplicates]="true"
     />
 

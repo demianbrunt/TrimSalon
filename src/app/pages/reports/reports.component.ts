@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { jsPDF as JsPDF } from 'jspdf';
 import { ButtonModule } from 'primeng/button';
@@ -7,8 +7,9 @@ import { CardModule } from 'primeng/card';
 import { DatePicker } from 'primeng/datepicker';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TableModule } from 'primeng/table';
-import { BehaviorSubject, Observable, switchMap } from 'rxjs';
+import { BehaviorSubject, map, Observable, switchMap } from 'rxjs';
 import { SubscriptionHolder } from '../../core/components/subscription-holder.component';
+import { Invoice, PaymentStatus } from '../../core/models/invoice.model';
 import {
   BreedPerformance,
   CalendarOccupancy,
@@ -22,7 +23,19 @@ import {
   RevenueReport,
   TopClient,
 } from '../../core/models/report.model';
+import { InvoiceService } from '../../core/services/invoice.service';
 import { ReportService } from '../../core/services/report.service';
+
+interface FinancialOverview {
+  invoicesIssued: Invoice[];
+  paymentsReceived: Invoice[];
+  totals: {
+    issuedTotal: number;
+    paidTotal: number;
+    outstandingTotal: number;
+  };
+  unlinkedInvoiceCount: number;
+}
 
 @Component({
   standalone: true,
@@ -39,7 +52,8 @@ import { ReportService } from '../../core/services/report.service';
   styleUrls: ['./reports.component.css'],
 })
 export class ReportsComponent extends SubscriptionHolder implements OnInit {
-  private reportService = inject(ReportService);
+  private readonly reportService = inject(ReportService);
+  private readonly invoiceService = inject(InvoiceService);
 
   private readonly autoTablePaddingAfterSection = 10;
 
@@ -82,6 +96,15 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
   hourlyRateKPI?: HourlyRateKPI;
   breedPerformance?: BreedPerformance[];
 
+  financialInvoicesIssued: Invoice[] = [];
+  financialPaymentsReceived: Invoice[] = [];
+  financialTotals: FinancialOverview['totals'] = {
+    issuedTotal: 0,
+    paidTotal: 0,
+    outstandingTotal: 0,
+  };
+  unlinkedInvoiceCount = 0;
+
   revenueChartData: unknown;
   revenueChartOptions: unknown;
 
@@ -108,6 +131,123 @@ export class ReportsComponent extends SubscriptionHolder implements OnInit {
         this.updateCharts();
       }),
     );
+
+    this.subscriptions.add(
+      this.period$
+        .pipe(
+          switchMap((period) =>
+            this.invoiceService
+              .getData$()
+              .pipe(
+                map((invoices) =>
+                  this.buildFinancialOverview(invoices, period),
+                ),
+              ),
+          ),
+        )
+        .subscribe((overview) => {
+          this.financialInvoicesIssued = overview.invoicesIssued;
+          this.financialPaymentsReceived = overview.paymentsReceived;
+          this.financialTotals = overview.totals;
+          this.unlinkedInvoiceCount = overview.unlinkedInvoiceCount;
+        }),
+    );
+  }
+
+  private buildFinancialOverview(
+    invoices: Invoice[],
+    period: ReportPeriod,
+  ): FinancialOverview {
+    const startMs = new Date(period.startDate).getTime();
+    const endMs = new Date(period.endDate).getTime();
+
+    const isInRange = (value: unknown): boolean => {
+      const d = this.toDate(value);
+      if (!d) return false;
+      const t = d.getTime();
+      return t >= startMs && t <= endMs;
+    };
+
+    const activeInvoices = (Array.isArray(invoices) ? invoices : []).filter(
+      (inv) => !inv.deletedAt,
+    );
+
+    const invoicesIssued = activeInvoices
+      .filter((inv) => isInRange(inv.issueDate))
+      .sort(
+        (a, b) =>
+          (this.toDate(b.issueDate)?.getTime() ?? 0) -
+          (this.toDate(a.issueDate)?.getTime() ?? 0),
+      );
+
+    const paymentsReceived = activeInvoices
+      .filter(
+        (inv) =>
+          inv.paymentStatus === PaymentStatus.PAID && isInRange(inv.paidDate),
+      )
+      .sort(
+        (a, b) =>
+          (this.toDate(b.paidDate)?.getTime() ?? 0) -
+          (this.toDate(a.paidDate)?.getTime() ?? 0),
+      );
+
+    const issuedTotal = invoicesIssued.reduce(
+      (sum, inv) => sum + (inv.totalAmount ?? 0),
+      0,
+    );
+
+    const paidTotal = paymentsReceived.reduce(
+      (sum, inv) => sum + (inv.totalAmount ?? 0),
+      0,
+    );
+
+    const outstandingTotal = invoicesIssued
+      .filter((inv) => inv.paymentStatus !== PaymentStatus.PAID)
+      .reduce((sum, inv) => sum + (inv.totalAmount ?? 0), 0);
+
+    const unlinkedInvoiceCount = invoicesIssued.filter(
+      (inv) => !(inv.appointmentId ?? inv.appointment?.id),
+    ).length;
+
+    return {
+      invoicesIssued,
+      paymentsReceived,
+      totals: { issuedTotal, paidTotal, outstandingTotal },
+      unlinkedInvoiceCount,
+    };
+  }
+
+  private toDate(value: unknown): Date | undefined {
+    if (value instanceof Date) return value;
+
+    if (value && typeof value === 'object' && 'toDate' in value) {
+      const maybe = (value as { toDate?: unknown }).toDate;
+      if (typeof maybe === 'function') {
+        const result = (maybe as () => unknown)();
+        return result instanceof Date ? result : undefined;
+      }
+    }
+
+    return undefined;
+  }
+
+  formatDate(value: unknown): string {
+    const d = this.toDate(value);
+    return d ? d.toLocaleDateString('nl-NL') : '-';
+  }
+
+  formatPaymentStatus(status: PaymentStatus | undefined): string {
+    switch (status) {
+      case PaymentStatus.PAID:
+        return 'Betaald';
+      case PaymentStatus.OVERDUE:
+        return 'Te laat';
+      case PaymentStatus.CANCELLED:
+        return 'Geannuleerd';
+      case PaymentStatus.PENDING:
+      default:
+        return 'Open';
+    }
   }
 
   loadReports(): void {

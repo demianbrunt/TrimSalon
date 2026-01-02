@@ -1,8 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { TestDataFactory } from '../../../test-helpers/test-data-factory';
+import { DEFAULT_APP_SETTINGS } from '../models/app-settings.model';
 import { Expense } from '../models/expense.model';
 import { Invoice, PaymentStatus } from '../models/invoice.model';
+import { AppSettingsService } from './app-settings.service';
 import { AppointmentService } from './appointment.service';
 import { ExpenseService } from './expense.service';
 import { InvoiceService } from './invoice.service';
@@ -13,6 +15,7 @@ describe('ReportService', () => {
   let mockAppointmentService: jasmine.SpyObj<AppointmentService>;
   let mockInvoiceService: jasmine.SpyObj<InvoiceService>;
   let mockExpenseService: jasmine.SpyObj<ExpenseService>;
+  let mockAppSettingsService: Pick<AppSettingsService, 'settings$'>;
 
   beforeEach(() => {
     mockAppointmentService = jasmine.createSpyObj('AppointmentService', [
@@ -20,6 +23,9 @@ describe('ReportService', () => {
     ]);
     mockInvoiceService = jasmine.createSpyObj('InvoiceService', ['getData$']);
     mockExpenseService = jasmine.createSpyObj('ExpenseService', ['getData$']);
+    mockAppSettingsService = {
+      settings$: of(DEFAULT_APP_SETTINGS),
+    };
 
     TestBed.configureTestingModule({
       providers: [
@@ -27,18 +33,72 @@ describe('ReportService', () => {
         { provide: AppointmentService, useValue: mockAppointmentService },
         { provide: InvoiceService, useValue: mockInvoiceService },
         { provide: ExpenseService, useValue: mockExpenseService },
+        { provide: AppSettingsService, useValue: mockAppSettingsService },
       ],
     });
+  });
 
-    service = TestBed.inject(ReportService);
+  describe('getCalendarOccupancy', () => {
+    it('should calculate available hours from weekly target (pro-rated by days)', (done) => {
+      const period = {
+        startDate: new Date('2024-01-01T00:00:00.000Z'),
+        endDate: new Date('2024-01-07T23:59:59.999Z'),
+      };
+
+      mockAppSettingsService = {
+        settings$: of({
+          ...DEFAULT_APP_SETTINGS,
+          weeklyAvailableHoursTarget: 8,
+        }),
+      };
+      TestBed.overrideProvider(AppSettingsService, {
+        useValue: mockAppSettingsService,
+      });
+
+      const appointments = [
+        {
+          id: 'apt-1',
+          startTime: new Date('2024-01-02T10:00:00.000Z'),
+          endTime: new Date('2024-01-02T12:00:00.000Z'),
+        },
+      ] as any[];
+
+      mockAppointmentService.getData$.and.returnValue(of(appointments));
+
+      service = TestBed.inject(ReportService);
+      service.getCalendarOccupancy(period).subscribe((occ) => {
+        expect(occ.totalBookedHours).toBeCloseTo(2, 6);
+        expect(occ.totalAvailableHours).toBeCloseTo(8, 6);
+        expect(occ.occupancyRate).toBeCloseTo(25, 6);
+        done();
+      });
+    });
+
+    it('should return 0 available hours for inverted periods', (done) => {
+      const period = {
+        startDate: new Date('2024-01-10T00:00:00.000Z'),
+        endDate: new Date('2024-01-01T00:00:00.000Z'),
+      };
+
+      mockAppointmentService.getData$.and.returnValue(of([] as any[]));
+
+      service = TestBed.inject(ReportService);
+      service.getCalendarOccupancy(period).subscribe((occ) => {
+        expect(occ.totalAvailableHours).toBe(0);
+        expect(occ.occupancyRate).toBe(0);
+        done();
+      });
+    });
   });
 
   it('should be created', () => {
+    service = TestBed.inject(ReportService);
     expect(service).toBeTruthy();
   });
 
   describe('getRevenueReport', () => {
     it('should calculate revenue for a period', (done) => {
+      service = TestBed.inject(ReportService);
       const period = {
         startDate: new Date('2024-01-01'),
         endDate: new Date('2024-01-31'),
@@ -76,6 +136,7 @@ describe('ReportService', () => {
     });
 
     it('should exclude unpaid invoices', (done) => {
+      service = TestBed.inject(ReportService);
       const period = {
         startDate: new Date('2024-01-01'),
         endDate: new Date('2024-01-31'),
@@ -106,6 +167,7 @@ describe('ReportService', () => {
     });
 
     it('should handle empty invoices', (done) => {
+      service = TestBed.inject(ReportService);
       const period = {
         startDate: new Date('2024-01-01'),
         endDate: new Date('2024-01-31'),
@@ -120,10 +182,88 @@ describe('ReportService', () => {
         done();
       });
     });
+
+    it('should exclude deleted invoices', (done) => {
+      service = TestBed.inject(ReportService);
+      const period = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+
+      const invoices = [
+        {
+          ...TestDataFactory.createInvoice(),
+          issueDate: new Date('2024-01-15'),
+          totalAmount: 100,
+          paymentStatus: PaymentStatus.PAID,
+          deletedAt: new Date('2024-01-16'),
+        },
+        {
+          ...TestDataFactory.createInvoice({ id: 'invoice-2' }),
+          issueDate: new Date('2024-01-20'),
+          totalAmount: 150,
+          paymentStatus: PaymentStatus.PAID,
+        },
+      ] as unknown as Invoice[];
+
+      mockInvoiceService.getData$.and.returnValue(of(invoices));
+
+      service.getRevenueReport(period).subscribe((report) => {
+        expect(report.totalRevenue).toBe(150);
+        expect(report.appointmentCount).toBe(1);
+        done();
+      });
+    });
+  });
+
+  describe('getTopClients', () => {
+    it('should exclude deleted appointments', (done) => {
+      service = TestBed.inject(ReportService);
+      const period = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+
+      const client = { id: 'client-1', name: 'Test Client' };
+      const dog = {
+        id: 'dog-1',
+        name: 'Rex',
+        breed: { id: 'breed-1', name: 'Labrador', size: 'medium' },
+      };
+
+      const appointments = [
+        {
+          id: 'apt-1',
+          client,
+          dog,
+          startTime: new Date('2024-01-10'),
+          endTime: new Date('2024-01-10T01:00:00.000Z'),
+        },
+        {
+          id: 'apt-2',
+          client,
+          dog,
+          startTime: new Date('2024-01-15'),
+          endTime: new Date('2024-01-15T01:00:00.000Z'),
+          deletedAt: new Date('2024-01-16'),
+        },
+      ] as any[];
+
+      mockAppointmentService.getData$.and.returnValue(of(appointments));
+      mockInvoiceService.getData$.and.returnValue(of([] as Invoice[]));
+
+      service.getTopClients(period, 10).subscribe((topClients) => {
+        expect(topClients.length).toBe(1);
+        expect(topClients[0].clientId).toBe('client-1');
+        expect(topClients[0].appointmentCount).toBe(1);
+        done();
+      });
+    });
   });
 
   describe('getExpenseReport', () => {
     it('should calculate expenses for a period', (done) => {
+      service = TestBed.inject(ReportService);
       const period = {
         startDate: new Date('2024-01-01'),
         endDate: new Date('2024-01-31'),
@@ -158,6 +298,7 @@ describe('ReportService', () => {
     });
 
     it('should exclude deleted expenses', (done) => {
+      service = TestBed.inject(ReportService);
       const period = {
         startDate: new Date('2024-01-01'),
         endDate: new Date('2024-01-31'),
@@ -190,6 +331,7 @@ describe('ReportService', () => {
 
   describe('getProfitLossReport', () => {
     it('should calculate profit/loss for a period', (done) => {
+      service = TestBed.inject(ReportService);
       const period = {
         startDate: new Date('2024-01-01'),
         endDate: new Date('2024-01-31'),

@@ -30,48 +30,6 @@
       }
     </span>
   </div>
-  @if (!isMobile) {
-    <div
-      class="grid grid-nogutter justify-content-between align-items-center mb-3"
-    >
-      <div class="col-12 md:col-6">
-        <h2 class="m-0 flex align-items-center gap-2">
-          <i class="pi pi-wallet text-primary"></i>
-          Uitgaven
-        </h2>
-        <p class="text-500 mt-1">Beheer je bedrijfskosten en investeringen</p>
-      </div>
-      <div class="col-12 md:col-6 flex justify-content-end">
-        <p-button
-          label="Nieuwe Uitgave"
-          icon="pi pi-plus"
-          (click)="createExpense()"
-        ></p-button>
-      </div>
-    </div>
-
-    <!-- Summary Card -->
-    <p-card styleClass="mb-4">
-      <div class="grid">
-        <div class="col-12 md:col-6 lg:col-3">
-          <div class="text-center p-3">
-            <div class="text-500 font-medium mb-2">Totale Uitgaven</div>
-            <div class="text-4xl font-bold text-red-500">
-              {{ formatCurrency(totalExpenses) }}
-            </div>
-          </div>
-        </div>
-        <div class="col-12 md:col-6 lg:col-3">
-          <div class="text-center p-3">
-            <div class="text-500 font-medium mb-2">Aantal Uitgaven</div>
-            <div class="text-4xl font-bold text-primary">
-              {{ expenses.length }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </p-card>
-  }
 
   @if (isMobile) {
     <div
