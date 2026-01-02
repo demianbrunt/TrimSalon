@@ -28,18 +28,34 @@ export class ReportService {
   private expenseService = inject(ExpenseService);
   private appSettingsService = inject(AppSettingsService);
 
+  private toDate(value: unknown): Date | null {
+    if (value instanceof Date) {
+      return value;
+    }
+    if (value && typeof value === 'object' && 'toDate' in value) {
+      return (value as any).toDate();
+    }
+    if (typeof value === 'string' || typeof value === 'number') {
+      return new Date(value);
+    }
+    return null;
+  }
+
   /**
    * Generate revenue report for a given period
    */
   getRevenueReport(period: ReportPeriod): Observable<RevenueReport> {
     return this.invoiceService.getData$().pipe(
       map((invoices) => {
-        const filteredInvoices = invoices.filter(
-          (invoice) =>
-            invoice.issueDate >= period.startDate &&
-            invoice.issueDate <= period.endDate &&
-            invoice.paymentStatus === PaymentStatus.PAID,
-        );
+        const filteredInvoices = invoices.filter((invoice) => {
+          const issueDate = this.toDate(invoice.issueDate);
+          return (
+            issueDate &&
+            issueDate >= period.startDate &&
+            issueDate <= period.endDate &&
+            invoice.paymentStatus === PaymentStatus.PAID
+          );
+        });
 
         const totalRevenue = filteredInvoices.reduce(
           (sum, inv) => sum + inv.totalAmount,
@@ -65,12 +81,15 @@ export class ReportService {
   getExpenseReport(period: ReportPeriod): Observable<ExpenseReport> {
     return this.expenseService.getData$().pipe(
       map((expenses) => {
-        const filteredExpenses = expenses.filter(
-          (expense) =>
+        const filteredExpenses = expenses.filter((expense) => {
+          const date = this.toDate(expense.date);
+          return (
             !expense.deletedAt &&
-            expense.date >= period.startDate &&
-            expense.date <= period.endDate,
-        );
+            date &&
+            date >= period.startDate &&
+            date <= period.endDate
+          );
+        });
 
         const totalExpenses = filteredExpenses.reduce(
           (sum, expense) => sum + expense.amount,
@@ -127,12 +146,15 @@ export class ReportService {
       this.invoiceService.getData$(),
     ]).pipe(
       map(([appointments, invoices]) => {
-        const filteredAppointments = appointments.filter(
-          (apt) =>
-            apt.startTime &&
-            apt.startTime >= period.startDate &&
-            apt.startTime <= period.endDate,
-        );
+        const filteredAppointments = appointments.filter((apt) => {
+          if (!apt.startTime) return false;
+          const startTime = this.toDate(apt.startTime);
+          return (
+            startTime &&
+            startTime >= period.startDate &&
+            startTime <= period.endDate
+          );
+        });
 
         // Group by client
         const clientMap = new Map<string, TopClient>();
@@ -154,13 +176,16 @@ export class ReportService {
           client.appointmentCount++;
 
           // Calculate revenue from invoices for this client
-          const clientInvoices = invoices.filter(
-            (inv) =>
+          const clientInvoices = invoices.filter((inv) => {
+            const issueDate = this.toDate(inv.issueDate);
+            return (
               inv.client.id === clientId &&
-              inv.issueDate >= period.startDate &&
-              inv.issueDate <= period.endDate &&
-              inv.paymentStatus === PaymentStatus.PAID,
-          );
+              issueDate &&
+              issueDate >= period.startDate &&
+              issueDate <= period.endDate &&
+              inv.paymentStatus === PaymentStatus.PAID
+            );
+          });
           client.totalRevenue = clientInvoices.reduce(
             (sum, inv) => sum + inv.totalAmount,
             0,
@@ -184,12 +209,15 @@ export class ReportService {
   ): Observable<PopularService[]> {
     return this.appointmentService.getData$().pipe(
       map((appointments) => {
-        const filteredAppointments = appointments.filter(
-          (apt) =>
-            apt.startTime &&
-            apt.startTime >= period.startDate &&
-            apt.startTime <= period.endDate,
-        );
+        const filteredAppointments = appointments.filter((apt) => {
+          if (!apt.startTime) return false;
+          const startTime = this.toDate(apt.startTime);
+          return (
+            startTime &&
+            startTime >= period.startDate &&
+            startTime <= period.endDate
+          );
+        });
 
         // Count service usage
         const serviceMap = new Map<string, PopularService>();
@@ -231,12 +259,15 @@ export class ReportService {
   ): Observable<PopularPackage[]> {
     return this.appointmentService.getData$().pipe(
       map((appointments) => {
-        const filteredAppointments = appointments.filter(
-          (apt) =>
-            apt.startTime &&
-            apt.startTime >= period.startDate &&
-            apt.startTime <= period.endDate,
-        );
+        const filteredAppointments = appointments.filter((apt) => {
+          if (!apt.startTime) return false;
+          const startTime = this.toDate(apt.startTime);
+          return (
+            startTime &&
+            startTime >= period.startDate &&
+            startTime <= period.endDate
+          );
+        });
 
         // Count package usage
         const packageMap = new Map<string, PopularPackage>();
@@ -275,19 +306,23 @@ export class ReportService {
   getCalendarOccupancy(period: ReportPeriod): Observable<CalendarOccupancy> {
     return this.appointmentService.getData$().pipe(
       map((appointments) => {
-        const filteredAppointments = appointments.filter(
-          (apt) =>
-            apt.startTime &&
-            apt.startTime >= period.startDate &&
-            apt.startTime <= period.endDate,
-        );
+        const filteredAppointments = appointments.filter((apt) => {
+          if (!apt.startTime) return false;
+          const startTime = this.toDate(apt.startTime);
+          return (
+            startTime &&
+            startTime >= period.startDate &&
+            startTime <= period.endDate
+          );
+        });
 
         // Calculate total booked hours
         const totalBookedHours = filteredAppointments.reduce((sum, apt) => {
-          if (apt.startTime && apt.endTime) {
+          const startTime = this.toDate(apt.startTime);
+          const endTime = this.toDate(apt.endTime);
+          if (startTime && endTime) {
             const hours =
-              (apt.endTime.getTime() - apt.startTime.getTime()) /
-              (1000 * 60 * 60);
+              (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
             return sum + hours;
           }
           return sum;
@@ -371,33 +406,40 @@ export class ReportService {
         const targetHourlyRate = settings.targetHourlyRate;
 
         // Filter appointments in period
-        const filteredAppointments = appointments.filter(
-          (apt) =>
-            apt.startTime &&
-            apt.startTime >= period.startDate &&
-            apt.startTime <= period.endDate &&
-            apt.completed,
-        );
+        const filteredAppointments = appointments.filter((apt) => {
+          if (!apt.startTime) return false;
+          const startTime = this.toDate(apt.startTime);
+          return (
+            startTime &&
+            startTime >= period.startDate &&
+            startTime <= period.endDate &&
+            apt.completed
+          );
+        });
 
         // Derive worked minutes from actual (or planned) appointment durations.
         let totalActiveMinutes = 0;
         filteredAppointments.forEach((apt) => {
-          if (apt.startTime && apt.actualEndTime) {
+          const startTime = this.toDate(apt.startTime);
+          const actualEndTime = apt.actualEndTime
+            ? this.toDate(apt.actualEndTime)
+            : null;
+          const endTime = apt.endTime ? this.toDate(apt.endTime) : null;
+
+          if (startTime && actualEndTime) {
             totalActiveMinutes += Math.max(
               0,
               Math.round(
-                (apt.actualEndTime.getTime() - apt.startTime.getTime()) / 60000,
+                (actualEndTime.getTime() - startTime.getTime()) / 60000,
               ),
             );
             return;
           }
 
-          if (apt.startTime && apt.endTime) {
+          if (startTime && endTime) {
             totalActiveMinutes += Math.max(
               0,
-              Math.round(
-                (apt.endTime.getTime() - apt.startTime.getTime()) / 60000,
-              ),
+              Math.round((endTime.getTime() - startTime.getTime()) / 60000),
             );
           }
         });
@@ -406,22 +448,28 @@ export class ReportService {
 
         // Calculate revenue from paid invoices
         const totalRevenue = invoices
-          .filter(
-            (inv) =>
-              inv.issueDate >= period.startDate &&
-              inv.issueDate <= period.endDate &&
-              inv.paymentStatus === PaymentStatus.PAID,
-          )
+          .filter((inv) => {
+            const issueDate = this.toDate(inv.issueDate);
+            return (
+              issueDate &&
+              issueDate >= period.startDate &&
+              issueDate <= period.endDate &&
+              inv.paymentStatus === PaymentStatus.PAID
+            );
+          })
           .reduce((sum, inv) => sum + inv.totalAmount, 0);
 
         // Calculate expenses
         const totalExpenses = expenses
-          .filter(
-            (exp) =>
+          .filter((exp) => {
+            const date = this.toDate(exp.date);
+            return (
               !exp.deletedAt &&
-              exp.date >= period.startDate &&
-              exp.date <= period.endDate,
-          )
+              date &&
+              date >= period.startDate &&
+              date <= period.endDate
+            );
+          })
           .reduce((sum, exp) => sum + exp.amount, 0);
 
         // Calculate rates
@@ -473,13 +521,16 @@ export class ReportService {
       this.invoiceService.getData$(),
     ]).pipe(
       map(([appointments, invoices]) => {
-        const filteredAppointments = appointments.filter(
-          (apt) =>
-            apt.startTime &&
-            apt.startTime >= period.startDate &&
-            apt.startTime <= period.endDate &&
-            apt.completed,
-        );
+        const filteredAppointments = appointments.filter((apt) => {
+          if (!apt.startTime) return false;
+          const startTime = this.toDate(apt.startTime);
+          return (
+            startTime &&
+            startTime >= period.startDate &&
+            startTime <= period.endDate &&
+            apt.completed
+          );
+        });
 
         // Group by breed
         const breedMap = new Map<
@@ -516,13 +567,17 @@ export class ReportService {
           }
 
           // Get minutes worked
-          if (apt.startTime && apt.actualEndTime) {
+          const startTime = this.toDate(apt.startTime);
+          const actualEndTime = this.toDate(apt.actualEndTime);
+          const endTime = this.toDate(apt.endTime);
+
+          if (startTime && actualEndTime) {
             data.totalMinutes += Math.round(
-              (apt.actualEndTime.getTime() - apt.startTime.getTime()) / 60000,
+              (actualEndTime.getTime() - startTime.getTime()) / 60000,
             );
-          } else if (apt.startTime && apt.endTime) {
+          } else if (startTime && endTime) {
             data.totalMinutes += Math.round(
-              (apt.endTime.getTime() - apt.startTime.getTime()) / 60000,
+              (endTime.getTime() - startTime.getTime()) / 60000,
             );
           }
         });

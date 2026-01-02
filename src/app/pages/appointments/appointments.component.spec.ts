@@ -121,7 +121,9 @@ describe('AppointmentsComponent', () => {
   });
 
   it('should show a completed indicator in the desktop table', () => {
-    component.appointments = [{ ...appointment, completed: true }];
+    const testAppointment = { ...appointment, completed: true };
+    component.appointments = [testAppointment];
+    component.visibleAppointments = [testAppointment];
     component.statusFilter = APPOINTMENT_STATUS.all;
     fixture.detectChanges();
 

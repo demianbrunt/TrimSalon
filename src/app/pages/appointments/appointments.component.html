@@ -93,14 +93,16 @@
             >
               <div header-actions class="flex gap-2 align-items-center">
                 <p-button
-                  label="Filters"
+                  [label]="isMobile ? 'Filters' : ''"
                   icon="pi pi-filter"
                   [text]="true"
+                  [rounded]="!isMobile"
                   size="small"
                   (click)="mobileFiltersOpen = !mobileFiltersOpen"
                   [attr.aria-expanded]="mobileFiltersOpen"
                   aria-controls="appointmentsMobileFilters"
                   ariaLabel="Filters"
+                  [pTooltip]="!isMobile ? 'Filters' : ''"
                 ></p-button>
 
                 <p-button
@@ -121,33 +123,38 @@
               [attr.aria-hidden]="!mobileFiltersOpen"
             >
               <div class="mobile-filters">
-                <p-selectButton
-                  [options]="statusFilterOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  [ngModel]="statusFilter"
-                  (ngModelChange)="setStatusFilter($event)"
-                  [allowEmpty]="false"
-                  ariaLabel="Filter afspraken"
-                ></p-selectButton>
+                <div
+                  class="flex flex-row flex-wrap justify-content-between align-items-center gap-2"
+                >
+                  <p-selectButton
+                    [options]="statusFilterOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    [ngModel]="statusFilter"
+                    (ngModelChange)="setStatusFilter($event)"
+                    [allowEmpty]="false"
+                    ariaLabel="Filter afspraken"
+                    styleClass="w-auto"
+                  ></p-selectButton>
 
-                <div class="flex gap-2 mt-2">
-                  <p-button
-                    label="Actief"
-                    [text]="showArchived"
-                    [outlined]="showArchived"
-                    [attr.aria-pressed]="!showArchived"
-                    (click)="setShowArchived(false)"
-                    size="small"
-                  ></p-button>
-                  <p-button
-                    label="Archief"
-                    [text]="!showArchived"
-                    [outlined]="!showArchived"
-                    [attr.aria-pressed]="showArchived"
-                    (click)="setShowArchived(true)"
-                    size="small"
-                  ></p-button>
+                  <div class="flex gap-2">
+                    <p-button
+                      label="Actief"
+                      [text]="showArchived"
+                      [outlined]="showArchived"
+                      [attr.aria-pressed]="!showArchived"
+                      (click)="setShowArchived(false)"
+                      size="small"
+                    ></p-button>
+                    <p-button
+                      label="Archief"
+                      [text]="!showArchived"
+                      [outlined]="!showArchived"
+                      [attr.aria-pressed]="showArchived"
+                      (click)="setShowArchived(true)"
+                      size="small"
+                    ></p-button>
+                  </div>
                 </div>
               </div>
             </div>

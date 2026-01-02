@@ -315,8 +315,11 @@ export class CompleteAppointmentDialogComponent implements OnInit {
     notes: new FormControl<string>(this.appointment.notes || '', {
       nonNullable: true,
     }),
-    isPaid: new FormControl<boolean>(false, { nonNullable: true }),
-    paidDate: new FormControl<Date | null>({ value: null, disabled: true }),
+    isPaid: new FormControl<boolean>(true, { nonNullable: true }),
+    paidDate: new FormControl<Date | null>({
+      value: this.appointment.actualEndTime,
+      disabled: true,
+    }),
   });
 
   get actualEndTime(): FormControl<Date | null> {
